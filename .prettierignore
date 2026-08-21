@@ -1,0 +1,13 @@
+bun.lock
+dist/
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.features-gen/
+reports/
+.stryker-tmp/
+src/paraglide/
+src/app/routeTree.gen.ts
+project.inlang/
+.type-coverage/

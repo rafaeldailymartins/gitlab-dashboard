@@ -1,0 +1,8 @@
+[
+  {
+    "name": "initial load (entry chunk + css)",
+    "path": ["dist/assets/index-*.js", "dist/assets/*.css"],
+    "limit": "180 kB",
+    "gzip": true
+  }
+]
