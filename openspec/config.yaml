@@ -1,8 +1,0 @@
-schema: spec-driven
-
-context: |
-  Dashboard de horas por dia baseado em timelogs do GitLab (GraphQL Query.timelogs).
-  Stack: React 19, TypeScript, TanStack Start/Router/Query/Table, Tailwind v4, shadcn/ui, zod.
-  Estrutura de pastas: Feature-Sliced Design (regra: camada so importa das camadas abaixo).
-  Arquitetura e convencoes: ver AGENTS.md na raiz.
-  Token do GitLab so existe no servidor (server functions).
