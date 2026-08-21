@@ -1,0 +1,39 @@
+[build]
+  command = "bun run build"
+  publish = "dist"
+
+[build.environment]
+  # Netlify picks Bun up from bun.lock; pinning the version keeps the CI build
+  # and a local build on the same runtime.
+  BUN_VERSION = "1.4.0"
+  # Still needed: Stryker and the Playwright run execute on Node.
+  NODE_VERSION = "24"
+
+# Single-page app. Without this every deep link — and `/auth/callback`, which the
+# OAuth redirect lands on — would return 404 from the CDN instead of the app.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # A Content-Security-Policy is added in task 11.1, together with the build
+    # step that hashes the inline theme script. Shipping `script-src
+    # 'unsafe-inline'` in the meantime would be weaker than no CSP is honest.
+
+# Hashed assets are immutable; index.html must never be cached, or a deploy
+# would keep serving the previous bundle's asset references.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
