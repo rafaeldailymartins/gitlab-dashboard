@@ -27,5 +27,6 @@
   "dashboard_this_week": "This week",
   "dashboard_of_target": "of {target} h",
   "dashboard_no_target": "no target today",
-  "dashboard_placeholder_notice": "Signing in and the real figures arrive in the next step. What you see below comes from your saved settings."
+  "dashboard_placeholder_notice": "Signing in and the real figures arrive in the next step. What you see below comes from your saved settings.",
+  "nav_label": "Main navigation"
 }

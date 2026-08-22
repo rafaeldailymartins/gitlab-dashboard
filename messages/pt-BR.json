@@ -27,5 +27,6 @@
   "dashboard_this_week": "Esta semana",
   "dashboard_of_target": "de {target} h",
   "dashboard_no_target": "sem meta hoje",
-  "dashboard_placeholder_notice": "O login e os números reais chegam no próximo passo. O que aparece abaixo vem das suas configurações salvas."
+  "dashboard_placeholder_notice": "O login e os números reais chegam no próximo passo. O que aparece abaixo vem das suas configurações salvas.",
+  "nav_label": "Navegação principal"
 }

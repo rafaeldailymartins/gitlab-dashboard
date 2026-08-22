@@ -30,7 +30,7 @@ function RootLayout() {
           <header className="border-b">
             <div className="mx-auto flex w-full max-w-5xl items-center gap-4 px-4 py-3">
               <span className="font-semibold tracking-tight">{m.app_name()}</span>
-              <nav aria-label={m.app_name()} className="flex items-center gap-1">
+              <nav aria-label={m.nav_label()} className="flex items-center gap-1">
                 <Link className={NAVIGATION_LINK_CLASS} to="/">
                   {m.nav_dashboard()}
                 </Link>
