@@ -22,13 +22,13 @@ default:
   before_script:
     - bun install --frozen-lockfile --ignore-scripts
 
-variables:
-  # Playwright and Stryker download nothing at run time in this project, but a
-  # frozen lockfile install still has to be reproducible.
-  BUN_INSTALL_CACHE_DIR: .bun-cache
-  # `--ignore-scripts` on every install: the `prepare` script installs git hooks,
-  # which a runner has no use for and which fail outright in an image without
-  # git. Nothing else in this project has a postinstall that matters here.
+# `--ignore-scripts` on every install: the `prepare` script installs git hooks,
+# which a runner has no use for and which fail outright in an image without git.
+# Nothing else in this project has a postinstall that matters here.
+#
+# No `BUN_INSTALL_CACHE_DIR` either. Pointing it inside the checkout put a copy
+# of every dependency where `prettier --check .` would walk it, and one of them
+# carries a config Prettier cannot resolve. `node_modules/` is what is cached.
 
 # Format, lint, ARIA, types, FSD layers, the dependency graph, dead code, type
 # coverage and `bun audit` — the whole fast gate, in one job, because any one of
