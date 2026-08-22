@@ -11,12 +11,15 @@ multi-user aggregate table, which is not what a person checking their own hours
 wants to look at.
 
 Three facts verified against the live GitLab API make a much better product
-possible. `currentUser.timelogs` accepts the same date and paging arguments, so
-the query can be scoped to the signed-in user server-side. The returned
-connection exposes `count` and `totalSpentTime`, so period totals arrive in one
-request without paginating anything. And GitLab answers both `POST /oauth/token`
-and `POST /api/graphql` with permissive CORS headers, so a browser can complete
-an OAuth exchange and query the API with no server in between.
+possible. `currentUser.timelogs` scopes the query to the signed-in user
+server-side, so nobody else's entries are ever fetched. It can be read
+newest first with no date window at all, so one request of a hundred entries
+answers today, this week and this month — its `startDate`/`endDate` arguments are
+truncated to UTC calendar dates and would not line up with the reader's own days,
+which is why periods are cut locally instead. And GitLab answers both
+`POST /oauth/token` and `POST /api/graphql` with permissive CORS headers, so a
+browser can complete an OAuth exchange and query the API with no server in
+between.
 
 Together those remove the token, the backend and the latency at once.
 
@@ -31,8 +34,10 @@ Together those remove the token, the backend and the latency at once.
   Code with PKCE, requesting the read-only `read_api` scope.
 - The report is scoped to the signed-in user and is no longer restricted to one
   configured group or project: it covers every project the user logged time in.
-- Period totals come from the GraphQL connection's `count` and `totalSpentTime`
-  rather than from summing a fully paginated result set.
+- Period totals are accumulated in seconds from the entries actually retrieved,
+  so a total always equals the sum of the days shown for it, and a period the
+  loaded history does not reach back to is reported as unsettled rather than as
+  final.
 - History is paged on demand with a cursor instead of eagerly fetching a fixed
   window, and the query cache is persisted so a return visit renders before any
   request resolves.

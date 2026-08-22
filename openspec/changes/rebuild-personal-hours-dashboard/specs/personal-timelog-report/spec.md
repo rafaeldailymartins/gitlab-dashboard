@@ -44,16 +44,18 @@ rejected rather than displayed.
 - **WHEN** a duration that is not a finite number is converted
 - **THEN** the conversion is rejected as invalid
 
-### Requirement: REPORT-3 — Totals do not require reading the whole period
+### Requirement: REPORT-3 — A period total agrees with the days it is made of
 
-The total hours and the number of entries for a period SHALL be available from
-the first response, without retrieving every entry in that period.
+A period total SHALL be accumulated in seconds from the entries the report has
+retrieved and rounded once, so it always equals the sum of the days shown for
+that period. A total whose period is not fully retrieved SHALL be reported as
+unsettled rather than as final, and retrieval SHALL continue until it is settled.
 
-#### Scenario: A period larger than one page
-
-- **WHEN** a period contains more entries than one page holds
-- **THEN** the reported period total already accounts for all of them
-- **AND** it is reported before any further page has been requested
+The provider is not asked for a period: it filters by UTC calendar date, while a
+day here is a day in the configured time zone, so a total it reported would
+disagree with the days on screen by the hours logged on the boundary days.
+Because history is read newest first, the periods this dashboard summarises —
+today, this week, this month — are answered by the first response.
 
 #### Scenario: Totals accumulate without compounding rounding
 
@@ -61,6 +63,19 @@ the first response, without retrieving every entry in that period.
   durations
 - **THEN** they agree exactly, because accumulation happens in seconds and
   rounding happens once for display
+
+#### Scenario: The recent periods need one request
+
+- **WHEN** a person opens the dashboard
+- **THEN** today, this week and this month are answered by the first response,
+  without requesting a second page
+
+#### Scenario: A period larger than one page
+
+- **WHEN** a period holds more entries than one page
+- **THEN** its total is reported as unsettled while older entries are still
+  being retrieved
+- **AND** it becomes settled once retrieval passes the start of the period
 
 ### Requirement: REPORT-4 — A day is a day in the person's time zone
 

@@ -43,23 +43,23 @@ considered done, and each task below names whatever additional gate proves it.
 
 ## 5. Timelog model
 
-- [ ] 5.1 Extend `entities/timelog/model` with the day-bucketing rule: group entries by calendar day in a given time zone, and drop entries that fall outside the requested range after conversion; write the failing tests first, covering an entry on either side of midnight and a range edge (REPORT-4)
-- [ ] 5.2 Write the failing tests for per-day aggregation — total per day, breakdown per work item with two entries on the same item merged, and unattributed time counted and labelled; then implement (REPORT-5, REPORT-7)
-- [ ] 5.3 Write the failing tests for period totals — accumulate in seconds and convert once, so a period total equals the sum of its days' durations exactly; then implement (REPORT-2, REPORT-3)
-- [ ] 5.4 Write the failing tests for balance against target — per day, per week and per month, including a weekend day with logged time counting as above target; then implement (PREF-1)
-- [ ] 5.5 Define the `TimelogGateway` port in `entities/timelog/model`; verify lint confirms the model imports nothing from `api/`
-- [ ] 5.6 Transcribe the aggregation and time-zone scenarios into `features/domain/aggregate-hours-by-day.feature` and `features/domain/timezone-day-boundaries.feature` with `# Spec:` citations
-- [ ] 5.7 Verify `bun run test:coverage` reports 100% on `model/` and `bun run test:mutation` stays at or above 85%
+- [x] 5.1 Extend `entities/timelogs/model` with the day-bucketing rule: group entries by calendar day in a given time zone, and keep only the entries inside a requested range once converted; write the failing tests first, covering an entry on either side of midnight and a range edge (REPORT-4)
+- [x] 5.2 Write the failing tests for per-day aggregation — total per day, breakdown per work item with two entries on the same item merged, and unattributed time counted and labelled; then implement (REPORT-5, REPORT-7)
+- [x] 5.3 Write the failing tests for period totals — accumulate in seconds and convert once, so a period total equals the sum of its days' durations exactly; then implement (REPORT-2, REPORT-3)
+- [x] 5.4 Write the failing tests for balance against target — per day, per week and per month, including a weekend day with logged time counting as above target; then implement (PREF-1)
+- [x] 5.5 Define the `TimelogGateway` port in `entities/timelogs/model`; verify lint confirms the model imports nothing from `api/`
+- [x] 5.6 Transcribe the aggregation and time-zone scenarios into `features/domain/aggregate-hours-by-day.feature` and `features/domain/timezone-day-boundaries.feature` with `# Spec:` citations
+- [x] 5.7 Verify `bun run test:coverage` reports 100% on `model/` and `bun run test:mutation` stays at or above 85%
 
 ## 6. Timelog adapter and queries
 
-- [ ] 6.1 Add `src/shared/api/graphql.ts` — a typed `fetch` wrapper for `POST /api/graphql` that attaches the bearer credential, surfaces GraphQL errors, and distinguishes unauthorized from unavailable; verify MSW tests cover a payload error, a 401 and a network failure (REPORT-9)
-- [ ] 6.2 Add the zod schemas for the timelog response in `entities/timelog/api`; verify a test asserts an unexpected shape fails with a message naming the offending field
-- [ ] 6.3 Implement `GitLabTimelogGateway` issuing the `currentUser.timelogs` query with the one-day margin at each end and no group or project filter; verify MSW tests assert the request variables, including the margin and the absence of a scope filter (REPORT-1)
-- [ ] 6.4 Capture MSW fixtures shaped from the real response recorded during research, including an entry with no work item and a merge request entry; verify the fixtures type-check against the zod schemas
-- [ ] 6.5 Add the `useInfiniteQuery` options keyed by period and time zone, paging on `pageInfo.endCursor` and exposing `count` and `totalSpentTime` from the first page; verify tests assert one request per page and none once `hasNextPage` is false (REPORT-3, REPORT-6)
-- [ ] 6.6 Add the IndexedDB query-cache persister with a 5-minute `staleTime` and 24-hour `gcTime`, and clear it on sign-out; verify a test asserts cached data renders before any request resolves and that sign-out empties the store (REPORT-8, AUTH-6)
-- [ ] 6.7 Wire error and retry behaviour so a failed refresh keeps cached figures on screen alongside the failure; verify component tests cover refresh-fails-with-cache and retry re-requesting the same period (REPORT-8, REPORT-9)
+- [x] 6.1 Add `src/shared/api/graphql.ts` — a typed `fetch` wrapper for `POST /api/graphql` that attaches the bearer credential, surfaces GraphQL errors, and distinguishes unauthorized from unavailable; verify MSW tests cover a payload error, a 401 and a network failure (REPORT-9)
+- [x] 6.2 Add the zod schemas for the timelog response in `entities/timelogs/api`; verify a test asserts an unexpected shape fails with a message naming the offending field
+- [x] 6.3 Implement `gitLabTimelogGateway` issuing the `currentUser.timelogs` query newest first, with no group or project filter and — as the live API forced — no `startDate`/`endDate`, since GitLab truncates both to UTC calendar dates; verify tests assert the request variables and the absence of a scope filter and of a period (REPORT-1, REPORT-3)
+- [x] 6.4 Capture MSW fixtures shaped from the real response recorded during research, including an entry with no work item and a merge request entry; verify the fixtures type-check against the zod schemas
+- [x] 6.5 Add the `useInfiniteQuery` options under one key for the whole history, paging on `pageInfo.endCursor`, and derive every period from the loaded entries with a `settled` flag saying whether the period is fully retrieved; verify tests assert the cursor handling, the settling rule and that a month keeps loading until settled (REPORT-3, REPORT-6)
+- [x] 6.6 Add the IndexedDB query-cache persister with a 5-minute `staleTime` and 24-hour `gcTime`, and clear it on sign-out; verify tests assert the throttled write, the restore, the removal and that a browser refusing storage is survived. Painting from the cache before any request resolves is asserted in the browser, in task 10.9 (REPORT-8, AUTH-6)
+- [x] 6.7 Wire error and retry behaviour so a failed refresh keeps cached figures on screen alongside the failure; verify component tests cover refresh-fails-with-cache and retry re-requesting the same period (REPORT-8, REPORT-9)
 
 ## 7. Dashboard
 
@@ -97,6 +97,7 @@ considered done, and each task below names whatever additional gate proves it.
 - [ ] 10.6 Write `docs/qa/accessibility-audit.md` — the manual screen-reader and keyboard procedure that automated axe checks cannot replace
 - [ ] 10.7 Write `docs/qa/release-checklist.md` — including the OAuth redirect URI and the Netlify environment variable, whose absence only shows at sign-in
 - [ ] 10.8 Update `docs/qa/quality-metrics.md` with the measured values at the end of this change
+- [ ] 10.9 Assert in the acceptance suite that a returning reader sees the previously loaded figures before any request resolves, and that signing out empties the persisted cache (REPORT-8, AUTH-6)
 
 ## 11. Deployment and CI
 

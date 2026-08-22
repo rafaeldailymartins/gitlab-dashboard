@@ -2,13 +2,19 @@ Feature: Opening the dashboard
   Every screen must render its own content and be usable by someone navigating
   with a screen reader or a keyboard, in either colour scheme.
 
-  # Spec: dashboard-ui / REQ-1
+  # Spec: dashboard-ui / UI-1
   Scenario: The dashboard renders
     Given I am signed in
     Then I see the page heading
     And the page has no accessibility violations
 
-  # Spec: dashboard-ui / REQ-4
+  # Spec: dashboard-ui / UI-2
+  Scenario: The summary shows the hours GitLab holds
+    Given I am signed in
+    Then today reads 6 hours
+    And the report says it is up to date
+
+  # Spec: dashboard-ui / UI-4
   Scenario Outline: The dashboard is accessible in both colour schemes
     Given my system prefers the <scheme> colour scheme
     And I am signed in
@@ -31,7 +37,7 @@ Feature: Opening the dashboard
       | light  |
       | dark   |
 
-  # Spec: dashboard-ui / REQ-4
+  # Spec: dashboard-ui / UI-4
   Scenario: The settings screen has no accessibility violations
     Given I am signed in
     When I open the settings page

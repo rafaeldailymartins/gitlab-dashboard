@@ -1,10 +1,14 @@
+import { useQueryClient } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { createRootRoute, Link, Outlet, useNavigate } from '@tanstack/react-router'
 
-import { callbackUri, navigateAway, sessionRuntime } from '@/app/lib/session'
+import { appRuntime, callbackUri, navigateAway } from '@/app/lib/runtime'
 import { PreferencesProvider, preferencesStore } from '@/entities/preferences'
 import { SessionProvider, useSession } from '@/entities/sessions'
+import { TimelogGatewayProvider } from '@/entities/timelogs'
 import { ThemeToggle } from '@/features/theme'
 import { NotConfiguredPage } from '@/pages/not-configured'
+import { createQueryClient, queryCachePersister } from '@/shared/api'
 import { LocaleProvider, m } from '@/shared/i18n'
 import { persistentStorage } from '@/shared/lib/storage'
 import { Button } from '@/shared/ui/button'
@@ -17,6 +21,10 @@ export const Route = createRootRoute({ component: RootLayout })
  * browser denies access.
  */
 const store = preferencesStore(persistentStorage())
+
+/** One cache for the page, restored from IndexedDB before the first request. */
+const queryClient = createQueryClient()
+const persister = queryCachePersister()
 
 const NAVIGATION_LINK_CLASS =
   'rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none aria-[current=page]:font-medium aria-[current=page]:text-foreground'
@@ -40,7 +48,7 @@ function AppShell() {
  * remounts everything below it, and the reader's settings must survive that.
  */
 function RootLayout() {
-  if (sessionRuntime.kind === 'missing-client-id') {
+  if (appRuntime.kind === 'missing-client-id') {
     return (
       <LocaleProvider>
         <NotConfiguredPage redirectUri={callbackUri()} />
@@ -49,28 +57,36 @@ function RootLayout() {
   }
 
   return (
-    <PreferencesProvider store={store}>
-      <LocaleProvider>
-        <SessionProvider manager={sessionRuntime.manager} navigateAway={navigateAway}>
-          <AppShell />
-        </SessionProvider>
-      </LocaleProvider>
-    </PreferencesProvider>
+    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
+      <PreferencesProvider store={store}>
+        <LocaleProvider>
+          <SessionProvider manager={appRuntime.manager} navigateAway={navigateAway}>
+            <TimelogGatewayProvider gateway={appRuntime.timelogs}>
+              <AppShell />
+            </TimelogGatewayProvider>
+          </SessionProvider>
+        </LocaleProvider>
+      </PreferencesProvider>
+    </PersistQueryClientProvider>
   )
 }
 
 /** The navigation and sign-out only make sense once there is a session. */
 function SignedInControls() {
   const { isSignedIn, signOut } = useSession()
+  const client = useQueryClient()
   const navigate = useNavigate()
 
   /**
    * The route guard only runs on navigation, so signing out has to move the
    * reader itself — otherwise they would sit on a screen they no longer have a
-   * session for.
+   * session for. The cache goes with it, in memory and on disk, so one person's
+   * hours never greet the next one on a shared device.
    */
   const leave = async (): Promise<void> => {
     await signOut()
+    client.clear()
+    await persister.removeClient()
     await navigate({ search: { next: '/' }, to: '/login' })
   }
 

@@ -55,4 +55,7 @@ function Button({
   )
 }
 
-export { Button }
+// `buttonVariants` is exported so a real link can look like a button without
+// being routed through Base UI's Button, which warns when it is asked to render
+// anything other than a native <button>.
+export { Button, buttonVariants }

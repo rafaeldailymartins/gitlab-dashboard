@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 
-import { hasSession } from '@/app/lib/session'
+import { hasSession } from '@/app/lib/runtime'
 
 /**
  * Everything behind a session hangs off this layout, so the check lives in one

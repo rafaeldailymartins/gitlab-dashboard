@@ -56,3 +56,13 @@ Then('the page has no accessibility violations', async ({ page }) => {
 
   expect(summary).toEqual([])
 })
+
+Then('today reads {int} hours', async ({ page }, hours: number) => {
+  const today = page.getByRole('group', { name: /^(today|hoje)$/i })
+
+  await expect(today).toContainText(String(hours))
+})
+
+Then('the report says it is up to date', async ({ page }) => {
+  await expect(page.getByRole('status')).toContainText(/up to date|atualizado/i)
+})

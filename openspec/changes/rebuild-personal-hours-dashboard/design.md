@@ -4,13 +4,14 @@ See `proposal.md` — Why for the motivation. What shapes the approach are four
 properties of GitLab's API, each verified against `gitlab.com` before this design
 was written rather than assumed from documentation:
 
-| Verified                                                                                                                                                           | How                                      | Result                                                        |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- | ------------------------------------------------------------- |
-| `Query.timelogs` and `CurrentUser.timelogs` both accept `startDate`, `endDate`, `username`, `sort`, `first`, `after`                                               | GraphQL introspection of the live schema | The query can be scoped to one person server-side             |
-| `TimelogConnection` exposes `count` and `totalSpentTime` alongside `nodes` and `pageInfo`                                                                          | GraphQL introspection                    | Period totals need one request, not a full walk               |
-| A 30-day window for a real user returned **30 entries / 122.3 h in 571 ms**                                                                                        | live query with `first: 3`               | One page of `first: 100` covers roughly a month               |
-| `POST /api/graphql` and `POST /oauth/token` both answer with `Access-Control-Allow-Origin: *`, and the GraphQL preflight allows the `authorization` request header | CORS preflight against both endpoints    | A browser can complete OAuth and query the API with no server |
-| `Timelog` exposes `spentAt`, `timeSpent`, `summary`, `user`, `issue`, `mergeRequest`, `note` and a non-null `project`                                              | GraphQL introspection                    | Everything the report needs comes from one query              |
+| Verified                                                                                                                                                           | How                                      | Result                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- | ----------------------------------------------------------------------- |
+| `Query.timelogs` and `CurrentUser.timelogs` both accept `startDate`, `endDate`, `username`, `sort`, `first`, `after`                                               | GraphQL introspection of the live schema | The query can be scoped to one person server-side                       |
+| `startDate` and `endDate` are **truncated to UTC calendar dates**: `startDate: 2026-08-20T16:00:00Z` still matches an entry recorded at `2026-08-20T15:00:00Z`     | live query against both boundaries       | A period asked of GitLab is a window of UTC days, not the reader’s days |
+| Both arguments are **optional**: omitting them returns the whole history, newest first with `sort: SPENT_AT_DESC`                                                  | live query with no dates                 | The request carries no period at all, and periods are cut locally       |
+| A 30-day window for a real user returned **30 entries / 122.3 h in 571 ms**                                                                                        | live query with `first: 3`               | One page of `first: 100` covers roughly a month                         |
+| `POST /api/graphql` and `POST /oauth/token` both answer with `Access-Control-Allow-Origin: *`, and the GraphQL preflight allows the `authorization` request header | CORS preflight against both endpoints    | A browser can complete OAuth and query the API with no server           |
+| `Timelog` exposes `spentAt`, `timeSpent`, `summary`, `user`, `issue`, `mergeRequest`, `note` and a non-null `project`                                              | GraphQL introspection                    | Everything the report needs comes from one query                        |
 
 The repository already carries the toolchain this design assumes: Bun, Vite,
 React 19, TanStack Router and Query, Tailwind v4, shadcn/ui on Base UI, Paraglide
@@ -100,17 +101,12 @@ Alternative considered: **no persistence, silent re-authorization on each visit.
 Stores nothing, but costs a full-page redirect on every cold start — a visible
 flash and a few hundred milliseconds against the one thing this rebuild is for.
 
-### 4. Query shape: scoped to the person, totals for free
+### 4. Query shape: scoped to the person, and carrying no period
 
 ```graphql
-query MyTimelogs($from: Time!, $to: Time!, $first: Int!, $after: String) {
+query MyTimelogs($first: Int!, $after: String) {
   currentUser {
-    username
-    name
-    avatarUrl
-    timelogs(startDate: $from, endDate: $to, sort: SPENT_AT_DESC, first: $first, after: $after) {
-      count
-      totalSpentTime
+    timelogs(sort: SPENT_AT_DESC, first: $first, after: $after) {
       pageInfo {
         hasNextPage
         endCursor
@@ -121,24 +117,18 @@ query MyTimelogs($from: Time!, $to: Time!, $first: Int!, $after: String) {
         summary
         project {
           name
-          nameWithNamespace
           fullPath
           webUrl
-          avatarUrl
         }
         issue {
-          iid
           title
           webUrl
           reference(full: true)
-          state
         }
         mergeRequest {
-          iid
           title
           webUrl
           reference(full: true)
-          state
         }
       }
     }
@@ -146,31 +136,58 @@ query MyTimelogs($from: Time!, $to: Time!, $first: Int!, $after: String) {
 }
 ```
 
-`count` and `totalSpentTime` describe the whole period, so the KPI row renders
-from the first response no matter how many pages the period spans. `nodes` fills
-the feed, extended by `useInfiniteQuery` on `pageInfo.endCursor` — one request
-per page, only when the reader scrolls past what is loaded.
+No group and no project id. Omitting them is what makes the report cover every
+project the person logged time in, which the previous version could not do.
 
-No group or project id is passed. Omitting them is what makes the report cover
-every project the person logged time in, which the previous version could not do.
+**No `startDate` or `endDate` either**, which is the one place this design
+departs from the obvious shape. GitLab truncates both arguments to UTC calendar
+dates — verified: `startDate: 2026-08-20T16:00:00Z` still matches an entry
+recorded at `2026-08-20T15:00:00Z`, and `endDate: 2026-08-21T14:00:00Z` still
+matches entries recorded at `2026-08-21T15:00:00Z`. So a period asked of GitLab
+is a window of **UTC days**, while a day on screen is a day in the reader's zone.
+The two do not line up, and `count` and `totalSpentTime` on the connection would
+describe the window GitLab filtered rather than the period on screen — a total
+that disagrees with the days below it by exactly the hours logged on the boundary
+days.
+
+Reading newest first instead makes the ordering do the work. Today, this week and
+this month are the newest entries there are, so they arrive in the first page;
+periods are cut from the loaded entries where the reader's zone is known; and the
+figures always agree with the days they are made of. A page of 100 entries is
+about a season of one person's logging — this account has **62 entries in total**,
+all in one page — so the common case is one request for everything the dashboard
+summarises, and older history extends the same cache entry as the reader scrolls.
+
+For the rare month that spans more than a page, `periodSummary` reports whether a
+period is **settled**: a total whose loaded history does not reach past the start
+of the period is a floor, is marked as such, and the query keeps loading until it
+is not. A figure that quietly understated the reader's hours would be worse than
+one that says it is still counting.
 
 Responses are parsed with `zod` at the adapter boundary, so a schema change on
-GitLab's side surfaces as one clear error instead of an `undefined` deep inside a
-component.
+GitLab's side surfaces as one clear error naming the field instead of an
+`undefined` reaching a component and rendering as a blank hour figure.
 
-### 5. Days are bucketed in the reader's time zone, and the window is widened by a day
+### 5. Days are bucketed in the reader's time zone
 
-`spentAt` comes back as an instant (observed as `2026-08-20T15:00:00Z` for time
-logged on the 20th). Which calendar day that is depends on the reader's time zone,
-and GitLab filters `startDate`/`endDate` in UTC. So the request asks for one extra
-day at each end, and the final grouping is done locally with
-`Intl.DateTimeFormat` in the configured zone, discarding entries that fall outside
-the requested range after conversion.
+`spentAt` is an instant, not a calendar date — observed as `2026-08-20T15:00:00Z`
+for time logged on the 20th, and as `2026-08-21T21:53:46Z` for another entry, so
+the time of day is real rather than a fixed hour. Which calendar day an instant
+belongs to therefore depends on the reader's time zone, and getting it wrong
+moves hours from one day to another: the most likely way this product could
+quietly lie.
 
-No date library is used. `Intl.DateTimeFormat` with a `timeZone` already does
-zone-correct formatting and day extraction, and it is the same mechanism the
-locale-aware display needs, so a library would add bundle weight for a second way
-to do what the platform does.
+`toIsoDate(instant, timeZone)` in `shared/lib/date` is the only place an instant
+becomes a day, and `dayTotals` is the only caller that matters. Date arithmetic —
+week and month boundaries, day stepping — runs on **date-fns 4** over a
+UTC-pinned `TZDate`, so a result never depends on the machine's own zone.
+Display formatting stays on `Intl`, bound to the active locale, because that is
+where the locale-aware month and weekday names already come from.
+
+Alternative considered: **`Intl.DateTimeFormat` for arithmetic too.** It can
+extract a day in a zone, which is all `toIsoDate` needs, but week and month
+boundaries would then be hand-rolled around it — and hand-rolled leap-year and
+month-length code is exactly what a library should be trusted with.
 
 ### 6. The cache is the first paint
 
@@ -192,12 +209,12 @@ Feature-Sliced Design outside, Clean Architecture inside each slice, using FSD's
 own segment names because both linters understand them:
 
 ```
-entities/timelog/
+entities/timelogs/
   model/    pure: day bucketing, aggregation, target and balance arithmetic,
             the TimelogGateway port
   api/      adapter: the GraphQL client, the zod schemas, the query options
   index.ts  the only import surface
-entities/session/
+entities/sessions/
   model/    pure: PKCE verifier and challenge, token lifetime arithmetic
   api/      adapter: the OAuth calls, the token stores
 ```
@@ -319,8 +336,9 @@ so it needs no real credentials and can run in CI.
   of 100 covers roughly a month for a real user, pages are fetched only when
   scrolled to, and results are cached for 24 hours.
 - **`spentAt` is an instant, not a date.** → Bucketing happens in the configured
-  time zone with a one-day margin on the query, and time-zone boundaries are a
-  named group of scenarios in the model's Gherkin features.
+  time zone, once, in `toIsoDate`; the provider is never asked for a period,
+  because it would filter one in UTC. Time-zone boundaries are a named group of
+  scenarios in the model's Gherkin features.
 - **Recharts is heavy relative to the rest of the bundle.** → Loaded lazily and
   held to the `size-limit` budget, which fails the build rather than warning.
 - **Bun's ecosystem has rough edges under Windows.** → Two known exceptions are

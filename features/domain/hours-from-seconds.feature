@@ -3,7 +3,7 @@ Feature: Hours from logged seconds
   the dashboard shows derives from this single conversion, so its rounding
   behaviour is a business rule rather than a formatting detail.
 
-  # Spec: personal-timelog-report / REQ-2
+  # Spec: personal-timelog-report / REPORT-2
   Scenario Outline: Converting a logged duration to hours
     Given a timelog of <seconds> seconds
     When the duration is converted to hours
@@ -19,7 +19,7 @@ Feature: Hours from logged seconds
       | 100     | 0.03  |
       | -3600   | -1    |
 
-  # Spec: personal-timelog-report / REQ-2
+  # Spec: personal-timelog-report / REPORT-2
   Scenario: Rejecting a duration that is not a number
     Given a timelog of an unknown duration
     When the duration is converted to hours

@@ -1,6 +1,8 @@
 import { expect, type Page } from '@playwright/test'
 import { createBdd } from 'playwright-bdd'
 
+import { stubTimelogs } from '../support/gitlab-api'
+
 const { Given, Then, When } = createBdd()
 
 const AUTHORIZE = '**/oauth/authorize*'
@@ -56,6 +58,7 @@ Given('GitLab will refuse to authorise this application', async ({ page }) => {
 
 Given('I am signed in', async ({ page }) => {
   await stubAuthorization(page, 'granted')
+  await stubTimelogs(page)
   await page.goto('/')
   await page.getByRole('button', { name: /continue with gitlab/i }).click()
   await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible()
