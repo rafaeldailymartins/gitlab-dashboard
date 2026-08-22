@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect } from '@playwright/test'
 import { createBdd } from 'playwright-bdd'
 
-const { Given, Then, When } = createBdd()
+const { Given, Then } = createBdd()
 
 /**
  * WCAG 2.1 A and AA, plus axe's best-practice rules. The best-practice set is
@@ -25,11 +25,6 @@ Given('I open the dashboard', async ({ page }) => {
   // nothing yet. Auditing at that point measures an empty document — which is
   // how this suite first "passed" on chromium and failed on webkit. Waiting for
   // the main landmark makes the step mean what it says.
-  await expect(page.getByRole('main')).toBeVisible()
-})
-
-When('I open the settings page', async ({ page }) => {
-  await page.goto('/settings')
   await expect(page.getByRole('main')).toBeVisible()
 })
 
@@ -65,13 +60,4 @@ Then('today reads {int} hours', async ({ page }, hours: number) => {
 
 Then('the report says it is up to date', async ({ page }) => {
   await expect(page.getByRole('status')).toContainText(/up to date|atualizado/i)
-})
-
-When('I open the insights page', async ({ page }) => {
-  await page.goto('/insights')
-  await expect(page.getByRole('main')).toBeVisible()
-})
-
-Then('I am on the insights page', async ({ page }) => {
-  await expect(page.getByRole('region', { name: /days of the month|dias do mês/i })).toBeVisible()
 })

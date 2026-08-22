@@ -83,9 +83,9 @@ considered done, and each task below names whatever additional gate proves it.
 
 ## 9. Responsiveness and accessibility
 
-- [ ] 9.1 Review every screen at a 375-pixel viewport, moving wide content into its own scroll container; verify an acceptance assertion confirms no horizontal page scrolling at that width (UI-11)
-- [ ] 9.2 Verify keyboard operability end to end with a visible focus indicator on every interactive element; verify an acceptance scenario tabs through the dashboard and asserts focus is always visible (UI-8)
-- [ ] 9.3 Extend the axe assertions to every route in both themes; verify `bun run test:e2e` reports no violation (UI-8)
+- [x] 9.1 Review every screen at a 375-pixel viewport; verify an acceptance outline asserts no horizontal page scrolling at that width on all four signed-in screens. The header wraps onto a second row rather than overflowing, which is what 40 pixels of overflow on every screen turned out to be (UI-11)
+- [x] 9.2 Verify keyboard operability end to end with a visible focus indicator on every interactive element; verify an acceptance scenario walks focus through the dashboard, reads the computed style at each stop and asserts an outline or ring is drawn, and that the walk reaches the day feed (UI-8)
+- [x] 9.3 Extend the axe assertions to every route in both themes as one outline; verify `bun run test:e2e` reports no violation. Biome now also checks ARIA statically, which caught what axe did not: `aria-label` on a generic element, and hardcoded ids behind `aria-labelledby` (UI-8)
 
 ## 10. Acceptance suite and QA documents
 

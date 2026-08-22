@@ -1,3 +1,5 @@
+import { useId } from 'react'
+
 import type { DayTotal } from '@/entities/timelogs'
 import type { IsoDate } from '@/shared/lib/date'
 
@@ -25,11 +27,12 @@ interface WeekStripProps {
  */
 export function WeekStrip({ days, loading, onSelect, today }: WeekStripProps) {
   const { preferences } = usePreferences()
+  const headingId = useId()
   const week = weekDays(days, preferences.dailyTarget, today)
 
   return (
-    <section aria-labelledby="week-strip-heading" className="rounded-lg border bg-card p-4">
-      <h2 className="text-sm font-medium text-muted-foreground" id="week-strip-heading">
+    <section aria-labelledby={headingId} className="rounded-lg border bg-card p-4">
+      <h2 className="text-sm font-medium text-muted-foreground" id={headingId}>
         {m.week_strip_title()}
       </h2>
       {loading ? (

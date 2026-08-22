@@ -12,7 +12,7 @@ a drift is visible without running anything.
 | ---------------------------------- | -------------------------------- | -------- | ------------------------------- | ------------------------ |
 | Formatting                         | no deviation                     | pass     | `bun run format:check`          | pre-commit, `verify`, CI |
 | Lint (type-aware)                  | 0 errors, 0 warnings             | pass     | `bun run lint`                  | pre-commit, `verify`, CI |
-| Lint (ARIA, static)                | 0 errors                         | pass     | `bun run lint:a11y`             | `verify`, CI             |
+| Lint (ARIA and element ids)        | 0 errors                         | pass     | `bun run lint:a11y`             | `verify`, CI             |
 | TypeScript                         | 0 errors under full strictness   | pass     | `bun run typecheck`             | pre-push, `verify`, CI   |
 | FSD conventions                    | 0 problems                       | pass     | `bun run arch:layers`           | pre-push, `verify`, CI   |
 | Dependency graph (cycles, orphans) | 0 violations                     | pass     | `bun run arch:graph`            | pre-push, `verify`, CI   |
@@ -33,26 +33,63 @@ acceptance runs across chromium, webkit and a mobile viewport.
 ## Two linters, on purpose
 
 ESLint carries the rules that need type information and the ones that need to
-understand React, tests or this project's layers. Biome carries the ARIA rules
-and nothing else.
+understand React or the test libraries. Biome carries the ARIA rules and the
+unique-id rule, and nothing else.
 
-The split is not a hedge. Biome checks 349 files in under 300 ms where ESLint
-takes 33 seconds, and swapping wholesale was measured and rejected: the rules
-that caught real defects in this codebase have no Biome equivalent —
-`restrict-template-expressions`, `unbound-method`,
-`react-hooks/set-state-in-effect` (a real bug in the auth callback),
-`testing-library/no-node-access`, the `sonarjs` and `unicorn` sets, and
-`perfectionist`'s object and module ordering. Biome 2.4's `types` domain covers
-three of those type-aware rules, and Biome's own release notes put
-`noFloatingPromises` at roughly 75% of typescript-eslint's accuracy. Trading a
-proven gate for a faster one is not a trade.
+Replacing ESLint outright was measured against Biome 2.5.10, twice — the first
+attempt was wrong and is worth recording, because the mistake is easy to repeat.
+Running `biome lint --config-path <elsewhere> src` reports nothing from the
+type-aware rules: the project scanner anchors on the directory holding the
+config, so with the config outside the project it has no project to scan and the
+rules silently find nothing. From the repository root they work.
 
-The speed problem had a cheaper answer: `eslint --cache` takes 3.9 seconds warm
-instead of 33. Biome earns its place for the one thing it alone catches — an
-`aria-label` on a generic element, which `jsx-a11y` and axe both let through. Two
-of its recommended ARIA rules are off, with the reason in `biome.json`:
-`useSemanticElements` asks for a `<fieldset>` wherever it sees `role="group"`,
-and `noLabelWithoutControl` cannot see through the shadcn `Label` wrapper.
+With that corrected, a file written to contain one instance of each rule this
+project relies on gave: ESLint 8 findings, Biome 4.
+
+| ESLint rule                          | Biome                                    |
+| ------------------------------------ | ---------------------------------------- |
+| `no-floating-promises`               | `noFloatingPromises` — nursery, opt-in   |
+| `no-unnecessary-condition`           | `noUnnecessaryConditions`                |
+| `require-await`                      | `useAwait`                               |
+| `restrict-template-expressions`      | none                                     |
+| `no-base-to-string`                  | none                                     |
+| `unbound-method`                     | none                                     |
+| `perfectionist/sort-modules`         | `useExportsLast`, which is a weaker rule |
+| `sonarjs/different-types-comparison` | none                                     |
+
+Biome does cover more than a first look suggests: every complexity ceiling here
+has an equivalent (`useMaxParams`, `noExcessiveLinesPerFunction`,
+`noExcessiveLinesPerFile`, `noExcessiveNestedCallbacks`,
+`noExcessiveCognitiveComplexity`), as do the restricted imports and globals that
+keep `model/` pure (`noRestrictedImports`, `noRestrictedGlobals`,
+`noNodejsModules`), the import-cycle check, and Tailwind class sorting.
+
+What has no equivalent at all is the part that has been catching defects:
+
+- **`testing-library/*` — nothing.** Biome has no rule from that plugin. A third
+  of the tests here are component tests, and `no-node-access` is what stopped a
+  test from walking the DOM, which is how the ARIA bug below came to light.
+- **`react-hooks/set-state-in-effect` — nothing.** Biome ships four rules from
+  `eslint-plugin-react-hooks`; that is not one of them. It caught a real bug in
+  the OAuth callback.
+- The four type-aware rules in the table above.
+
+And `noFloatingPromises` sits in the nursery group, which Biome documents as not
+subject to semantic versioning.
+
+The speed argument, measured: ESLint 33 s cold and **3.9 s warm with `--cache`**;
+Biome 2 s with the project scan, 300 ms without. Cold CI runs are 33 s against
+2 s. Thirty seconds of CI is not worth three rules that have each found a real
+defect in this repository.
+
+Biome earns its place for what it alone catches. It found an `aria-label` on a
+generic element in four files — prohibited ARIA, so every screen reader ignored
+it — which `jsx-a11y` and the axe assertions both let through. It also found two
+hardcoded `id` attributes behind `aria-labelledby`, which work only while each
+section renders once. Two of its recommended ARIA rules are off, with the reason
+in `biome.json`: `useSemanticElements` asks for a `<fieldset>` wherever it sees
+`role="group"`, and `noLabelWithoutControl` cannot see through the shadcn `Label`
+wrapper.
 
 ## Complexity ceilings
 

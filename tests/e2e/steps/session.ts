@@ -62,6 +62,10 @@ Given('I am signed in', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: /continue with gitlab/i }).click()
   await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible()
+  // The header appears while the callback is still navigating on to the
+  // dashboard. Waiting for something only the dashboard renders is what makes
+  // the next step's navigation safe: otherwise it cancels this one mid-flight.
+  await expect(page.getByRole('status')).toBeVisible()
 })
 
 When('I continue with GitLab', async ({ page }) => {

@@ -27,7 +27,7 @@ Feature: Signing in with GitLab
   # Spec: gitlab-authentication / AUTH-8
   Scenario: A deep link survives the round trip to GitLab
     Given GitLab will authorise this application
-    When I open the settings page
+    When I open the "settings" screen
     And I continue with GitLab
     Then I am on the settings page
 

@@ -1,3 +1,5 @@
+import { useId } from 'react'
+
 import type { DayTotal } from '@/entities/timelogs'
 
 import { usePreferences } from '@/entities/preferences'
@@ -35,9 +37,11 @@ interface DayFeedProps {
  * virtualiser makes the list jump — the one thing UI-3 forbids.
  */
 export function DayFeed({ appending, days, loading, onLoadOlder, reachedBeginning }: DayFeedProps) {
+  const headingId = useId()
+
   return (
-    <section aria-labelledby="day-feed-heading" className="flex flex-col gap-3">
-      <h2 className="text-sm font-medium text-muted-foreground" id="day-feed-heading">
+    <section aria-labelledby={headingId} className="flex flex-col gap-3">
+      <h2 className="text-sm font-medium text-muted-foreground" id={headingId}>
         {m.day_feed_title()}
       </h2>
       <div className="overflow-hidden rounded-lg border bg-card">
