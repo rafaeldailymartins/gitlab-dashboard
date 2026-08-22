@@ -299,7 +299,32 @@ no fixed version, and this project's `bun audit` gate permits zero
 vulnerabilities at any severity. A gate that would have to be silenced is not a
 gate.
 
-### 15. Tests follow the spec, at two levels
+### 15. The day feed skips work without a virtualiser
+
+Rows in the day feed carry `content-visibility: auto` with a reserved intrinsic
+size. The browser then skips layout and paint for the rows off screen while
+keeping their space, which is the work a virtualiser saves — without one.
+
+A virtualiser was the plan and was dropped on contact with the requirement. Rows
+here expand into their work items, so their height changes; a measured list whose
+items change height is exactly where a virtualiser scrolls the reader somewhere
+they did not ask to be, and UI-3 requires the list to extend without jumping.
+`@tanstack/react-virtual` was installed, tried and removed.
+
+The feed extends both ways: an `IntersectionObserver` sentinel asks for the next
+page as the reader approaches the end, and an explicit control does the same for
+anyone who is not scrolling — an observer never fires for someone tabbing through
+the page, and "scroll further" is not an instruction a keyboard reader can follow.
+
+Chart colours live in `src/app/charts.css`, apart from the interface tokens,
+because they answer to a different rule: an interface colour has to look right, a
+chart colour has to be readable. Every value there was checked with a palette
+validator against this app's own card surfaces, in both themes — the ordinal ramp
+for the month heatmap is one hue with monotone lightness and a light end that
+still clears the surface, and the categorical set for the project split keeps its
+adjacent pairs separable under colour-vision deficiency.
+
+### 16. Tests follow the spec, at two levels
 
 Each capability's scenarios become Gherkin, at whichever level can actually
 observe the behaviour: business rules in `features/domain/` run against the pure

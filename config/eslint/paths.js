@@ -41,6 +41,8 @@ export const E2E_STEP_RULES = { 'playwright/no-standalone-expect': 'off' }
 export const VENDORED_UI_FILES = [
   'src/shared/ui/button.tsx',
   'src/shared/ui/card.tsx',
+  'src/shared/ui/collapsible.tsx',
   'src/shared/ui/input.tsx',
   'src/shared/ui/label.tsx',
+  'src/shared/ui/skeleton.tsx',
 ]

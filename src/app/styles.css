@@ -1,12 +1,13 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import './charts.css';
 
 @custom-variant dark (&:is(.dark *));
 
 /*
  * Design tokens. Base: Tailwind `slate`. Accent: Tailwind `indigo`.
  * Values are literal hex so every token can be audited against the palette.
- * Chart tokens live in `charts.css` and are imported by the chart widgets.
+ * Chart tokens live in `charts.css`, which this file imports.
  */
 :root {
   --radius: 0.625rem;
@@ -111,6 +112,15 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /*
+   * Lets the browser skip layout and paint for rows scrolled out of view while
+   * keeping their space reserved — the day feed's answer to a long history.
+   */
+  .cv-auto {
+    content-visibility: auto;
+    contain: layout paint;
   }
 
   /* Tabular figures keep hour columns from shifting as values change. */

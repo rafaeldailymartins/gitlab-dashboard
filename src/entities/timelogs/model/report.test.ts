@@ -82,9 +82,9 @@ describe('reportFrom', () => {
     expect(reportFrom([page([entry('2026-08-20')], 'older')], SAO_PAULO).complete).toBe(false)
   })
 
-  it('reports the oldest day it has loaded', () => {
+  it('reports the oldest day it has loaded, not the second one', () => {
     const report = reportFrom(
-      [page([entry('2026-08-21'), entry('2026-07-01')], 'older')],
+      [page([entry('2026-08-21'), entry('2026-08-05'), entry('2026-07-01')], 'older')],
       SAO_PAULO,
     )
 

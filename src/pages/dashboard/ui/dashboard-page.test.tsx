@@ -1,7 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { failingGateway, fakeGateway, renderReport } from '~tests/support/report'
+import {
+  failingGateway,
+  fakeGateway,
+  renderReport,
+  renderRoutedReport,
+} from '~tests/support/report'
 
 import type { TimelogEntry } from '@/entities/timelogs'
 
@@ -228,6 +233,78 @@ describe('DashboardPage', () => {
 
     await waitFor(() => {
       expect(figure('Today').getByRole('definition')).toHaveTextContent('no target today')
+    })
+  })
+  it('shows the week strip, the feed and the summary together', async () => {
+    const gateway = fakeGateway([{ entries: [entry('2026-08-21', 24_120)], nextCursor: null }])
+
+    renderRoutedReport(<DashboardPage />, { gateway })
+
+    await waitFor(() => {
+      expect(figure('Today').getByRole('definition')).toHaveTextContent('6.7')
+    })
+    expect(screen.getByRole('region', { name: /This week/i })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: /History/i })).toBeInTheDocument()
+  })
+
+  it('opens the day a reader picks out of the week strip', async () => {
+    const { router } = renderRoutedReport(<DashboardPage />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Wed/i })).toBeInTheDocument()
+    })
+    await userEvent.click(screen.getByRole('button', { name: /Wed/i }))
+
+    expect(router.state.location.pathname).toBe('/days/2026-08-19')
+  })
+
+  it('lists the loaded days newest first in the feed', async () => {
+    const gateway = fakeGateway([
+      {
+        entries: [entry('2026-08-21', 3600), entry('2026-08-19', 7200)],
+        nextCursor: null,
+      },
+    ])
+
+    renderRoutedReport(<DashboardPage />, { gateway })
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { expanded: false })).toHaveLength(2)
+    })
+    const rows = screen.getAllByRole('button', { expanded: false })
+
+    expect(rows.at(0)).toHaveTextContent('21')
+    expect(rows.at(1)).toHaveTextContent('19')
+  })
+
+  it('asks for an older page when the reader wants more history', async () => {
+    const gateway = fakeGateway([
+      { entries: [entry('2026-08-21', 3600)], nextCursor: 'older' },
+      { entries: [entry('2026-07-20', 3600)], nextCursor: null },
+    ])
+
+    renderRoutedReport(<DashboardPage />, { gateway })
+
+    await waitFor(() => {
+      expect(gateway.myTimelogs.mock.calls.length).toBeGreaterThan(1)
+    })
+    expect(gateway.myTimelogs).toHaveBeenLastCalledWith({ after: 'older' }, expect.anything())
+  })
+  it('asks for an older page when the reader presses for more history', async () => {
+    const gateway = fakeGateway([
+      { entries: [entry('2026-08-21', 3600), entry('2026-07-01', 3600)], nextCursor: 'older' },
+      { entries: [entry('2026-06-30', 3600)], nextCursor: null },
+    ])
+
+    renderRoutedReport(<DashboardPage />, { gateway })
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Load older days/i })).toBeInTheDocument()
+    })
+    await userEvent.click(screen.getByRole('button', { name: /Load older days/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/whole history/i)).toBeInTheDocument()
     })
   })
 })

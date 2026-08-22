@@ -1,36 +1,29 @@
-import { targetForDate, targetForDates, usePreferences } from '@/entities/preferences'
-import { m, useActiveLocale } from '@/shared/i18n'
-import {
-  addDays,
-  datesBetween,
-  endOfMonth,
-  startOfMonth,
-  startOfWeek,
-  toIsoDate,
-} from '@/shared/lib/date'
+import { useNavigate } from '@tanstack/react-router'
+
+import { usePreferences } from '@/entities/preferences'
+import { useActiveLocale } from '@/shared/i18n'
+import { type IsoDate, toIsoDate } from '@/shared/lib/date'
 import { formatFullDate } from '@/shared/lib/format'
+import { ReportNotice, useHoursReport } from '@/widgets/hours-report'
 
-import { useHoursReport } from '../lib/use-hours-report'
-import { PeriodFigure } from './period-figure'
-import { ReportNotice } from './report-notice'
-
-const LAST_DAY_OF_WEEK = 6
+import { DayFeed } from './day-feed'
+import { KpiRow } from './kpi-row'
+import { WeekStrip } from './week-strip'
 
 /**
- * The reader's own hours: today, this week, this month.
- *
- * The week strip and the day feed land on top of this in the next step; what is
- * here already reads real timelogs, in the reader's own time zone, against the
- * targets they configured.
+ * The reader's own hours: the three periods that matter, the shape of this week,
+ * and everything before it.
  */
 export function DashboardPage() {
   const { preferences } = usePreferences()
   const { locale } = useActiveLocale()
+  const navigate = useNavigate()
   const report = useHoursReport()
 
   const today = toIsoDate(new Date(), preferences.timeZone)
-  const weekStart = startOfWeek(today)
-  const { dailyTarget } = preferences
+  const openDay = (date: IsoDate): void => {
+    void navigate({ params: { date }, to: '/days/$date' })
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8">
@@ -39,29 +32,23 @@ export function DashboardPage() {
         <ReportNotice report={report} />
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <PeriodFigure
-          label={m.dashboard_today()}
-          summary={report.today}
-          target={targetForDate(dailyTarget, today)}
-          waiting={!report.hasFigures}
-        />
-        <PeriodFigure
-          label={m.dashboard_this_week()}
-          summary={report.week}
-          target={targetForDates(
-            dailyTarget,
-            datesBetween(weekStart, addDays(weekStart, LAST_DAY_OF_WEEK)),
-          )}
-          waiting={!report.hasFigures}
-        />
-        <PeriodFigure
-          label={m.dashboard_this_month()}
-          summary={report.month}
-          target={targetForDates(dailyTarget, datesBetween(startOfMonth(today), endOfMonth(today)))}
-          waiting={!report.hasFigures}
-        />
-      </div>
+      <KpiRow
+        loading={!report.hasFigures}
+        month={report.month}
+        today={today}
+        todayTotal={report.today}
+        week={report.week}
+      />
+
+      <WeekStrip days={report.days} loading={!report.hasFigures} onSelect={openDay} today={today} />
+
+      <DayFeed
+        appending={report.appending}
+        days={report.days}
+        loading={!report.hasFigures}
+        onLoadOlder={report.loadOlder}
+        reachedBeginning={report.complete}
+      />
     </main>
   )
 }

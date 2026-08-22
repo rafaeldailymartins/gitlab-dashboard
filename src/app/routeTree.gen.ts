@@ -10,6 +10,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AuthenticatedDaysDateRouteImport } from './routes/_authenticated.days.$date'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -35,18 +36,25 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedDaysDateRoute = AuthenticatedDaysDateRouteImport.update({
+  id: '/days/$date',
+  path: '/days/$date',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/days/$date': typeof AuthenticatedDaysDateRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthenticatedIndexRoute
+  '/days/$date': typeof AuthenticatedDaysDateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -55,12 +63,13 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/days/$date': typeof AuthenticatedDaysDateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/settings' | '/auth/callback'
+  fullPaths: '/' | '/login' | '/settings' | '/auth/callback' | '/days/$date'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/settings' | '/auth/callback' | '/'
+  to: '/login' | '/settings' | '/auth/callback' | '/' | '/days/$date'
   id:
     | '__root__'
     | '/_authenticated'
@@ -68,6 +77,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/auth/callback'
     | '/_authenticated/'
+    | '/_authenticated/days/$date'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -113,17 +123,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/days/$date': {
+      id: '/_authenticated/days/$date'
+      path: '/days/$date'
+      fullPath: '/days/$date'
+      preLoaderRoute: typeof AuthenticatedDaysDateRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedDaysDateRoute: typeof AuthenticatedDaysDateRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedDaysDateRoute: AuthenticatedDaysDateRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

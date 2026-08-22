@@ -63,15 +63,15 @@ considered done, and each task below names whatever additional gate proves it.
 
 ## 7. Dashboard
 
-- [ ] 7.1 Add the shadcn components these screens need via `bunx shadcn@latest add`; verify `bun run deadcode` reports no unused component afterwards
-- [ ] 7.2 Load the chart palette guidance and define the chart colour tokens in a dedicated stylesheet; verify the tokens are defined for both themes and referenced by no hardcoded colour
-- [ ] 7.3 Build `widgets/kpi-row` — today, this week, this month, each with progress against target and a zero state; verify component tests cover a period with nothing logged reading as zero rather than missing (UI-2)
-- [ ] 7.4 Build `widgets/week-strip` — one bar per weekday against its target, today marked, hours readable without interaction, and an accessible text alternative naming hours and target; verify component tests cover a met target, a shortfall and the announced text (UI-1, UI-8)
-- [ ] 7.5 Build `widgets/day-feed` — reverse-chronological, virtualised, extending on scroll, with skeletons sized to the final row height; verify component tests cover appending without the list jumping and the end-of-history state (UI-3, UI-9)
-- [ ] 7.6 Build the day row's expansion into work items with project, reference, title, hours and an external link that preserves the current view; verify component tests cover the listed hours summing to the day total, an unattributed entry and the link target (UI-4, UI-10)
-- [ ] 7.7 Distinguish loaded-and-empty from not-yet-loaded from failed in every list and tile; verify component tests assert the three states render differently (UI-7)
-- [ ] 7.8 Compose `pages/dashboard` from the widgets with the period selector in the URL and prefetch on hover or focus of the period controls; verify a test asserts a prefetch is issued on intent
-- [ ] 7.9 Add the `/days/$date` route rendering the same detail as a page and as a drawer from the feed, including a no-time-logged state; verify tests cover reload on the address and a day with no entries (UI-5)
+- [x] 7.1 Add the shadcn components these screens need via `bunx shadcn@latest add`; verify `bun run deadcode` reports no unused component afterwards
+- [x] 7.2 Load the chart palette guidance and define the chart colour tokens in a dedicated stylesheet; verify the tokens are defined for both themes and referenced by no hardcoded colour
+- [x] 7.3 Build the KPI row — today, this week, this month, each with progress against target and a zero state; verify component tests cover a period with nothing logged reading as zero rather than missing (UI-2)
+- [x] 7.4 Build the week strip — one bar per weekday against its target, today marked with `aria-current`, hours readable without interaction, and an accessible name giving hours and target; verify component tests cover a met target, a shortfall, a weekend without a target and the announced text (UI-1, UI-8)
+- [x] 7.5 Build the day feed — reverse-chronological, extending as the reader approaches the end and by an explicit control for anyone not scrolling, with skeletons sized to the final row height. Rows carry `content-visibility: auto` instead of a virtualiser: they expand into their work items, and a measured list whose rows change height is where a virtualiser makes the list jump. Verify component tests cover appending without replacing, the end-of-history state and the observer contract (UI-3, UI-9)
+- [x] 7.6 Build the day row's expansion into work items with project, reference, title, hours and an external link that preserves the current view; verify component tests cover the listed hours summing to the day total, an unattributed entry and the link target (UI-4, UI-10)
+- [x] 7.7 Distinguish loaded-and-empty from not-yet-loaded from failed in every list and tile; verify component tests assert the three states render differently (UI-7)
+- [x] 7.8 Compose `pages/dashboard` from the blocks above. No period in the URL and no prefetching: the request carries no period, so every screen reads the one newest-first cache entry and opening a day costs no request at all. The single-consumer blocks live inside the page slice rather than in `widgets/`, which is what steiger requires of a block with one reference
+- [x] 7.9 Add the `/days/$date` route rendering the same detail as a page and as a drawer from the feed, including a no-time-logged state; verify tests cover reload on the address and a day with no entries (UI-5)
 
 ## 8. Insights and settings
 

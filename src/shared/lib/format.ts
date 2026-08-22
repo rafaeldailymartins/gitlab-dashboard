@@ -12,6 +12,7 @@ const REFERENCE_MONDAY = isoDate('2026-08-17')
 
 const DATE_STYLES = {
   full: { day: 'numeric', month: 'long', weekday: 'long', year: 'numeric' },
+  long: { day: 'numeric', month: 'long', year: 'numeric' },
   weekdayLong: { weekday: 'long' },
   weekdayShort: { weekday: 'short' },
 } as const satisfies Record<string, Intl.DateTimeFormatOptions>
@@ -41,6 +42,16 @@ export function formatFullDate(date: IsoDate, locale: string): string {
  */
 export function formatHours(hours: number, locale: string): string {
   return hourFormatter(locale).format(hours)
+}
+
+/**
+ * The same date without its weekday — `21 August 2026`.
+ *
+ * For the places that print the weekday themselves: a row saying "Friday, 21
+ * August 2026" above "Friday" says it twice.
+ */
+export function formatLongDate(date: IsoDate, locale: string): string {
+  return formatDate(date, locale, 'long')
 }
 
 /**

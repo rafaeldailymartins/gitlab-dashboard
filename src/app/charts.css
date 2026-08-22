@@ -1,0 +1,92 @@
+/*
+ * Chart tokens.
+ *
+ * Separate from the interface tokens in `styles.css` because they answer to a
+ * different rule: an interface colour has to look right, a chart colour has to
+ * be *readable* — inside a lightness band, above a chroma floor, and far enough
+ * from its neighbours to survive colour-vision deficiency. Every value below was
+ * checked with the palette validator against this app's own card surfaces
+ * (`#ffffff` light, `#0f172a` dark) rather than against a generic white.
+ *
+ * Roles, not hues. A widget says `bg-chart-scale-3`, never `#4338ca`, so the
+ * light and dark sets can differ — the dark set is stepped for the dark surface,
+ * never an automatic flip of the light one.
+ */
+
+:root {
+  /*
+   * One series, magnitude: the week strip. Today is marked with a ring and a
+   * label rather than its own colour — it is the same measure, not another one.
+   */
+  --chart-bar: #4f46e5; /* indigo-600, 5.60:1 on white */
+  --chart-target: #94a3b8; /* slate-400, the dashed target line */
+  --chart-grid: #e2e8f0; /* slate-200 */
+  --chart-baseline: #cbd5e1; /* slate-300 */
+
+  /*
+   * Ordinal magnitude in four steps: the month heatmap. Validated as an ordinal
+   * ramp — one hue, monotone lightness, gaps of at least 0.06 L, and a light end
+   * clearing 2:1 against the surface so the lowest band is still a mark rather
+   * than a smudge.
+   */
+  --chart-scale-1: #9aabfb; /* 2.19:1 on white */
+  --chart-scale-2: #6366f1;
+  --chart-scale-3: #4338ca;
+  --chart-scale-4: #312e81;
+  /* A working day with nothing logged: absence reads as neutral, not as "a little". */
+  --chart-empty: #f1f5f9; /* slate-100 */
+
+  /*
+   * Identity, not magnitude: hours per project. Assigned in this fixed order and
+   * never cycled — a project keeps its colour when the filter changes the set.
+   * Three of these sit below 3:1 on white, so the split always ships visible
+   * direct labels; hue never carries the meaning alone.
+   */
+  --chart-series-1: #2a78d6;
+  --chart-series-2: #eb6834;
+  --chart-series-3: #1baf7a;
+  --chart-series-4: #eda100;
+  --chart-series-5: #e87ba4;
+  --chart-series-6: #008300;
+}
+
+.dark {
+  --chart-bar: #818cf8; /* indigo-400 */
+  --chart-target: #64748b; /* slate-500 */
+  --chart-grid: #1e293b; /* slate-800 */
+  --chart-baseline: #334155; /* slate-700 */
+
+  --chart-scale-1: #4338ca; /* 2.26:1 on the dark card */
+  --chart-scale-2: #6366f1;
+  --chart-scale-3: #818cf8;
+  --chart-scale-4: #c7d2fe;
+  --chart-empty: #1e293b;
+
+  /* The same six hues, stepped for the dark surface: all six clear 3:1 here. */
+  --chart-series-1: #3987e5;
+  --chart-series-2: #d95926;
+  --chart-series-3: #199e70;
+  --chart-series-4: #c98500;
+  --chart-series-5: #d55181;
+  --chart-series-6: #008300;
+}
+
+@theme inline {
+  --color-chart-bar: var(--chart-bar);
+  --color-chart-target: var(--chart-target);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-baseline: var(--chart-baseline);
+
+  --color-chart-scale-1: var(--chart-scale-1);
+  --color-chart-scale-2: var(--chart-scale-2);
+  --color-chart-scale-3: var(--chart-scale-3);
+  --color-chart-scale-4: var(--chart-scale-4);
+  --color-chart-empty: var(--chart-empty);
+
+  --color-chart-series-1: var(--chart-series-1);
+  --color-chart-series-2: var(--chart-series-2);
+  --color-chart-series-3: var(--chart-series-3);
+  --color-chart-series-4: var(--chart-series-4);
+  --color-chart-series-5: var(--chart-series-5);
+  --color-chart-series-6: var(--chart-series-6);
+}

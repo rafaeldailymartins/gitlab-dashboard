@@ -65,9 +65,11 @@ export function PeriodFigure({ label, summary, target, waiting }: PeriodFigurePr
               />
             </span>
           )}
-          <span className="text-xs text-muted-foreground">
-            {waiting ? null : balanceText(progress.balanceHours, locale)}
-          </span>
+          {waiting || progress.ratio === null ? null : (
+            <span className="text-xs text-muted-foreground">
+              {balanceText(progress.balanceHours, locale)}
+            </span>
+          )}
         </dd>
       </dl>
       {summary.settled ? null : (

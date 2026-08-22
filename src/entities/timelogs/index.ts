@@ -1,6 +1,6 @@
 export { gitLabTimelogGateway } from './api/gitlab-timelog-gateway'
 export { myTimelogsQuery } from './api/queries'
-export type { DayTotal } from './model/aggregate'
+export type { DayTotal, WorkItemTotal } from './model/aggregate'
 export type { TimelogGateway, TimelogPage } from './model/ports'
 export { periodSummary, reportFrom } from './model/report'
 

@@ -27,7 +27,7 @@ export interface PeriodTotal {
 }
 
 /** Time spent on one work item, on one day. */
-interface WorkItemTotal {
+export interface WorkItemTotal {
   readonly entryCount: number
   readonly hours: number
   readonly project: ProjectRef
