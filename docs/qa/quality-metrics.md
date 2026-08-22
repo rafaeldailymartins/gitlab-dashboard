@@ -178,7 +178,17 @@ linter — with coverage as the floor that stops whole paths going unexercised.
   instead and also reports branch coverage more accurately through JSX.
 - **No Lighthouse CI.** `@lhci/cli` carries a high-severity advisory with no
   fixed upstream version, which the zero-vulnerability policy forbids.
-  Performance is guarded by the `size-limit` budget and, once the acceptance
-  suite covers it, by Web Vitals asserted in Playwright.
+  Performance is guarded by the `size-limit` budget and by the layout-shift
+  assertion in the acceptance suite. Paint timing is not asserted: the suite runs
+  against the dev server, where a paint time measures the dev server.
 - **Two tools run on Node, not Bun.** Stryker (its plugin loader cannot resolve
   plugins under Bun) and the Playwright run. Both are marked in `package.json`.
+- **CI installs with `--ignore-scripts`.** The `prepare` script installs git
+  hooks, which a runner has no use for and which fail outright in the `oven/bun`
+  image, since it ships no git. The first pipeline died there.
+- **No `BUN_INSTALL_CACHE_DIR` pointing inside the checkout.** The second
+  pipeline died because it did: every dependency was unpacked where
+  `prettier --check .` walks, and one of them carries a config Prettier cannot
+  resolve. What is cached is `node_modules/`.
+- **The shared runner needed no identity validation.** That was the one risk in
+  the plan only the account owner could clear, and it did not appear.

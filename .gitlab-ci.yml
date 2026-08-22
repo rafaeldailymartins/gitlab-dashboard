@@ -74,6 +74,11 @@ build:
 e2e:
   stage: test
   image: mcr.microsoft.com/playwright:v1.62.1-noble
+  variables:
+    # Any non-empty id will do: the OAuth flow is stubbed, and what this checks
+    # is that the app is configured rather than showing its not-configured
+    # screen. The real id is a Netlify environment variable, not a CI one.
+    VITE_GITLAB_CLIENT_ID: acceptance-suite-client-id
   before_script:
     - npm install -g bun
     - bun install --frozen-lockfile --ignore-scripts

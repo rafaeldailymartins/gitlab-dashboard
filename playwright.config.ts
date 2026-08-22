@@ -34,6 +34,12 @@ export default defineConfig({
     command: 'bun run dev',
     reuseExistingServer: !isCi,
     stdout: 'ignore',
+    /**
+     * A cold container transforms the whole module graph on the first request,
+     * which takes longer than Playwright's default minute. Locally the default
+     * is plenty and a slow start is worth noticing.
+     */
+    ...(isCi ? { timeout: 180_000 } : {}),
     url: 'http://localhost:3000',
   },
   // `exactOptionalPropertyTypes` forbids passing `undefined` explicitly, so the
