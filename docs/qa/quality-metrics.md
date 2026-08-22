@@ -192,3 +192,12 @@ linter — with coverage as the floor that stops whole paths going unexercised.
   resolve. What is cached is `node_modules/`.
 - **The shared runner needed no identity validation.** That was the one risk in
   the plan only the account owner could clear, and it did not appear.
+- **Two more pipeline failures were the suite, not the code.** The dev server did
+  not answer within Playwright's default minute in a cold container, so the
+  `webServer` timeout is three minutes under CI; and a runner has no `.env`, so
+  the e2e job sets a placeholder client id — the OAuth flow is stubbed, and what
+  the suite needs is a configured app rather than a real application.
+
+The first green pipeline ran in **6.9 minutes**: verify 87s, test 66s, e2e 273s,
+build 51s. Comfortably inside the 400 compute minutes a month the Free plan
+allows, with mutation testing kept off the blocking path.

@@ -104,7 +104,7 @@ considered done, and each task below names whatever additional gate proves it.
 - [x] 11.1 Add `netlify.toml` and generate the Content-Security-Policy into `dist/_headers` after the build, since it names the hash of the inline theme script. Verified locally by serving the real bundle with the policy applied and driving sign-in, the dashboard, insights, settings and a theme switch: no violations, so `style-src 'self'` holds. The deploy-preview checks are in `docs/qa/release-checklist.md`
 - [x] 11.2 Add `.gitlab-ci.yml` running the whole fast gate, the tests with coverage, the build with the size budget and the acceptance suite as blocking stages. `glab ci lint` accepts it; the first real pipeline is verified on the push
 - [x] 11.3 Add the scheduled mutation job — `rules: schedule` and `allow_failure: true`, so a merge request never waits for it and never fails on it
-- [ ] 11.4 Report the GitLab shared-runner identity validation prompt if the first pipeline hits it, since only the account owner can clear it
+- [x] 11.4 No identity validation was asked for: the shared runner picked the first pipeline up and ran it. What did fail was mine, four times over — the `prepare` script needing git in an image without it, `BUN_INSTALL_CACHE_DIR` unpacking dependencies where `prettier --check .` walks, a dev server slower than Playwright's default minute in a cold container, and no `.env` on a runner. All four are recorded in `docs/qa/quality-metrics.md`. Pipeline green in 6.9 minutes: verify 87s, test 66s, e2e 273s, build 51s
 
 ## 12. Closing the change
 
