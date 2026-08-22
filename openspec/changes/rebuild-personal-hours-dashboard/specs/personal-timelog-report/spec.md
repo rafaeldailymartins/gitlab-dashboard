@@ -148,7 +148,17 @@ completes, and SHALL be replaced by fresh data when it arrives.
 
 - **WHEN** a person opens the dashboard again on a slow connection
 - **THEN** the previously seen figures appear before any request completes
-- **AND** they are marked as being refreshed until fresh data replaces them
+
+#### Scenario: Returning while the figures are still fresh
+
+- **WHEN** a person returns while the cached figures are still within the
+  freshness window
+- **THEN** those figures are shown and no request is made at all
+
+#### Scenario: A refresh in flight is visible
+
+- **WHEN** a refresh is in flight over figures already on screen
+- **THEN** it is reported as being refreshed until fresh data replaces them
 
 #### Scenario: Refreshing fails
 

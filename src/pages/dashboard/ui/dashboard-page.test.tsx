@@ -8,7 +8,7 @@ import {
   renderRoutedReport,
 } from '~tests/support/report'
 
-import type { TimelogEntry } from '@/entities/timelogs'
+import type { TimelogEntry, TimelogPage } from '@/entities/timelogs'
 
 import { GraphQLRequestError } from '@/shared/api'
 import { memoryStorage } from '@/shared/lib/storage'
@@ -22,6 +22,21 @@ const PROJECT = {
   fullPath: 'invent-software/invent-apps-2/squad-fiscal/inventariofiscal',
   name: 'invent.fiscal.inventariofiscal',
   webUrl: 'https://gitlab.com/invent-software/invent-apps-2/squad-fiscal/inventariofiscal',
+}
+
+/** A promise this test settles itself, to hold a request open on purpose. */
+function deferred<T>() {
+  const handle: { resolve?: (value: T) => void } = {}
+  const promise = new Promise<T>((resolve) => {
+    handle.resolve = resolve
+  })
+
+  return {
+    promise,
+    settle(value: T) {
+      handle.resolve?.(value)
+    },
+  }
 }
 
 function entry(day: string, seconds: number): TimelogEntry {
@@ -306,5 +321,29 @@ describe('DashboardPage', () => {
     await waitFor(() => {
       expect(screen.getByText(/whole history/i)).toBeInTheDocument()
     })
+  })
+
+  it('says it is checking GitLab while a refresh is in flight over the figures', async () => {
+    const inFlight = deferred<TimelogPage>()
+    const gateway = {
+      myTimelogs: vi
+        .fn()
+        .mockResolvedValueOnce({ entries: [entry('2026-08-21', 3600)], nextCursor: null })
+        .mockReturnValueOnce(inFlight.promise),
+    }
+
+    const { client } = renderReport(<DashboardPage />, { gateway })
+
+    await waitFor(() => {
+      expect(figure('Today').getByRole('definition')).toHaveTextContent('1')
+    })
+    void client.refetchQueries()
+
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toHaveTextContent(/checking gitlab/i)
+    })
+    // The old figure stays put while the new one is on its way.
+    expect(figure('Today').getByRole('definition')).toHaveTextContent('1')
+    inFlight.settle({ entries: [entry('2026-08-21', 7200)], nextCursor: null })
   })
 })
