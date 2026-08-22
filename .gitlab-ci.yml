@@ -20,12 +20,15 @@ default:
     paths:
       - node_modules/
   before_script:
-    - bun install --frozen-lockfile
+    - bun install --frozen-lockfile --ignore-scripts
 
 variables:
   # Playwright and Stryker download nothing at run time in this project, but a
   # frozen lockfile install still has to be reproducible.
   BUN_INSTALL_CACHE_DIR: .bun-cache
+  # `--ignore-scripts` on every install: the `prepare` script installs git hooks,
+  # which a runner has no use for and which fail outright in an image without
+  # git. Nothing else in this project has a postinstall that matters here.
 
 # Format, lint, ARIA, types, FSD layers, the dependency graph, dead code, type
 # coverage and `bun audit` — the whole fast gate, in one job, because any one of
@@ -73,7 +76,7 @@ e2e:
   image: mcr.microsoft.com/playwright:v1.62.1-noble
   before_script:
     - npm install -g bun
-    - bun install --frozen-lockfile
+    - bun install --frozen-lockfile --ignore-scripts
   script:
     - bun run test:e2e
   artifacts:
@@ -91,7 +94,7 @@ mutation:
   image: oven/bun:1.4
   before_script:
     - apt-get update && apt-get install -y --no-install-recommends nodejs
-    - bun install --frozen-lockfile
+    - bun install --frozen-lockfile --ignore-scripts
   script:
     - bun run test:mutation
   rules:
