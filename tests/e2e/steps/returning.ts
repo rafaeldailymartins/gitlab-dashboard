@@ -36,12 +36,15 @@ When('I come back to the dashboard', async ({ page }) => {
   await page.goto('/')
 })
 
-Then('today reads {int} hours before the request has finished', async ({ page }, hours: number) => {
-  // No extra waiting: the figure has to be there while the request would still
-  // be in flight, which is the whole claim.
-  await expect(page.getByRole('group', { name: /^today$/i })).toContainText(String(hours))
-  expect(hours).toBe(LOGGED_TODAY)
-})
+Then(
+  'today reads {float} hours before the request has finished',
+  async ({ page }, hours: number) => {
+    // No extra waiting: the figure has to be there while the request would still
+    // be in flight, which is the whole claim.
+    await expect(page.getByRole('group', { name: /^today$/i })).toContainText(String(hours))
+    expect(hours).toBe(LOGGED_TODAY)
+  },
+)
 
 Then('GitLab was not asked again', async ({ page }) => {
   // Inside the five-minute freshness window the cache is the answer, so a return

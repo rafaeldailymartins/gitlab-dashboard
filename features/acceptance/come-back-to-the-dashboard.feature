@@ -9,7 +9,7 @@ Feature: Coming back to the dashboard
     And my hours have been kept on this device
     And GitLab has become slow to answer
     When I come back to the dashboard
-    Then today reads 6 hours before the request has finished
+    Then today reads 6.5 hours before the request has finished
     And GitLab was not asked again
 
   # Spec: gitlab-authentication / AUTH-6

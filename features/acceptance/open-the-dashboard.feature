@@ -11,7 +11,7 @@ Feature: Opening the dashboard
   # Spec: dashboard-ui / UI-2
   Scenario: The summary shows the hours GitLab holds
     Given I am signed in
-    Then today reads 6 hours
+    Then today reads 6.5 hours
     And the report says it is up to date
 
   # Spec: gitlab-authentication / AUTH-1

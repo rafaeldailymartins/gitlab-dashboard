@@ -37,3 +37,29 @@ Feature: Signing in with GitLab
     When I sign out
     Then I am asked to sign in
     And no credential remains on the device
+
+  # Spec: gitlab-authentication / AUTH-7
+  Scenario: The application asks for read-only authority
+    Given GitLab will authorise this application
+    When I open the dashboard
+    And I continue with GitLab
+    Then GitLab was asked for the read_api scope and no other
+
+  # Spec: gitlab-authentication / AUTH-3
+  Scenario: The access credential is never written to the device
+    Given I am signed in
+    Then no access token is anywhere on this device
+
+  # Spec: gitlab-authentication / AUTH-4
+  Scenario: The session survives leaving and coming back
+    Given I am signed in
+    When I come back to the dashboard
+    Then I see the dashboard
+
+  # Spec: gitlab-authentication / AUTH-5
+  Scenario: A credential about to expire is renewed without being noticed
+    Given GitLab will authorise this application, with a credential that expires at once
+    When I open the dashboard
+    And I continue with GitLab
+    Then I see the dashboard
+    And the credential was renewed

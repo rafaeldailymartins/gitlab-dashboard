@@ -59,3 +59,41 @@ Then('I am on a day screen', async ({ page }) => {
   await expect(page).toHaveURL(/\/days\/\d{4}-\d{2}-\d{2}$/)
   await expect(page.getByRole('link', { name: /back to the dashboard/i })).toBeVisible()
 })
+
+Then('it shows a square for every day of the month', async ({ page }) => {
+  const days = new Date()
+  const inMonth = new Date(days.getFullYear(), days.getMonth() + 1, 0).getDate()
+  const grid = page.getByRole('region', { name: /days of the month/i })
+
+  await expect(grid.getByText(/: [\d.,]+ hours?$/).first()).toBeVisible()
+  await expect(grid.getByText(/: [\d.,]+ hours?/)).toHaveCount(inMonth)
+})
+
+Then('it splits the hours by project', async ({ page }) => {
+  const split = page.getByRole('region', { name: /hours by project/i })
+
+  await expect(split.getByRole('listitem').first()).toContainText(/inventariofiscal/)
+})
+
+Then('it lists the work items by hours', async ({ page }) => {
+  const table = page.getByRole('region', { name: /what took the time/i })
+
+  await expect(table.getByRole('row')).not.toHaveCount(0)
+  await expect(table.getByRole('columnheader', { name: /hours/i })).toBeVisible()
+})
+
+Then('the feed says nothing has been logged yet', async ({ page }) => {
+  await expect(page.getByText(/no time logged in gitlab yet/i)).toBeVisible()
+})
+
+Then('the summary reads zero rather than waiting', async ({ page }) => {
+  await expect(page.getByRole('group', { name: /^today$/i })).toContainText('0')
+})
+
+Then('I am told GitLab could not be reached', async ({ page }) => {
+  await expect(page.getByRole('status')).toContainText(/could not be reached/i)
+})
+
+Then('I am offered a retry', async ({ page }) => {
+  await expect(page.getByRole('button', { name: /try again/i })).toBeVisible()
+})

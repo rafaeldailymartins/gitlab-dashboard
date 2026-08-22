@@ -11,7 +11,7 @@ const PROJECT = {
 }
 
 /** Hours the fixture logs today. `features/acceptance/*` state the same number. */
-export const LOGGED_TODAY = 6
+export const LOGGED_TODAY = 6.5
 
 /** Answers slowly, so a test can see what the reader sees before data arrives. */
 export async function stubSlowTimelogs(page: Page, delayMs: number): Promise<void> {
@@ -93,6 +93,28 @@ function payload() {
  * request — spans two of them.
  */
 const asked = new WeakMap<Page, { count: number }>()
+
+/** An endpoint that cannot be reached at all. */
+export async function failTimelogs(page: Page): Promise<void> {
+  await page.route(GRAPHQL, async (route) => {
+    await route.abort('connectionfailed')
+  })
+}
+
+/** An account with no time logged at all. */
+export async function stubEmptyTimelogs(page: Page): Promise<void> {
+  await page.route(GRAPHQL, async (route) => {
+    await route.fulfill({
+      json: {
+        data: {
+          currentUser: {
+            timelogs: { nodes: [], pageInfo: { endCursor: null, hasNextPage: false } },
+          },
+        },
+      },
+    })
+  })
+}
 
 export function timesAsked(page: Page): number {
   return asked.get(page)?.count ?? 0

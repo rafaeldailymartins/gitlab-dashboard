@@ -35,3 +35,25 @@ Feature: Reading my week
     Given I am signed in
     When I reload the day screen for 2026-08-20
     Then I am on the day screen for 2026-08-20
+
+  # Spec: dashboard-ui / UI-6
+  Scenario: Insights shows the month, the projects and what took the time
+    Given I am signed in
+    When I open the "insights" screen
+    Then it shows a square for every day of the month
+    And it splits the hours by project
+    And it lists the work items by hours
+
+  # Spec: dashboard-ui / UI-7
+  Scenario: Loaded and empty is not the same as not yet loaded
+    Given GitLab has nothing logged for me
+    When I sign in
+    Then the feed says nothing has been logged yet
+    And the summary reads zero rather than waiting
+
+  # Spec: personal-timelog-report / REPORT-9
+  Scenario: A failure is explained and can be retried
+    Given GitLab cannot be reached
+    When I sign in
+    Then I am told GitLab could not be reached
+    And I am offered a retry

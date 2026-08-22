@@ -14,11 +14,13 @@ Paraglide.
 | --------------------------------- | --------------------------------------------------------------------------------------------------- |
 | `bun run dev`                     | Dev server on http://localhost:3000                                                                 |
 | `bun run verify`                  | Every fast gate: format, lint, ARIA, types, architecture, dead code, type coverage, vulnerabilities |
-| `bun run test`                    | Unit and component tests (`domain` + `ui` Vitest projects)                                          |
+| `bun run test`                    | Unit, component and Gherkin domain tests (`domain` + `ui` Vitest projects)                          |
 | `bun run test:coverage`           | Same, with coverage thresholds enforced                                                             |
 | `bun run test:e2e`                | Generates specs from `features/acceptance/*.feature`, then runs Playwright                          |
 | `bun run test:mutation`           | Stryker mutation testing on the model layer                                                         |
-| `bun run build` && `bun run size` | Production build and the 180 kB gzip budget                                                         |
+| `bun run build` && `bun run size` | Production build, its Content-Security-Policy, and the 180 kB gzip budget                           |
+| `bun run arch:trace`              | Every scenario cites a requirement, and every requirement is cited                                  |
+| `bun run lint:a11y`               | Biome, ARIA rules only                                                                              |
 
 Run `bun run verify && bun run test` before calling any change finished.
 
@@ -43,18 +45,30 @@ Feature-Sliced Design on the outside, Clean Architecture inside each slice.
 src/
   app/          router, providers, global styles, and routes/ (TanStack Router
                 file-based routing lives inside the app layer, because route
-                files are wiring)
-  pages/        screen composition
-  widgets/      composed UI blocks
-  features/     single user interactions
+                files are wiring). `lib/runtime.ts` builds the session manager
+                and the timelog gateway once, from one configuration read.
+  pages/        screen composition. A block with one consumer lives here rather
+                than in widgets/, which is what steiger requires.
+    dashboard/    the KPI row, the week strip, the day feed and their derivations
+    day-detail/   one day, addressable
+    insights/     the month heatmap, the project split, the top-items table
+    settings/     the preference fields
+    login/, auth-callback/, not-configured/
+  widgets/      composed blocks with more than one consumer
+    hours-report/ the query, the report and the status notice — used by the
+                  dashboard and by the day screen
+  features/     single user interactions (theme/)
   entities/     domain slices (plural names, kept consistent by steiger)
     timelogs/
       model/    PURE business rules and ports. No React, no I/O, no strings.
-      api/      adapters: GitLab GraphQL gateway, zod schemas, query options
-      ui/       slice-level components
+      api/      adapters: the GitLab GraphQL gateway, zod schemas, query options
+      ui/       the gateway provider
       index.ts  public API — import from here, never from internals
+    sessions/     PKCE, credentials, the OAuth adapter and the token stores
     preferences/  daily target, time zone, theme choice
-  shared/       ui (shadcn plus ours), lib, i18n, config
+  shared/       ui (shadcn plus ours), api (the GraphQL client, the query client
+                and the cache persister), lib, i18n, config
+scripts/        build and gate tooling: the CSP writer, the traceability check
 ```
 
 `model/` and `api/` are FSD's own segment names; they carry the Clean
@@ -80,6 +94,47 @@ adapter. Both linters recognise them, which custom names like `domain/` and
 
 When a gate fails, fix the cause. Raising a ceiling or adding an ignore entry
 requires a comment saying why, in the config, next to the change.
+
+## Decisions that will look wrong until you know why
+
+Each of these was tried the obvious way first and changed on evidence. Reverting
+one without reading the reason will reintroduce a bug that is already fixed.
+
+- **The timelog query carries no period, and no `count`/`totalSpentTime`.**
+  GitLab truncates `startDate`/`endDate` to UTC calendar dates — verified:
+  `startDate: 2026-08-20T16:00:00Z` still matches an entry recorded at
+  `15:00:00Z`. So a period asked of GitLab is a window of UTC days, and its
+  totals disagree with the days on screen by the hours logged on the boundary
+  days. History is read newest first instead, and every period is cut locally
+  where the reader's zone is known. See `design.md` § 4.
+- **`totalSpentTime` is a string and `summary` is `''`, not null.** Both are
+  normalised at the adapter boundary. The fixtures in `tests/e2e/support/` and
+  `tests/support/gitlab-timelogs.ts` are shaped from a real recorded response for
+  that reason; keep them that way.
+- **A period total says whether it is settled.** A total whose loaded history
+  does not reach past the period's start is a floor, not an answer, and the query
+  keeps loading until it is. Presenting a floor as final would understate the
+  reader's hours.
+- **The day feed uses `content-visibility: auto`, not a virtualiser.**
+  `@tanstack/react-virtual` was installed, tried and removed: rows expand into
+  their work items, and a measured list whose items change height is exactly
+  where a virtualiser scrolls the reader somewhere they did not ask to be.
+- **There is no charting library.** The week strip, the heatmap and the project
+  split are divs with a width or a background token. Colours come from
+  `src/app/charts.css`, validated against this app's own card surfaces in both
+  themes; editing a token there means re-validating it.
+- **Hour figures use `HourFigure`, never `aria-label`.** Naming is prohibited on
+  a generic element, so `aria-label` on a `<span>` is ignored by screen readers
+  while Testing Library still computes it — a green suite over a broken figure.
+  The component hides the digits from assistive technology and puts the spoken
+  form beside them.
+- **A section's heading id comes from `useId`.** A hardcoded id works only while
+  the section renders once, and `aria-labelledby` breaks silently when it does
+  not. Biome's `useUniqueElementIds` enforces this.
+- **Two linters.** ESLint carries the type-aware, React and testing-library
+  rules; Biome carries the ARIA rules and the unique-id rule. Replacing ESLint
+  with Biome was measured twice and rejected — `docs/qa/quality-metrics.md` has
+  the table.
 
 ## Conventions
 
@@ -119,11 +174,22 @@ requires a comment saying why, in the config, next to the change.
   `axe-core` accessibility assertions.
 - `src/**/*.test.ts(x)` — unit and component tests, co-located.
 - Every `Scenario` carries a `# Spec: <capability> / <requirement>` comment
-  linking it back to the OpenSpec requirement it covers.
+  linking it back to the OpenSpec requirement it covers, and `bun run arch:trace`
+  fails if one is missing or if a requirement has no scenario. A requirement no
+  browser can observe goes in that script's `UNCITED_BY_DESIGN` map with the
+  reason, never silently.
 
 Coverage: 90% overall on authored logic, **100% on `model/`**. Mutation score on
-`model/` must stay above 85%. `docs/qa/quality-metrics.md` records every
-gate, its target and where it is enforced.
+`model/` must stay above 85%.
+
+**Coverage is a floor, not a target.** Outside `model/` the last few branches are
+not chased: a test written to reach a branch the type system makes unreachable
+asserts nothing a reader cares about. `docs/qa/quality-metrics.md` records every
+gate, its target, where it is enforced, and why coverage alone is not the
+quality signal here — the `aria-label` bug had 100% coverage over it.
+
+`docs/qa/` also holds the test plan, the manual regression pass, the browser
+matrix, the screen-reader procedure and the release checklist.
 
 ## Planning
 

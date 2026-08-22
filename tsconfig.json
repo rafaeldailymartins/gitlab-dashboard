@@ -50,6 +50,7 @@
     "*.config.ts",
     "*.config.js",
     ".dependency-cruiser.cjs",
-    "config/**/*.js"
+    "config/**/*.js",
+    "scripts"
   ]
 }
