@@ -10,15 +10,15 @@ Paraglide.
 
 ## Commands
 
-| Command                           | What it does                                                                                  |
-| --------------------------------- | --------------------------------------------------------------------------------------------- |
-| `bun run dev`                     | Dev server on http://localhost:3000                                                           |
-| `bun run verify`                  | Every fast gate: format, lint, types, architecture, dead code, type coverage, vulnerabilities |
-| `bun run test`                    | Unit and component tests (`domain` + `ui` Vitest projects)                                    |
-| `bun run test:coverage`           | Same, with coverage thresholds enforced                                                       |
-| `bun run test:e2e`                | Generates specs from `features/acceptance/*.feature`, then runs Playwright                    |
-| `bun run test:mutation`           | Stryker mutation testing on the model layer                                                   |
-| `bun run build` && `bun run size` | Production build and the 180 kB gzip budget                                                   |
+| Command                           | What it does                                                                                        |
+| --------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `bun run dev`                     | Dev server on http://localhost:3000                                                                 |
+| `bun run verify`                  | Every fast gate: format, lint, ARIA, types, architecture, dead code, type coverage, vulnerabilities |
+| `bun run test`                    | Unit and component tests (`domain` + `ui` Vitest projects)                                          |
+| `bun run test:coverage`           | Same, with coverage thresholds enforced                                                             |
+| `bun run test:e2e`                | Generates specs from `features/acceptance/*.feature`, then runs Playwright                          |
+| `bun run test:mutation`           | Stryker mutation testing on the model layer                                                         |
+| `bun run build` && `bun run size` | Production build and the 180 kB gzip budget                                                         |
 
 Run `bun run verify && bun run test` before calling any change finished.
 
@@ -73,6 +73,7 @@ adapter. Both linters recognise them, which custom names like `domain/` and
 | Shipped code never imports `node:*`                                                                                                 | `BROWSER_ONLY_RULES`                                  |
 | Cyclomatic complexity ≤ 8, cognitive complexity ≤ 10, ≤ 40 lines per function (60 for components), ≤ 200 lines per file, ≤ 3 params | `config/eslint/limits.js`                             |
 | No unused export, file or dependency                                                                                                | `knip` (`bun run deadcode`)                           |
+| ARIA attributes are supported by the role they sit on                                                                               | `biome` (`bun run lint:a11y`)                         |
 | ≥ 99% of expressions carry a real type                                                                                              | `type-coverage`                                       |
 | Zero dependency vulnerabilities, at any severity                                                                                    | `bun audit`                                           |
 | Named exports only                                                                                                                  | `no-restricted-exports`                               |

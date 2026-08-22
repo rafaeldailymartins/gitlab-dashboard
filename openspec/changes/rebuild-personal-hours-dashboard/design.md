@@ -248,14 +248,21 @@ loads. Anything that runs after React mounts is too late: the reader sees a flas
 The React provider then owns the same state for the toggle and listens for system
 changes while no explicit choice is stored.
 
-### 10. Charts
+### 10. Charts, without a charting library
 
-The week strip, the month heatmap and the project split use shadcn/ui's chart
-components over Recharts, for consistent axes, tooltips and legends. Recharts is
-around 95 kB gzipped, so it is loaded lazily: it is not part of the initial chunk,
-and the 180 kB budget in `docs/qa/quality-metrics.md` guards that. Small marks
-that are not really charts — a day row's proportional bar, a progress ring — stay
-as plain CSS or inline SVG rather than dragging a chart library into a list item.
+There is no Recharts, and no chart runtime at all. The three things this product
+draws are a bar per weekday, a square per day of the month and a bar per project;
+each is a handful of divs with a width or a background token. A charting library
+would add tens of kilobytes to a 180 kB budget to do that, and would put the
+accessible text — the part that carries the meaning for anyone not seeing the
+shape — inside a component we do not own.
+
+What replaces it is the discipline, not the library: colours come from a
+validated palette in `src/app/charts.css`, one hue with monotone lightness for
+ordinal magnitude and a fixed categorical order for identity, both checked
+against this app's own card surfaces in both themes. Every mark is paired with
+the number it stands for in text, so nothing is carried by colour or height
+alone.
 
 ### 11. Netlify, with a SPA fallback
 

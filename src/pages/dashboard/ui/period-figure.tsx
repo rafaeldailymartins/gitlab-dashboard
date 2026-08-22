@@ -4,7 +4,8 @@ import type { PeriodSummary } from '@/entities/timelogs'
 
 import { targetProgress } from '@/entities/preferences'
 import { m, useActiveLocale } from '@/shared/i18n'
-import { formatHours, formatSpokenHours } from '@/shared/lib/format'
+import { formatHours } from '@/shared/lib/format'
+import { HourFigure } from '@/shared/ui/hour-figure'
 
 interface PeriodFigureProps {
   readonly label: string
@@ -41,16 +42,19 @@ export function PeriodFigure({ label, summary, target, waiting }: PeriodFigurePr
         <dd className="mt-1 flex flex-col gap-2">
           <span className="flex items-baseline gap-1.5">
             {waiting ? (
-              <span aria-hidden className="h-8 w-16 animate-pulse rounded bg-muted" />
+              <>
+                <span aria-hidden className="h-8 w-16 animate-pulse rounded bg-muted" />
+                <span aria-hidden className="text-sm text-muted-foreground">
+                  {m.hours_short()}
+                </span>
+              </>
             ) : (
-              <span
-                aria-label={formatSpokenHours(summary.hours, locale)}
+              <HourFigure
                 className="tabular text-3xl font-semibold"
-              >
-                {formatHours(summary.hours, locale)}
-              </span>
+                hours={summary.hours}
+                unitClassName="text-sm text-muted-foreground"
+              />
             )}
-            <span className="text-sm text-muted-foreground">{m.hours_short()}</span>
             <span className="ml-1 text-xs text-muted-foreground">
               {target > 0
                 ? m.dashboard_of_target({ target: formatHours(target, locale) })

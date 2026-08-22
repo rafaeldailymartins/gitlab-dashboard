@@ -57,6 +57,15 @@ module.exports = {
 
   options: {
     doNotFollow: { dependencyTypes: ['npm', 'npm-dev', 'npm-optional', 'npm-peer', 'npm-bundled'] },
+    // `@tanstack/react-table` v9 ships an `exports` map and no `main`, which the
+    // default resolution reports as unresolvable. Spelling out the conditions,
+    // the exports field and the main fields resolves it the way Vite and
+    // TypeScript already do.
+    enhancedResolveOptions: {
+      conditionNames: ['import', 'require', 'node', 'default'],
+      exportsFields: ['exports'],
+      mainFields: ['module', 'main'],
+    },
     exclude: { path: ['^src/paraglide/', '[.]test[.]tsx?$'] },
     tsConfig: { fileName: 'tsconfig.json' },
     tsPreCompilationDeps: true,

@@ -4,7 +4,8 @@ import { ArrowLeft } from 'lucide-react'
 import { targetForDate, targetProgress, usePreferences } from '@/entities/preferences'
 import { m, useActiveLocale } from '@/shared/i18n'
 import { type IsoDate, weekdayOf } from '@/shared/lib/date'
-import { formatHours, formatLongDate, formatSpokenHours, weekdayName } from '@/shared/lib/format'
+import { formatHours, formatLongDate, weekdayName } from '@/shared/lib/format'
+import { HourFigure } from '@/shared/ui/hour-figure'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { useHoursReport } from '@/widgets/hours-report'
 
@@ -45,13 +46,11 @@ export function DayDetailPage({ date }: { readonly date: IsoDate }) {
       {report.hasFigures ? (
         <>
           <p className="flex items-baseline gap-1.5">
-            <span
-              aria-label={formatSpokenHours(progress.loggedHours, locale)}
+            <HourFigure
               className="tabular text-3xl font-semibold"
-            >
-              {formatHours(progress.loggedHours, locale)}
-            </span>
-            <span className="text-sm text-muted-foreground">{m.hours_short()}</span>
+              hours={progress.loggedHours}
+              unitClassName="text-sm text-muted-foreground"
+            />
             <span className="ml-1 text-xs text-muted-foreground">
               {target > 0
                 ? m.dashboard_of_target({ target: formatHours(target, locale) })

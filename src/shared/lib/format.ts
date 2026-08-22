@@ -13,6 +13,7 @@ const REFERENCE_MONDAY = isoDate('2026-08-17')
 const DATE_STYLES = {
   full: { day: 'numeric', month: 'long', weekday: 'long', year: 'numeric' },
   long: { day: 'numeric', month: 'long', year: 'numeric' },
+  month: { month: 'long', year: 'numeric' },
   weekdayLong: { weekday: 'long' },
   weekdayShort: { weekday: 'short' },
 } as const satisfies Record<string, Intl.DateTimeFormatOptions>
@@ -52,6 +53,11 @@ export function formatHours(hours: number, locale: string): string {
  */
 export function formatLongDate(date: IsoDate, locale: string): string {
   return formatDate(date, locale, 'long')
+}
+
+/** A month and its year, as a heading — `August 2026`, `agosto de 2026`. */
+export function formatMonth(date: IsoDate, locale: string): string {
+  return formatDate(date, locale, 'month')
 }
 
 /**

@@ -63,7 +63,7 @@ describe('DayDetailPage', () => {
     renderRoutedReport(<DayDetailPage date={isoDate('2026-08-20')} />, { gateway })
 
     await waitFor(() => {
-      expect(screen.getByLabelText('6.7 hours')).toBeInTheDocument()
+      expect(screen.getByText('6.7 hours')).toBeInTheDocument()
     })
     expect(screen.getByText(/of 8 h/)).toBeInTheDocument()
   })
@@ -116,7 +116,7 @@ describe('DayDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText(/No time logged on this day/i)).toBeInTheDocument()
     })
-    expect(screen.getByLabelText('0 hours')).toBeInTheDocument()
+    expect(screen.getByText('0 hours')).toBeInTheDocument()
   })
 
   it('offers the way back to the dashboard', async () => {

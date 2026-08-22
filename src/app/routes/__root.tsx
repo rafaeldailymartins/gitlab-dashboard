@@ -97,6 +97,9 @@ function SignedInControls() {
           <Link className={NAVIGATION_LINK_CLASS} to="/">
             {m.nav_dashboard()}
           </Link>
+          <Link className={NAVIGATION_LINK_CLASS} to="/insights">
+            {m.nav_insights()}
+          </Link>
           <Link className={NAVIGATION_LINK_CLASS} to="/settings">
             {m.nav_settings()}
           </Link>

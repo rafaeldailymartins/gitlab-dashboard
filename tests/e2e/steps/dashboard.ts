@@ -66,3 +66,12 @@ Then('today reads {int} hours', async ({ page }, hours: number) => {
 Then('the report says it is up to date', async ({ page }) => {
   await expect(page.getByRole('status')).toContainText(/up to date|atualizado/i)
 })
+
+When('I open the insights page', async ({ page }) => {
+  await page.goto('/insights')
+  await expect(page.getByRole('main')).toBeVisible()
+})
+
+Then('I am on the insights page', async ({ page }) => {
+  await expect(page.getByRole('region', { name: /days of the month|dias do mês/i })).toBeVisible()
+})

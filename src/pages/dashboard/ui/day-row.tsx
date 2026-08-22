@@ -2,10 +2,11 @@ import { ChevronRight } from 'lucide-react'
 
 import type { DayTotal } from '@/entities/timelogs'
 
-import { m, useActiveLocale } from '@/shared/i18n'
+import { useActiveLocale } from '@/shared/i18n'
 import { weekdayOf } from '@/shared/lib/date'
-import { formatHours, formatLongDate, formatSpokenHours, weekdayName } from '@/shared/lib/format'
+import { formatLongDate, weekdayName } from '@/shared/lib/format'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/shared/ui/collapsible'
+import { HourFigure } from '@/shared/ui/hour-figure'
 
 import { WorkItemRow } from './work-item-row'
 
@@ -50,14 +51,11 @@ export function DayRow({ day, scale }: DayRowProps) {
             />
           </span>
         ) : null}
-        <span
-          aria-label={formatSpokenHours(day.hours, locale)}
-          className="tabular ml-auto w-16 shrink-0 text-right font-medium sm:ml-0"
-        >
-          {formatHours(day.hours, locale)}
-          <span className="ml-0.5 text-xs font-normal text-muted-foreground">
-            {m.hours_short()}
-          </span>
+        <span className="tabular ml-auto w-16 shrink-0 text-right font-medium sm:ml-0">
+          <HourFigure
+            hours={day.hours}
+            unitClassName="ml-0.5 text-xs font-normal text-muted-foreground"
+          />
         </span>
       </CollapsibleTrigger>
       <CollapsibleContent>

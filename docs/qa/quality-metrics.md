@@ -12,21 +12,47 @@ a drift is visible without running anything.
 | ---------------------------------- | -------------------------------- | -------- | ------------------------------- | ------------------------ |
 | Formatting                         | no deviation                     | pass     | `bun run format:check`          | pre-commit, `verify`, CI |
 | Lint (type-aware)                  | 0 errors, 0 warnings             | pass     | `bun run lint`                  | pre-commit, `verify`, CI |
+| Lint (ARIA, static)                | 0 errors                         | pass     | `bun run lint:a11y`             | `verify`, CI             |
 | TypeScript                         | 0 errors under full strictness   | pass     | `bun run typecheck`             | pre-push, `verify`, CI   |
 | FSD conventions                    | 0 problems                       | pass     | `bun run arch:layers`           | pre-push, `verify`, CI   |
 | Dependency graph (cycles, orphans) | 0 violations                     | pass     | `bun run arch:graph`            | pre-push, `verify`, CI   |
 | Dead code (files, exports, deps)   | 0 findings                       | pass     | `bun run deadcode`              | pre-push, `verify`, CI   |
-| Type coverage                      | ≥ 99%                            | 99.88%   | `bun run types:coverage`        | `verify`, CI             |
+| Type coverage                      | ≥ 99%                            | 99.85%   | `bun run types:coverage`        | `verify`, CI             |
 | Dependency vulnerabilities         | **0, at any severity**           | 0        | `bun run security:audit`        | pre-push, `verify`, CI   |
 | Test coverage, statements          | ≥ 90%                            | 100%     | `bun run test:coverage`         | CI                       |
-| Test coverage, branches            | ≥ 90%                            | 100%     | `bun run test:coverage`         | CI                       |
+| Test coverage, branches            | ≥ 90%                            | 98.5%    | `bun run test:coverage`         | CI                       |
 | Test coverage, `model/`            | **100%**                         | 100%     | `bun run test:coverage`         | CI                       |
-| Mutation score, `model/`           | ≥ 85%                            | 95.60%   | `bun run test:mutation`         | scheduled CI             |
-| Initial bundle                     | ≤ 180 kB gzip                    | 98.59 kB | `bun run build && bun run size` | CI                       |
+| Mutation score, `model/`           | ≥ 85%                            | 96.80%   | `bun run test:mutation`         | scheduled CI             |
+| Initial bundle                     | ≤ 180 kB gzip                    | 114.6 kB | `bun run build && bun run size` | CI                       |
 | Accessibility (WCAG 2.1 AA)        | 0 axe violations, light and dark | pass     | `bun run test:e2e`              | CI                       |
 
-Tests: 424 unit and component, 185 of them on the pure model layer, plus 33
+Tests: 717 unit and component, 300 of them on the pure model layer and its Gherkin
+features, plus 39
 acceptance runs across chromium, webkit and a mobile viewport.
+
+## Two linters, on purpose
+
+ESLint carries the rules that need type information and the ones that need to
+understand React, tests or this project's layers. Biome carries the ARIA rules
+and nothing else.
+
+The split is not a hedge. Biome checks 349 files in under 300 ms where ESLint
+takes 33 seconds, and swapping wholesale was measured and rejected: the rules
+that caught real defects in this codebase have no Biome equivalent —
+`restrict-template-expressions`, `unbound-method`,
+`react-hooks/set-state-in-effect` (a real bug in the auth callback),
+`testing-library/no-node-access`, the `sonarjs` and `unicorn` sets, and
+`perfectionist`'s object and module ordering. Biome 2.4's `types` domain covers
+three of those type-aware rules, and Biome's own release notes put
+`noFloatingPromises` at roughly 75% of typescript-eslint's accuracy. Trading a
+proven gate for a faster one is not a trade.
+
+The speed problem had a cheaper answer: `eslint --cache` takes 3.9 seconds warm
+instead of 33. Biome earns its place for the one thing it alone catches — an
+`aria-label` on a generic element, which `jsx-a11y` and axe both let through. Two
+of its recommended ARIA rules are off, with the reason in `biome.json`:
+`useSemanticElements` asks for a `<fieldset>` wherever it sees `role="group"`,
+and `noLabelWithoutControl` cannot see through the shadcn `Label` wrapper.
 
 ## Complexity ceilings
 
@@ -59,6 +85,37 @@ Enforced per function and per file by `config/eslint/limits.js`.
 
 A line that is hard to cover is a design signal. Moving code out of a covered
 path to make a number go up is not an acceptable fix.
+
+## Coverage is a floor, not a target
+
+The thresholds are 90% overall and 100% on `model/`. Measured coverage sits near
+100% everywhere, and that gap is worth naming: nothing forced it, and chasing it
+is not free.
+
+100% on `model/` is right. That layer is pure functions with no I/O, it is where
+a wrong hour figure comes from, and mutation testing on the same files shows the
+tests actually assert rather than merely execute. A hard-to-cover line there is a
+design signal, not an excuse.
+
+Outside `model/`, the last few branches are not chased. A branch is worth a test
+when a reader would notice it being wrong — a period with no target, a day split
+across two pages, a refused credential. A branch is not worth a test when the
+only way to reach it is to defeat the type system, and a test written to reach it
+asserts nothing a reader cares about. Two such tests were written during this
+change and removed again: they asserted that a number was printed, in order to
+reach a `??` fallback that the surrounding arithmetic makes unreachable.
+
+**Coverage measures that a line ran, not that it worked.** The clearest proof of
+that in this repository: four screens gave their hour figures an `aria-label` on
+a `<span>`. Naming is prohibited on a generic element, so every screen reader
+ignored it and read "6.7 h" as digits and a letter. Those lines were covered,
+and the tests asserted `getByLabelText('6.7 hours')` and passed — Testing
+Library computes an accessible name whether or not the platform would. Coverage,
+`jsx-a11y` and the axe assertions in the acceptance suite all missed it; Biome's
+`useAriaPropsSupportedByRole` found it. The figure now renders the spoken form as
+visually hidden text, which works in any role, and the tests assert on that text.
+That is why the quality signals here are mutation testing, axe and the a11y
+linter — with coverage as the floor that stops whole paths going unexercised.
 
 ## Known measurement caveats
 

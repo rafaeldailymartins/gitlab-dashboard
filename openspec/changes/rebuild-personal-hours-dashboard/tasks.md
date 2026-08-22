@@ -75,10 +75,10 @@ considered done, and each task below names whatever additional gate proves it.
 
 ## 8. Insights and settings
 
-- [ ] 8.1 Build `widgets/month-heatmap` distinguishing days with time, working days without time, and days outside the month; verify component tests cover all three (UI-6)
-- [ ] 8.2 Build `widgets/project-split` for hours per project over the period; verify a component test asserts the split sums to the period total
-- [ ] 8.3 Build `widgets/top-items-table` on TanStack Table, sortable by hours; verify a component test asserts the busiest item sorts first (UI-6)
-- [ ] 8.4 Compose `pages/insights`, importing the chart components lazily; verify `bun run build && bun run size` shows the chart library outside the initial chunk and the budget still met
+- [x] 8.1 Build the month heatmap distinguishing days with time, working days without time, and days outside the month; verify component tests cover all three, and that a day is measured against its own weekday target rather than a fixed eight (UI-6)
+- [x] 8.2 Build the project split for hours per project over the period, keyed by full path so two projects sharing a name stay apart; verify tests assert the split sums to the period total and that the shares sum to one
+- [x] 8.3 Build the top-items table on TanStack Table 9, sortable by hours, project, item or the number of days an item kept coming back; verify tests assert the busiest item leads without being asked and that sorting reverses it (UI-6)
+- [x] 8.4 Compose `pages/insights`. There is no chart library to import lazily — the heatmap is a CSS grid and the split is CSS bars, which is lighter than any charting runtime and leaves the accessible text under our own control; the route is its own chunk, so TanStack Table stays out of the initial one. Verified: 14.3 kB gzip for the insights chunk, 114.6 kB initial against the 180 kB budget
 - [x] 8.5 Compose `pages/settings` for daily target per weekday, time zone, language and theme, with validation messages; verify component tests cover rejecting an out-of-range target and applying a new time zone (PREF-2, PREF-3)
 
 ## 9. Responsiveness and accessibility

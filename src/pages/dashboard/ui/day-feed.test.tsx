@@ -17,6 +17,17 @@ const PROJECT = {
   webUrl: 'https://gitlab.com/invent-software/invent-apps-2/squad-fiscal/inventariofiscal',
 }
 
+/**
+ * The width of a row's bar.
+ *
+ * Reading a style off the DOM is the only way to assert on a proportional mark;
+ * the alternative is to assert that a number is printed, which the row already
+ * does elsewhere and which says nothing about the bar.
+ */
+function barWidthOf(row: HTMLElement): string | undefined {
+  return row.querySelector<HTMLElement>('[class*="bg-chart-bar"]')?.style.width
+}
+
 function day(date: string, items: WorkItemTotal[]): DayTotal {
   const seconds = items.reduce((total, entry) => total + entry.seconds, 0)
 
@@ -75,7 +86,7 @@ describe('DayFeed', () => {
   it('shows each day total, spoken with its unit', () => {
     renderReport(feed([AUGUST_20]))
 
-    expect(screen.getByLabelText('6.7 hours')).toBeInTheDocument()
+    expect(screen.getByText('6.7 hours')).toBeInTheDocument()
   })
 
   it('keeps a day closed until it is asked to open', () => {
@@ -179,15 +190,16 @@ describe('DayFeed', () => {
 
     expect(screen.getByText(/No time logged in GitLab yet/i)).toBeInTheDocument()
   })
-  it('fills the whole track on a day with no target but logged time', () => {
-    renderReport(feed([day('2026-08-22', [item(3, null)])]))
 
-    expect(screen.getByLabelText('3 hours')).toBeInTheDocument()
-  })
+  it('draws every row on one scale, so the list reads by comparison', () => {
+    // Eight hours against the reader's eight-hour target is a full track; two is
+    // a quarter of it — including on a Saturday, which carries no target of its
+    // own and would otherwise fill the track for any time at all.
+    renderReport(feed([day('2026-08-21', [item(8, null)]), day('2026-08-22', [item(2, null)])]))
 
-  it('draws no bar on a day with no target and no time', () => {
-    renderReport(feed([day('2026-08-22', [])]))
+    const [full, quarter] = screen.getAllByRole('button').map((row) => barWidthOf(row))
 
-    expect(screen.getByLabelText('0 hours')).toBeInTheDocument()
+    expect(full).toBe('100%')
+    expect(quarter).toBe('25%')
   })
 })

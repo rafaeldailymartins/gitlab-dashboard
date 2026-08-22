@@ -34,3 +34,4 @@ Thumbs.db
 project.inlang/cache/
 project.inlang/.meta.json
 .type-coverage/
+.tanstack/

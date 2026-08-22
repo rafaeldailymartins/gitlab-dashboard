@@ -37,6 +37,13 @@ Feature: Opening the dashboard
       | light  |
       | dark   |
 
+  # Spec: dashboard-ui / UI-6
+  Scenario: The insights screen has no accessibility violations
+    Given I am signed in
+    When I open the insights page
+    Then I am on the insights page
+    And the page has no accessibility violations
+
   # Spec: dashboard-ui / UI-4
   Scenario: The settings screen has no accessibility violations
     Given I am signed in

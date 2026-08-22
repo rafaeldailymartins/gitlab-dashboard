@@ -72,7 +72,7 @@ describe('KpiRow', () => {
   it('waits rather than claiming zero before anything has loaded', () => {
     renderReport(row({ loading: true }))
 
-    expect(figure('Today').queryByLabelText(/hours/)).not.toBeInTheDocument()
+    expect(figure('Today').queryByText(/hours/)).not.toBeInTheDocument()
   })
 
   it('says a total is still rising while its period is unsettled', () => {
