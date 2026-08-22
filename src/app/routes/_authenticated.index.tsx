@@ -11,7 +11,7 @@ import { m, useActiveLocale } from '@/shared/i18n'
 import { addDays, datesBetween, startOfWeek, toIsoDate } from '@/shared/lib/date'
 import { formatFullDate, formatHours } from '@/shared/lib/format'
 
-export const Route = createFileRoute('/')({ component: DashboardRoute })
+export const Route = createFileRoute('/_authenticated/')({ component: DashboardRoute })
 
 /**
  * Placeholder dashboard.

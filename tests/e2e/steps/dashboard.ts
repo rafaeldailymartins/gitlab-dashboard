@@ -2,13 +2,13 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect } from '@playwright/test'
 import { createBdd } from 'playwright-bdd'
 
-const { Given, Then } = createBdd()
+const { Given, Then, When } = createBdd()
 
 /**
  * WCAG 2.1 A and AA, plus axe's best-practice rules. The best-practice set is
- * stricter than the standard requires — unique landmarks, meaningful link text,
- * heading order — and catches the things a reader notices before a checklist
- * does.
+ * stricter than the standard requires — unique landmarks, heading order,
+ * meaningful link text — and catches the things a reader notices before a
+ * checklist does.
  */
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice']
 
@@ -26,6 +26,22 @@ Given('I open the dashboard', async ({ page }) => {
   // how this suite first "passed" on chromium and failed on webkit. Waiting for
   // the main landmark makes the step mean what it says.
   await expect(page.getByRole('main')).toBeVisible()
+})
+
+When('I open the settings page', async ({ page }) => {
+  await page.goto('/settings')
+  await expect(page.getByRole('main')).toBeVisible()
+})
+
+Then('I see the dashboard', async ({ page }) => {
+  await expect(page.getByRole('link', { name: /dashboard/i })).toBeVisible()
+  await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible()
+})
+
+Then('I am on the settings page', async ({ page }) => {
+  await expect(
+    page.getByRole('heading', { level: 1, name: /settings|configurações/i }),
+  ).toBeVisible()
 })
 
 Then('I see the page heading', async ({ page }) => {

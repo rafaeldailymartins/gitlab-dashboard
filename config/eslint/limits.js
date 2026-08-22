@@ -3,6 +3,14 @@
  * Raising one of these numbers needs a reason recorded in the commit message,
  * not a silent edit.
  */
+/** Parameters kept only to document a signature are prefixed with _. */
+export const UNUSED_ARGUMENT_RULE = {
+  '@typescript-eslint/no-unused-vars': [
+    'error',
+    { args: 'after-used', argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+  ],
+}
+
 export const COMPLEXITY_RULES = {
   complexity: ['error', 8],
   'max-depth': ['error', 3],

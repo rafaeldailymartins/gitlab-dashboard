@@ -16,16 +16,16 @@ a drift is visible without running anything.
 | FSD conventions                    | 0 problems                       | pass     | `bun run arch:layers`           | pre-push, `verify`, CI   |
 | Dependency graph (cycles, orphans) | 0 violations                     | pass     | `bun run arch:graph`            | pre-push, `verify`, CI   |
 | Dead code (files, exports, deps)   | 0 findings                       | pass     | `bun run deadcode`              | pre-push, `verify`, CI   |
-| Type coverage                      | ≥ 99%                            | 99.91%   | `bun run types:coverage`        | `verify`, CI             |
+| Type coverage                      | ≥ 99%                            | 99.88%   | `bun run types:coverage`        | `verify`, CI             |
 | Dependency vulnerabilities         | **0, at any severity**           | 0        | `bun run security:audit`        | pre-push, `verify`, CI   |
 | Test coverage, statements          | ≥ 90%                            | 100%     | `bun run test:coverage`         | CI                       |
 | Test coverage, branches            | ≥ 90%                            | 100%     | `bun run test:coverage`         | CI                       |
 | Test coverage, `model/`            | **100%**                         | 100%     | `bun run test:coverage`         | CI                       |
-| Mutation score, `model/`           | ≥ 85%                            | 93.65%   | `bun run test:mutation`         | scheduled CI             |
-| Initial bundle                     | ≤ 180 kB gzip                    | 95.11 kB | `bun run build && bun run size` | CI                       |
+| Mutation score, `model/`           | ≥ 85%                            | 95.60%   | `bun run test:mutation`         | scheduled CI             |
+| Initial bundle                     | ≤ 180 kB gzip                    | 98.59 kB | `bun run build && bun run size` | CI                       |
 | Accessibility (WCAG 2.1 AA)        | 0 axe violations, light and dark | pass     | `bun run test:e2e`              | CI                       |
 
-Tests: 257 unit and component, 111 of them on the pure model layer, plus 9
+Tests: 424 unit and component, 185 of them on the pure model layer, plus 33
 acceptance runs across chromium, webkit and a mobile viewport.
 
 ## Complexity ceilings
@@ -62,7 +62,7 @@ path to make a number go up is not an acceptable fix.
 
 ## Known measurement caveats
 
-- **Eight surviving mutants are equivalent mutants, not test gaps.** Every one
+- **Seven surviving mutants are equivalent mutants, not test gaps.** Every one
   is a type guard TypeScript requires but that carries no behaviour: narrowing
   `unknown` before a spread in `parseObject` and `dailyTargetFrom`, and
   `typeof value === 'number'` before `isValidTargetHours`, whose

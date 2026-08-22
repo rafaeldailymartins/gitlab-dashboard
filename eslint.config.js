@@ -19,7 +19,11 @@ import {
   FSD_ELEMENTS,
   FSD_POLICIES,
 } from './config/eslint/layers.js'
-import { COMPLEXITY_RULES, COMPONENT_LENGTH_RULE } from './config/eslint/limits.js'
+import {
+  COMPLEXITY_RULES,
+  COMPONENT_LENGTH_RULE,
+  UNUSED_ARGUMENT_RULE,
+} from './config/eslint/limits.js'
 import {
   E2E_FILES,
   E2E_STEP_RULES,
@@ -57,6 +61,7 @@ export default defineConfig(
     plugins: { boundaries },
     rules: {
       ...COMPLEXITY_RULES,
+      ...UNUSED_ARGUMENT_RULE,
 
       'boundaries/dependencies': ['error', { default: 'disallow', policies: FSD_POLICIES }],
 

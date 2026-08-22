@@ -6,40 +6,40 @@ considered done, and each task below names whatever additional gate proves it.
 
 ## 1. Shared kernel
 
-- [ ] 1.1 Add `src/shared/config/env.ts` parsing `VITE_GITLAB_CLIENT_ID` and optional `VITE_GITLAB_BASE_URL` with zod, exposing a typed config and a distinguishable "not configured" result; verify unit tests cover a missing id, a blank id and a trailing slash on the base URL
-- [ ] 1.2 Add `src/shared/lib/date.ts` — day extraction, week and month boundaries and weekday index for an instant in a given IANA time zone, using `Intl.DateTimeFormat` only; verify unit tests cover a DST transition, an entry either side of midnight in `America/Sao_Paulo`, and an unrecognised zone
-- [ ] 1.3 Add `src/shared/lib/format.ts` — locale-aware hour, date and weekday formatting built on `Intl`; verify unit tests assert the `en` and `pt-BR` output for the same values, including the decimal separator (I18N-4)
-- [ ] 1.4 Add `src/shared/lib/result.ts` — a small tagged result type for adapter boundaries so failures are values rather than thrown strings; verify unit tests cover mapping over both arms
-- [ ] 1.5 Add the en and pt-BR message entries for every string these tasks introduce as they are introduced, never as a later pass; verify `bun run build` fails when an entry is missing from one catalogue (I18N-5)
-- [ ] 1.6 Add `src/features/theme` with the pre-paint resolution already inlined in `index.html`, a provider owning the same state, and a toggle; verify component tests cover system-follows, explicit override, and reacting to a system change while no override is stored (PREF-4, PREF-5)
-- [ ] 1.7 Add `src/features/locale` with a language switcher wired to Paraglide and persistence; verify component tests cover switching without reload and restoring the stored choice (I18N-3)
-- [ ] 1.8 Set the document language from the active locale; verify an acceptance assertion reads the root `lang` attribute in both languages (I18N-6)
+- [x] 1.1 Add `src/shared/config/env.ts` parsing `VITE_GITLAB_CLIENT_ID` and optional `VITE_GITLAB_BASE_URL` with zod, exposing a typed config and a distinguishable "not configured" result; verify unit tests cover a missing id, a blank id and a trailing slash on the base URL
+- [x] 1.2 Add `src/shared/lib/date.ts` — day extraction, week and month boundaries and weekday index for an instant in a given IANA time zone, using `Intl.DateTimeFormat` only; verify unit tests cover a DST transition, an entry either side of midnight in `America/Sao_Paulo`, and an unrecognised zone
+- [x] 1.3 Add `src/shared/lib/format.ts` — locale-aware hour, date and weekday formatting built on `Intl`; verify unit tests assert the `en` and `pt-BR` output for the same values, including the decimal separator (I18N-4)
+- [ ] 1.4 (moved to group 6, its only consumer) Add `src/shared/lib/result.ts` — a small tagged result type for adapter boundaries so failures are values rather than thrown strings; verify unit tests cover mapping over both arms
+- [x] 1.5 Add the en and pt-BR message entries for every string these tasks introduce as they are introduced, never as a later pass; verify `bun run build` fails when an entry is missing from one catalogue (I18N-5)
+- [x] 1.6 Add `src/features/theme` with the pre-paint resolution already inlined in `index.html`, a provider owning the same state, and a toggle; verify component tests cover system-follows, explicit override, and reacting to a system change while no override is stored (PREF-4, PREF-5)
+- [x] 1.7 Add `src/features/locale` with a language switcher wired to Paraglide and persistence; verify component tests cover switching without reload and restoring the stored choice (I18N-3)
+- [x] 1.8 Set the document language from the active locale; verify an acceptance assertion reads the root `lang` attribute in both languages (I18N-6)
 
 ## 2. Preferences model
 
-- [ ] 2.1 Write the failing tests for `entities/preferences/model` — daily target per weekday with the 8h weekday / 0h weekend default, period target as the sum of its days, and rejection of a negative or greater-than-24h target; then implement (PREF-1, PREF-2)
-- [ ] 2.2 Write the failing tests for preference decoding — unknown time zone falls back to the default, malformed stored value falls back to defaults, storage access denied falls back to defaults; then implement (PREF-3, PREF-6)
-- [ ] 2.3 Add `entities/preferences/api` persisting through a storage port, with an in-memory implementation used by tests; verify the model tests need no browser storage
-- [ ] 2.4 Transcribe the preference scenarios into `features/domain/daily-target-and-balance.feature` with `# Spec:` citations; verify `bun run test` runs them
-- [ ] 2.5 Confirm `bun run test:mutation` still reports 100% on `model/` after this group
+- [x] 2.1 Write the failing tests for `entities/preferences/model` — daily target per weekday with the 8h weekday / 0h weekend default, period target as the sum of its days, and rejection of a negative or greater-than-24h target; then implement (PREF-1, PREF-2)
+- [x] 2.2 Write the failing tests for preference decoding — unknown time zone falls back to the default, malformed stored value falls back to defaults, storage access denied falls back to defaults; then implement (PREF-3, PREF-6)
+- [x] 2.3 Add `entities/preferences/api` persisting through a storage port, with an in-memory implementation used by tests; verify the model tests need no browser storage
+- [x] 2.4 Transcribe the preference scenarios into `features/domain/daily-target-and-balance.feature` with `# Spec:` citations; verify `bun run test` runs them
+- [x] 2.5 Confirm `bun run test:mutation` still reports 100% on `model/` after this group
 
 ## 3. Session model
 
-- [ ] 3.1 Write the failing tests for `entities/session/model/pkce.ts` — verifier length within 43..128 and drawn only from the unreserved set, verifier uniqueness across calls, and the `S256` challenge matching a known verifier/challenge pair from RFC 7636; then implement (AUTH-2)
-- [ ] 3.2 Write the failing tests for token lifetime arithmetic — when a credential is due for renewal, and treating a missing or past expiry as due now; then implement (AUTH-5)
-- [ ] 3.3 Define the `AuthGateway` and `TokenStore` ports in `entities/session/model`; verify lint confirms the model imports no adapter and touches no browser global
-- [ ] 3.4 Transcribe the PKCE scenarios into `features/domain/pkce-challenge-generation.feature`; verify `bun run test` runs them
+- [x] 3.1 Write the failing tests for `entities/session/model/pkce.ts` — verifier length within 43..128 and drawn only from the unreserved set, verifier uniqueness across calls, and the `S256` challenge matching a known verifier/challenge pair from RFC 7636; then implement (AUTH-2)
+- [x] 3.2 Write the failing tests for token lifetime arithmetic — when a credential is due for renewal, and treating a missing or past expiry as due now; then implement (AUTH-5)
+- [x] 3.3 Define the `AuthGateway` and `TokenStore` ports in `entities/session/model`; verify lint confirms the model imports no adapter and touches no browser global
+- [x] 3.4 Transcribe the PKCE scenarios into `features/domain/pkce-challenge-generation.feature`; verify `bun run test` runs them
 
 ## 4. Session adapter and screens
 
-- [ ] 4.1 Implement `entities/session/api/gitlab-oauth.ts` — authorize URL construction, code exchange, renewal and revocation as form-encoded requests with no client secret; verify MSW-backed tests cover success, a denied authorization and a rejected renewal (AUTH-1, AUTH-6, AUTH-9)
-- [ ] 4.2 Implement the token stores: access token in memory only, refresh token in `localStorage` replaced atomically on rotation; verify a test asserts nothing is written to any persistent storage for the access token (AUTH-3, AUTH-4)
-- [ ] 4.3 Implement single-flight renewal shared by concurrent callers; verify a test fires several concurrent unauthorized requests and asserts exactly one renewal call reaches the gateway (AUTH-5)
-- [ ] 4.4 Add the `/login` page and the sign-in action; verify a component test asserts there is no token input anywhere on it (AUTH-1)
-- [ ] 4.5 Add the `/auth/callback` route performing the exchange, validating `state`, consuming the verifier and reporting failure; verify tests cover a mismatched `state`, a callback with no pending request and a replayed callback (AUTH-2)
-- [ ] 4.6 Add the route guard that redirects to sign-in and restores the originally requested destination afterwards; verify a test opens a day deep link while signed out and asserts the post-sign-in destination (AUTH-8)
-- [ ] 4.7 Implement sign-out: revoke, clear both stores, reset the query cache and the persisted cache; verify tests cover the happy path and revocation failing while local state is still cleared (AUTH-6)
-- [ ] 4.8 Transcribe the sign-in scenarios into `features/acceptance/sign-in-with-gitlab.feature` driven against a stubbed authorize endpoint; verify `bun run test:e2e` runs them
+- [x] 4.1 Implement `entities/session/api/gitlab-oauth.ts` — authorize URL construction, code exchange, renewal and revocation as form-encoded requests with no client secret; verify MSW-backed tests cover success, a denied authorization and a rejected renewal (AUTH-1, AUTH-6, AUTH-9)
+- [x] 4.2 Implement the token stores: access token in memory only, refresh token in `localStorage` replaced atomically on rotation; verify a test asserts nothing is written to any persistent storage for the access token (AUTH-3, AUTH-4)
+- [x] 4.3 Implement single-flight renewal shared by concurrent callers; verify a test fires several concurrent unauthorized requests and asserts exactly one renewal call reaches the gateway (AUTH-5)
+- [x] 4.4 Add the `/login` page and the sign-in action; verify a component test asserts there is no token input anywhere on it (AUTH-1)
+- [x] 4.5 Add the `/auth/callback` route performing the exchange, validating `state`, consuming the verifier and reporting failure; verify tests cover a mismatched `state`, a callback with no pending request and a replayed callback (AUTH-2)
+- [x] 4.6 Add the route guard that redirects to sign-in and restores the originally requested destination afterwards; verify a test opens a day deep link while signed out and asserts the post-sign-in destination (AUTH-8)
+- [x] 4.7 Implement sign-out: revoke, clear both stores, reset the query cache and the persisted cache; verify tests cover the happy path and revocation failing while local state is still cleared (AUTH-6)
+- [x] 4.8 Transcribe the sign-in scenarios into `features/acceptance/sign-in-with-gitlab.feature` driven against a stubbed authorize endpoint; verify `bun run test:e2e` runs them
 
 ## 5. Timelog model
 
@@ -79,7 +79,7 @@ considered done, and each task below names whatever additional gate proves it.
 - [ ] 8.2 Build `widgets/project-split` for hours per project over the period; verify a component test asserts the split sums to the period total
 - [ ] 8.3 Build `widgets/top-items-table` on TanStack Table, sortable by hours; verify a component test asserts the busiest item sorts first (UI-6)
 - [ ] 8.4 Compose `pages/insights`, importing the chart components lazily; verify `bun run build && bun run size` shows the chart library outside the initial chunk and the budget still met
-- [ ] 8.5 Compose `pages/settings` for daily target per weekday, time zone, language and theme, with validation messages; verify component tests cover rejecting an out-of-range target and applying a new time zone (PREF-2, PREF-3)
+- [x] 8.5 Compose `pages/settings` for daily target per weekday, time zone, language and theme, with validation messages; verify component tests cover rejecting an out-of-range target and applying a new time zone (PREF-2, PREF-3)
 
 ## 9. Responsiveness and accessibility
 
