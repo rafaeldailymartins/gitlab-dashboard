@@ -47,13 +47,14 @@ src/
   pages/        screen composition
   widgets/      composed UI blocks
   features/     single user interactions
-  entities/     domain slices
-    timelog/
+  entities/     domain slices (plural names, kept consistent by steiger)
+    timelogs/
       model/    PURE business rules and ports. No React, no I/O, no strings.
       api/      adapters: GitLab GraphQL gateway, zod schemas, query options
       ui/       slice-level components
       index.ts  public API — import from here, never from internals
-  shared/       ui (shadcn), lib, i18n, config
+    preferences/  daily target, time zone, theme choice
+  shared/       ui (shadcn plus ours), lib, i18n, config
 ```
 
 `model/` and `api/` are FSD's own segment names; they carry the Clean
@@ -93,6 +94,19 @@ requires a comment saying why, in the config, next to the change.
   on `:root`, dark on `.dark`. Never hardcode a colour in a component.
 - **Time**: GitLab reports seconds. Convert with `secondsToHours` and accumulate
   in seconds, so rounding never compounds.
+- **Dates**: a day is an `IsoDate` (branded `YYYY-MM-DD`) from
+  `shared/lib/date`. `toIsoDate` is the only place an instant becomes a day;
+  everything after it is calendar arithmetic, which no time zone can get wrong.
+  That arithmetic runs on date-fns over a UTC-pinned `TZDate`, so a result never
+  depends on the machine's zone — a test would otherwise pass locally and fail
+  on a UTC runner. Display goes through `Intl` in `shared/lib/format`, never
+  date-fns locales: `Intl` carries the platform's CLDR data, so "21 de agosto de
+  2026" comes out right without a hand-written pattern per language.
+- **Switching language remounts the tree.** Compiled messages are plain
+  functions, so a component that renders one without also reading the locale
+  context would keep the old language. `LocaleProvider` keys its subtree on the
+  locale to force the whole thing to render again; anything whose state must
+  survive a language switch belongs outside it.
 - **Commits**: Conventional Commits, enforced by commitlint on commit-msg.
 
 ## Tests

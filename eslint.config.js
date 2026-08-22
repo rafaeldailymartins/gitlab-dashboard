@@ -108,9 +108,14 @@ export default defineConfig(
     files: VENDORED_UI_FILES,
     rules: {
       ...PERFECTIONIST_OFF,
+      // A generic <Label> wrapper receives `htmlFor` from its caller, so the
+      // association it needs is not visible in this file. `SelectField` and
+      // every other authored component still has to satisfy the rule.
+      'jsx-a11y/label-has-associated-control': 'off',
       'max-lines': 'off',
       'max-lines-per-function': 'off',
       'sonarjs/no-nested-conditional': 'off',
+      'sonarjs/prefer-read-only-props': 'off',
     },
   },
 
@@ -156,7 +161,15 @@ export default defineConfig(
 
   // --------------------------------------------------------- tooling and specs
   {
-    files: ['*.config.ts', '*.config.js', 'config/**/*.js', 'tests/**/*.ts'],
+    files: [
+      '*.config.ts',
+      '*.config.js',
+      'config/**/*.js',
+      'tests/**/*.{ts,tsx}',
+      // Tests reach across layers on purpose: a component test renders the
+      // providers the app mounts, whatever layer they live in.
+      ...TEST_FILES,
+    ],
     rules: {
       'boundaries/dependencies': 'off',
       'no-restricted-exports': 'off',

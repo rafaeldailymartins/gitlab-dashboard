@@ -7,7 +7,7 @@
   },
   "mutate": ["src/**/model/**/*.ts", "!src/**/*.test.ts"],
   "coverageAnalysis": "perTest",
-  "reporters": ["clear-text", "progress", "html"],
+  "reporters": ["clear-text", "progress", "html", "json"],
   "htmlReporter": {
     "fileName": "reports/mutation/index.html"
   },
@@ -17,5 +17,8 @@
     "high": 95
   },
   "tempDirName": ".stryker-tmp",
-  "plugins": ["@stryker-mutator/vitest-runner"]
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "jsonReporter": {
+    "fileName": "reports/mutation/report.json"
+  }
 }

@@ -39,7 +39,8 @@
        ESLint rule forbids importing `node:*` from application code. */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "~tests/*": ["./tests/*"]
     },
     "types": ["node", "vite/client"]
   },

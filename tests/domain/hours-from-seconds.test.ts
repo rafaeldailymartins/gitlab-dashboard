@@ -1,7 +1,7 @@
 import { describeFeature, loadFeature } from '@amiceli/vitest-cucumber'
 import { expect } from 'vitest'
 
-import { secondsToHours } from '@/entities/timelog/model/duration'
+import { secondsToHours } from '@/entities/timelogs/model/duration'
 
 const feature = await loadFeature('features/domain/hours-from-seconds.feature')
 
