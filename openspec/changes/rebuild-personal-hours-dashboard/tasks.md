@@ -189,3 +189,25 @@ the chosen one is the split-screen sign-in of one, with the palette of another.
       Handing the hours payload to the viewer query would fail its schema and
       greet nobody, silently — the same class of defect as a green suite over a
       broken figure
+
+## 15. Making the gates worth waiting for
+
+- [x] 15.1 Run the acceptance suite against the built bundle on its own port
+      rather than the dev server on 3000. Measured on one machine, all three
+      engines: 358s at two workers against the dev server, 128s at eight against
+      the build. The server no longer transforms modules per request, which is
+      what had forced the worker count down — and the suite now exercises the
+      artefact that deploys
+- [x] 15.2 Run chromium locally and the three-engine matrix in CI. A local run is
+      for the change in front of you; nothing ships unverified, because the
+      pipeline still runs all three
+- [x] 15.3 Fix the date assertion that only held on Saturdays and Sundays:
+      `\p{L}+` does not match the hyphen in `segunda-feira`, so the step passed
+      for a week and failed the first Monday it saw
+- [ ] 15.4 NOT DONE, and deliberately: running `verify` and the pre-push hook in
+      parallel. Measured at 344s against 53s in series, because the gates are not
+      independent — `prelint`, `pretypecheck`, `pretest` and `prebuild` all run
+      `i18n:compile`, which WRITES `src/paraglide/` while the other gates read it.
+      Parallelising them is a race, not just contention. The real fix is to drop
+      the implicit `pre*` chain and compile once, which changes how every script
+      behaves and is worth doing on its own terms rather than smuggling in here

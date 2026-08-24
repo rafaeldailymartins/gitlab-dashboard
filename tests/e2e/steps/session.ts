@@ -2,14 +2,13 @@ import { expect, type Page } from '@playwright/test'
 import { createBdd } from 'playwright-bdd'
 
 import { failTimelogs, stubEmptyTimelogs, stubTimelogs } from '../support/gitlab-api'
+import { ACCEPTANCE_ORIGIN } from '../support/origin'
 
 const { Given, Then, When } = createBdd()
 
 const AUTHORIZE = '**/oauth/authorize*'
 const TOKEN = '**/oauth/token'
 const REVOKE = '**/oauth/revoke'
-
-const ORIGIN = 'http://localhost:3000'
 
 interface AuthorizationOptions {
   readonly expiresInSeconds?: number
@@ -42,7 +41,7 @@ async function stubAuthorization(
 
   await page.route(AUTHORIZE, async (route) => {
     const sent = new URL(route.request().url())
-    const callback = new URL('/auth/callback', ORIGIN)
+    const callback = new URL('/auth/callback', ACCEPTANCE_ORIGIN)
     seen.authorizeUrl = sent.toString()
 
     if (outcome === 'granted') {

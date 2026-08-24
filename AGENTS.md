@@ -16,7 +16,7 @@ Paraglide.
 | `bun run verify`                  | Every fast gate: format, lint, ARIA, contrast, translations, types, architecture, dead code, type coverage, vulnerabilities |
 | `bun run test`                    | Unit, component and Gherkin domain tests (`domain` + `ui` Vitest projects)                                                  |
 | `bun run test:coverage`           | Same, with coverage thresholds enforced                                                                                     |
-| `bun run test:e2e`                | Generates specs from `features/acceptance/*.feature`, then runs Playwright                                                  |
+| `bun run test:e2e`                | Builds, serves `dist/`, runs Playwright over `features/acceptance/*.feature` — chromium locally, three engines in CI        |
 | `bun run test:mutation`           | Stryker mutation testing on the model layer                                                                                 |
 | `bun run build` && `bun run size` | Production build, its Content-Security-Policy, and the 180 kB gzip budget                                                   |
 | `bun run arch:trace`              | Every scenario cites a requirement, and every requirement is cited                                                          |
@@ -71,6 +71,8 @@ src/
       ui/       the gateway provider
       index.ts  public API — import from here, never from internals
     sessions/     PKCE, credentials, the OAuth adapter and the token stores
+    viewers/      who is signed in, on its own query so a screen that wants a
+                  name does not load a season of hours to get one
     preferences/  daily target, time zone, theme choice
   shared/       ui (shadcn plus ours), api (the GraphQL client, the query client
                 and the cache persister), lib, i18n, config

@@ -73,9 +73,12 @@ Then('the dashboard is in Portuguese', async ({ page }) => {
 })
 
 Then('the date reads as Portuguese writes it', async ({ page }) => {
-  // "sábado, 22 de agosto de 2026" — the weekday first, "de" between the parts.
+  // "segunda-feira, 24 de agosto de 2026" — the weekday first, "de" between the
+  // parts. The hyphen is not optional: five of the seven Portuguese weekdays
+  // carry one, and a `\p{L}+` weekday passed this only on a Saturday or a
+  // Sunday. It ran on a Sunday for a week and looked green.
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-    /^\p{L}+, \d{1,2} de \p{L}+ de \d{4}$/u,
+    /^[\p{L}-]+, \d{1,2} de \p{L}+ de \d{4}$/u,
   )
 })
 

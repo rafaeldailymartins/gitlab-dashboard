@@ -202,14 +202,20 @@ The first green pipeline ran in **6.9 minutes**: verify 87s, test 66s, e2e 273s,
 build 51s. Comfortably inside the 400 compute minutes a month the Free plan
 allows, with mutation testing kept off the blocking path.
 
-- **The acceptance suite runs at two workers, locally as well as in CI.** Every
-  browser talks to one Vite dev server, and Playwright's default of a worker per
-  two cores puts more concurrent page loads on it than it can transform inside a
-  five-second expectation. Measured on one machine: the default failed 25 of 147
-  scenarios, all of them WebKit, all of them waiting for a control that does
-  render; two workers ran all 147 green in 3.5 minutes against the 6.7 the
-  failing run took. A suite that fails for its own reasons is worse than a slow
-  one.
+- **The acceptance suite runs against the built bundle, not the dev server.**
+  It used to share one Vite instance across every browser, which transformed
+  modules on demand — so the suite was both slow and worker-bound: Playwright's
+  default worker count put more concurrent page loads on that one server than it
+  could serve inside a five-second expectation, and 25 scenarios failed for that
+  reason alone, every one of them WebKit. Serving `dist/` costs one build per run
+  and pays for it several times over. Measured on one machine, all three engines:
+  358s against the dev server at two workers, 128s against the build at eight.
+  The ceiling rose rather than vanished — at eight workers the WebKit keyboard
+  walk failed once — so the worker count is Playwright's default locally and two
+  in CI, where the runner has two cores.
+- **A local run is chromium only; the matrix is CI's job.** 153 scenarios in
+  three engines is what a merge deserves, not what a change in front of you
+  deserves. `--project=webkit` when you want it.
 - **The initial-bundle figure was wrong until this revision, and too low.** The
   budget globbed `dist/assets/index-*.js` plus the stylesheet — 2 of the 10 files
   `dist/index.html` actually requests. It never saw the eight `modulepreload`
@@ -229,3 +235,9 @@ allows, with mutation testing kept off the blocking path.
 hours` found yesterday's three. Four scenarios, three browsers, twelve failures,
   none of them about the code. The app buckets days in `America/Sao_Paulo`, so the
   fixture does too.
+- **A weekday with a hyphen in it broke a date assertion for a week.** The step
+  that checks Portuguese date formatting matched the weekday with `\p{L}+`, and
+  five of the seven Portuguese weekdays carry a hyphen — `segunda-feira`. It ran
+  on a Sunday and looked green. Two clock-dependent defects in one suite is a
+  pattern worth naming: an assertion that only holds on some days is a failing
+  assertion that has not been run yet.
