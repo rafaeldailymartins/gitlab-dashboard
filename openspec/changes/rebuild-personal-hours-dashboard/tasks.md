@@ -172,3 +172,20 @@ the chosen one is the split-screen sign-in of one, with the palette of another.
       in Brazil; and Playwright's default worker count over-subscribed the one
       Vite dev server every browser shares, failing 25 scenarios for its own
       reasons. All four are recorded in `docs/qa/quality-metrics.md`
+
+## 14. The dashboard greets the reader
+
+- [x] 14.1 Add `entities/viewer`: a gateway that reads `currentUser { name }`, its
+      own query keyed apart from the hours and stale after a day, and a pure
+      `greetingNameOf` that takes the first word of the name and returns nothing
+      rather than a greeting with a hole in it. The name is deliberately NOT read
+      from the timelog query: the settings screen wants a name and no hours, and
+      the two must not drag each other's refetches (UI-12)
+- [x] 14.2 Greet above the day's heading on the dashboard, reserving the line's
+      height whether or not a name has arrived — it sits above a heading, so
+      appearing late would push the whole screen down and UI-9 says loading does
+      not move the page (UI-12, UI-9)
+- [x] 14.3 Teach the acceptance stub to answer both queries by reading the request.
+      Handing the hours payload to the viewer query would fail its schema and
+      greet nobody, silently — the same class of defect as a green suite over a
+      broken figure

@@ -25,3 +25,8 @@ Feature: Opening the dashboard
       | scheme |
       | light  |
       | dark   |
+
+  # Spec: dashboard-ui / UI-12
+  Scenario: The dashboard greets the reader by name
+    Given I am signed in
+    Then I am greeted by name above the day's heading

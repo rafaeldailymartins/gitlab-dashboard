@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test'
+import type { Page, Route } from '@playwright/test'
 
 const GRAPHQL = '**/api/graphql'
 
@@ -18,6 +18,17 @@ const PROJECT = {
 /** Hours the fixture logs today. `features/acceptance/*` state the same number. */
 export const LOGGED_TODAY = 6.5
 
+/** The name the fixture signs in as. `features/acceptance/*` greet it. */
+export const VIEWER_NAME = 'Ada Lovelace'
+
+const VIEWER_ANSWER = { data: { currentUser: { name: VIEWER_NAME } } }
+
+const NO_HOURS = {
+  data: {
+    currentUser: { timelogs: { nodes: [], pageInfo: { endCursor: null, hasNextPage: false } } },
+  },
+}
+
 /** Answers slowly, so a test can see what the reader sees before data arrives. */
 export async function stubSlowTimelogs(page: Page, delayMs: number): Promise<void> {
   asked.set(page, { count: 0 })
@@ -26,7 +37,7 @@ export async function stubSlowTimelogs(page: Page, delayMs: number): Promise<voi
     await new Promise((resolve) => {
       setTimeout(resolve, delayMs)
     })
-    await route.fulfill({ json: payload() })
+    await answer(route, payload())
   })
 }
 
@@ -39,8 +50,23 @@ export async function stubSlowTimelogs(page: Page, delayMs: number): Promise<voi
  */
 export async function stubTimelogs(page: Page): Promise<void> {
   await page.route(GRAPHQL, async (route) => {
-    await route.fulfill({ json: payload() })
+    await answer(route, payload())
   })
+}
+
+/**
+ * Answers whichever of the two queries arrived.
+ *
+ * The hours and the viewer's name share this endpoint, so the stub has to read
+ * the request to know what it is answering. Handing the hours payload to the
+ * viewer query would fail its schema and greet nobody, without saying why.
+ */
+async function answer(route: Route, hours: unknown): Promise<void> {
+  const body: unknown = route.request().postDataJSON()
+  const query = typeof body === 'object' && body !== null && 'query' in body ? body.query : ''
+  const wantsHours = typeof query === 'string' && query.includes('timelogs')
+
+  await route.fulfill({ json: wantsHours ? hours : VIEWER_ANSWER })
 }
 
 /**
@@ -116,15 +142,7 @@ export async function failTimelogs(page: Page): Promise<void> {
 /** An account with no time logged at all. */
 export async function stubEmptyTimelogs(page: Page): Promise<void> {
   await page.route(GRAPHQL, async (route) => {
-    await route.fulfill({
-      json: {
-        data: {
-          currentUser: {
-            timelogs: { nodes: [], pageInfo: { endCursor: null, hasNextPage: false } },
-          },
-        },
-      },
-    })
+    await answer(route, NO_HOURS)
   })
 }
 

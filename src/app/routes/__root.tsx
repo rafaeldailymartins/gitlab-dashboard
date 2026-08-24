@@ -6,6 +6,7 @@ import { appRuntime, callbackUri, navigateAway } from '@/app/lib/runtime'
 import { PreferencesProvider, preferencesStore } from '@/entities/preferences'
 import { SessionProvider } from '@/entities/sessions'
 import { TimelogGatewayProvider } from '@/entities/timelogs'
+import { ViewerGatewayProvider } from '@/entities/viewers'
 import { NotConfiguredPage } from '@/pages/not-configured'
 import { LocaleProvider } from '@/shared/i18n'
 import { persistentStorage } from '@/shared/lib/storage'
@@ -47,9 +48,11 @@ function RootLayout() {
         <LocaleProvider>
           <SessionProvider manager={appRuntime.manager} navigateAway={navigateAway}>
             <TimelogGatewayProvider gateway={appRuntime.timelogs}>
-              <div className="flex min-h-dvh flex-col bg-background text-foreground">
-                <Outlet />
-              </div>
+              <ViewerGatewayProvider gateway={appRuntime.viewer}>
+                <div className="flex min-h-dvh flex-col bg-background text-foreground">
+                  <Outlet />
+                </div>
+              </ViewerGatewayProvider>
             </TimelogGatewayProvider>
           </SessionProvider>
         </LocaleProvider>

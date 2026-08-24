@@ -13,12 +13,14 @@ import { vi } from 'vitest'
 
 import { PreferencesProvider, preferencesStore } from '@/entities/preferences'
 import { type TimelogGateway, TimelogGatewayProvider, type TimelogPage } from '@/entities/timelogs'
+import { type ViewerGateway, ViewerGatewayProvider } from '@/entities/viewers'
 import { LocaleProvider } from '@/shared/i18n'
 import { type KeyValueStorage, memoryStorage } from '@/shared/lib/storage'
 
 interface ReportRenderOptions {
   readonly gateway?: TimelogGateway
   readonly storage?: KeyValueStorage
+  readonly viewer?: ViewerGateway
 }
 
 /** A gateway that always fails, for the paths where GitLab does not answer. */
@@ -40,6 +42,13 @@ export function fakeGateway(pages: TimelogPage[]) {
   return { myTimelogs } satisfies TimelogGateway
 }
 
+/** Whoever the screen greets. Named so an assertion on the greeting is obvious. */
+export function fakeViewerGateway(name: null | string = 'Ada Lovelace') {
+  return {
+    me: vi.fn(() => Promise.resolve(name === null ? null : { name })),
+  } satisfies ViewerGateway
+}
+
 /**
  * Renders inside the providers a screen reading hours needs.
  *
@@ -50,12 +59,15 @@ export function renderReport(ui: ReactNode, options: ReportRenderOptions = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const gateway = options.gateway ?? fakeGateway([{ entries: [], nextCursor: null }])
   const store = preferencesStore(options.storage ?? memoryStorage())
+  const viewer = options.viewer ?? fakeViewerGateway()
 
   const inProviders = (screen: ReactNode) => (
     <QueryClientProvider client={client}>
       <PreferencesProvider store={store}>
         <LocaleProvider>
-          <TimelogGatewayProvider gateway={gateway}>{screen}</TimelogGatewayProvider>
+          <TimelogGatewayProvider gateway={gateway}>
+            <ViewerGatewayProvider gateway={viewer}>{screen}</ViewerGatewayProvider>
+          </TimelogGatewayProvider>
         </LocaleProvider>
       </PreferencesProvider>
     </QueryClientProvider>
@@ -71,6 +83,7 @@ export function renderReport(ui: ReactNode, options: ReportRenderOptions = {}) {
     rerender: (next: ReactNode) => {
       view.rerender(inProviders(next))
     },
+    viewer,
   }
 }
 

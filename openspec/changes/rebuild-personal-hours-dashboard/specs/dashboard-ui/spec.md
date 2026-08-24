@@ -177,3 +177,18 @@ page scrolling.
 - **WHEN** a person opens any screen at a viewport 375 pixels wide
 - **THEN** all content is reachable by vertical scrolling only
 - **AND** any wide element scrolls within its own bounds
+
+### Requirement: UI-12 — The dashboard greets the person whose hours these are
+
+The dashboard SHALL greet the signed-in person by name, and SHALL leave the
+greeting unsaid rather than incomplete when no name is available.
+
+#### Scenario: Arriving at the dashboard
+
+- **WHEN** a signed-in person opens the dashboard
+- **THEN** they are greeted by their own name, above the day's heading
+
+#### Scenario: No name to greet by
+
+- **WHEN** the provider returns no name for the signed-in person
+- **THEN** no greeting is shown, and the screen's layout is unchanged

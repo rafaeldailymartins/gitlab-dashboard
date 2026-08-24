@@ -6,6 +6,7 @@ import {
   sessionStore,
 } from '@/entities/sessions'
 import { gitLabTimelogGateway, type TimelogGateway } from '@/entities/timelogs'
+import { gitLabViewerGateway, type ViewerGateway } from '@/entities/viewers'
 import { graphQLClient } from '@/shared/api'
 import { gitLabConfig, type GitLabConfig } from '@/shared/config'
 import { persistentStorage } from '@/shared/lib/storage'
@@ -21,6 +22,7 @@ export type AppRuntime =
       readonly kind: 'ready'
       readonly manager: SessionManager
       readonly timelogs: TimelogGateway
+      readonly viewer: ViewerGateway
     }
 
 /**
@@ -58,13 +60,16 @@ function createRuntime(): AppRuntime {
   }
 
   const manager = createSessionManager(result.config)
+  // The manager is the credential: it hands out an access token and knows how to
+  // renew one, which is all the data client asks of a session. One client serves
+  // both gateways, so one renewal covers both.
+  const client = graphQLClient(result.config.baseUrl + GRAPHQL_PATH, manager)
 
   return {
     kind: 'ready',
     manager,
-    // The manager is the credential: it hands out an access token and knows how
-    // to renew one, which is all the data client asks of a session.
-    timelogs: gitLabTimelogGateway(graphQLClient(result.config.baseUrl + GRAPHQL_PATH, manager)),
+    timelogs: gitLabTimelogGateway(client),
+    viewer: gitLabViewerGateway(client),
   }
 }
 

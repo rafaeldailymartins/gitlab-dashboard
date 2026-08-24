@@ -61,3 +61,9 @@ Then('today reads {float} hours', async ({ page }, hours: number) => {
 Then('the report says it is up to date', async ({ page }) => {
   await expect(page.getByRole('status')).toContainText(/up to date|atualizado/i)
 })
+
+Then("I am greeted by name above the day's heading", async ({ page }) => {
+  // The first word of the fixture's name, which is how someone is greeted: the
+  // provider stores one name field and no notion of a given name.
+  await expect(page.getByText(/^(hello|olá), ada$/i)).toBeVisible()
+})

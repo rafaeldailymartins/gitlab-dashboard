@@ -1,6 +1,7 @@
 import { useNavigate } from '@tanstack/react-router'
 
 import { usePreferences } from '@/entities/preferences'
+import { ViewerGreeting } from '@/entities/viewers'
 import { useActiveLocale } from '@/shared/i18n'
 import { type IsoDate, toIsoDate } from '@/shared/lib/date'
 import { formatFullDate } from '@/shared/lib/format'
@@ -28,6 +29,7 @@ export function DashboardPage() {
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8">
       <header className="flex flex-col gap-1">
+        <ViewerGreeting />
         <h1 className="text-2xl font-semibold tracking-tight">{formatFullDate(today, locale)}</h1>
         <ReportNotice report={report} />
       </header>
