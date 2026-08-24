@@ -1,21 +1,57 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    /* Language and emit */
+    "target": "ES2023",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "moduleDetection": "force",
     "jsx": "react-jsx",
-    "types": ["vite/client", "node"],
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "useDefineForClassFields": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+
+    /* The tooling configs are JavaScript and import plugins that ship no type
+       declarations, so they join the program (which typescript-eslint needs to
+       lint them with type information) without being type-checked themselves. */
+    "allowJs": true,
+    "checkJs": false,
+
+    /* Strictness: every available check is on. */
     "strict": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "verbatimModuleSyntax": true,
-    "skipLibCheck": true,
-    "noEmit": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+
+    /* Module resolution. `node` types are here for the build tooling only; an
+       ESLint rule forbids importing `node:*` from application code. */
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": ["./src/*"],
+      "~tests/*": ["./tests/*"]
+    },
+    "types": ["node", "vite/client"]
   },
-  "include": ["src", "vite.config.ts"]
+  "include": [
+    "src",
+    "tests",
+    "*.config.ts",
+    "*.config.js",
+    ".dependency-cruiser.cjs",
+    ".size-limit.js",
+    "config/**/*.js",
+    "scripts"
+  ]
 }

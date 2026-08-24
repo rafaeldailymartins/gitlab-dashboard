@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "assist": { "enabled": false },
+  "files": {
+    "includes": ["src/**/*.tsx", "!src/paraglide/**", "!src/app/routeTree.gen.ts"]
+  },
+  "formatter": { "enabled": false },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "a11y": {
+        "noLabelWithoutControl": "off",
+        "preset": "recommended",
+        "useSemanticElements": "off"
+      },
+      "correctness": { "preset": "none", "useUniqueElementIds": "error" },
+      "preset": "none"
+    }
+  }
+}

@@ -1,0 +1,46 @@
+[build]
+  command = "bun run build"
+  publish = "dist"
+
+[build.environment]
+  # Netlify picks Bun up from bun.lock; pinning the version keeps the CI build
+  # and a local build on the same runtime.
+  BUN_VERSION = "1.4.0"
+  # Still needed: Stryker and the Playwright run execute on Node.
+  NODE_VERSION = "24"
+  # Netlify runs `bun install` before the build command. Without these it would
+  # resolve the lockfile again, and it would run the root `prepare` script,
+  # which installs git hooks a build agent has no use for. `.gitlab-ci.yml`
+  # installs with the same two flags, for the same reason.
+  BUN_FLAGS = "--frozen-lockfile --ignore-scripts"
+
+# Single-page app. Without this every deep link — and `/auth/callback`, which the
+# OAuth redirect lands on — would return 404 from the CDN instead of the app.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # The Content-Security-Policy is not here. It names the hash of the inline
+    # theme script, which is only known once the bundle exists, so `bun run csp`
+    # writes it into `dist/_headers` after the build. Putting a policy here
+    # instead would mean `script-src 'unsafe-inline'`, which permits exactly the
+    # injection the policy is for.
+
+# Hashed assets are immutable; index.html must never be cached, or a deploy
+# would keep serving the previous bundle's asset references.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

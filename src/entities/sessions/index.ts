@@ -1,0 +1,7 @@
+export { gitLabAuthGateway } from './api/gitlab-oauth'
+export { pendingAuthorizationStore } from './api/pending-authorization'
+export { sessionManager, type SessionManager } from './api/session-manager'
+export { sessionStore } from './api/session-store'
+export { asAuthFailure, AuthError } from './model/auth-error'
+export type { AuthFailure } from './model/ports'
+export { SessionProvider, useSession } from './ui/session-provider'

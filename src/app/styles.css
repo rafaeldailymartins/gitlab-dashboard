@@ -1,60 +1,135 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import './charts.css';
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Design tokens. A ledger: warm paper and deep ink, one oxblood accent, and
+ * brass for the mark that says a total is closed.
+ *
+ * Values are literal hex so every token can be audited against the palette.
+ * There are no contrast ratios in these comments on purpose: they used to be
+ * here, and one of them was wrong by a point and a half for as long as it took
+ * someone to check. `scripts/check-contrast.ts` measures every pair that has to
+ * stay legible — body text at 4.5:1, a control's own boundary at 3:1 (WCAG
+ * 1.4.11), recessive furniture at a stated house floor — and `bun run verify`
+ * fails when one drops below it. A number below is here only when it explains a
+ * value that was rejected, which no gate can hold.
+ *
+ * Four decisions here will look wrong until you know why:
+ *
+ * 1. `--input` is not `--border`. A control's boundary answers to 3:1; a divider
+ *    drawn at 3:1 would be a cage. So dividers are quiet and control edges are
+ *    not, and `button.tsx`'s outline variant uses `border-input`, not
+ *    `border-border`.
+ * 2. `--ring` is ink, not the brand. The ring is painted at 50% alpha, which
+ *    caps what any hue can reach over this ground: oxblood composites to 2.53:1
+ *    and brass to 2.24:1, both under 3:1, and no value of either hue can pass.
+ *    It also keeps focus from looking like the invalid state, which a red ring
+ *    would.
+ * 3. There is one quiet surface step, so `--secondary` and `--muted` share a
+ *    value and differ by role. Inventing a second, lighter one produced a fill
+ *    indistinguishable from the ground — an invisible ghost-button hover.
+ * 4. Two reds, separated by role rather than by hue. The oxblood is only ever a
+ *    filled surface carrying cream text; the error red is only ever ink and a
+ *    1px boundary beside the field it describes. They never occupy the same
+ *    role, so a reader is never asked to compare them. If a destructive action
+ *    ever ships, it takes a neutral fill with error ink — never a red fill.
+ *
+ * Chart tokens live in `charts.css`, which this file imports.
+ */
 :root {
-  --background: oklch(0.982 0.005 80);
-  --foreground: oklch(0.22 0.015 40);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.015 40);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.015 40);
-  --primary: oklch(0.66 0.19 42);
-  --primary-foreground: oklch(0.99 0.005 80);
-  --secondary: oklch(0.945 0.01 75);
-  --secondary-foreground: oklch(0.3 0.02 40);
-  --muted: oklch(0.955 0.008 80);
-  --muted-foreground: oklch(0.5 0.015 50);
-  --accent: oklch(0.94 0.03 70);
-  --accent-foreground: oklch(0.3 0.03 45);
-  --destructive: oklch(0.577 0.245 27.3);
-  --destructive-foreground: oklch(0.99 0.005 80);
-  --border: oklch(0.905 0.01 75);
-  --input: oklch(0.905 0.01 75);
-  --ring: oklch(0.66 0.19 42);
-  --radius: 0.55rem;
-  --tanuki-rust: oklch(0.6 0.195 32);
-  --tanuki-orange: oklch(0.7 0.185 45);
-  --tanuki-amber: oklch(0.79 0.15 72);
+  --radius: 0.625rem;
+
+  --background: #efeeea; /* paper */
+  --foreground: #14100c; /* ink */
+
+  --card: #fbfaf7;
+  --card-foreground: #14100c;
+  --popover: #fbfaf7;
+  --popover-foreground: #14100c;
+
+  --primary: #8c232b; /* oxblood */
+  --primary-foreground: #f6f2e9; /* cream on oxblood */
+  /* A hover darkens here and lightens on dark, rather than thinning the fill
+     toward whatever is behind it. `bg-primary/80` was measured and rejected:
+     over the dark ground it composites to 2.45:1, so the button faded into the
+     page exactly when the reader pointed at it. */
+  --primary-hover: #7a1e25;
+
+  --secondary: #e5e0d3;
+  --secondary-foreground: #14100c;
+
+  --muted: #e5e0d3;
+  /* Carries almost every secondary string, so it was chosen against the worst
+     surface it can land on rather than the best: the ground, a card, and a muted
+     fill are all checked. Those strings are 12–14px, so the large-text
+     allowance never applies to them. */
+  --muted-foreground: #665f4f;
+
+  /* Not the brand: shadcn uses this pair as the subtle hover surface and its
+     text. One warm step past `--muted`, with the ink unchanged — a hover moves
+     the surface, it never re-colours the text. */
+  --accent: #e0dbcd;
+  --accent-foreground: #14100c;
+
+  --destructive: #b83a16; /* 18° of hue off the oxblood */
+  --destructive-foreground: #fbf7f0; /* kept for token parity; unused by design */
+
+  --border: #dcd6c8; /* a divider — quiet on purpose */
+  --input: #837c6d; /* a control boundary */
+  --ring: #14100c;
+
+  /* The seal: brass, for the one thing it means — a total that reached its
+     target. Deeper than the palette's #8a6d12 because this one carries words
+     rather than marking a bar: that lighter brass measures 4.70:1 on a card,
+     which clears the body floor by two hundredths and nothing more. */
+  --seal: #7e620e;
 }
 
 .dark {
-  --background: oklch(0.175 0.01 45);
-  --foreground: oklch(0.94 0.008 80);
-  --card: oklch(0.215 0.012 45);
-  --card-foreground: oklch(0.94 0.008 80);
-  --popover: oklch(0.215 0.012 45);
-  --popover-foreground: oklch(0.94 0.008 80);
-  --primary: oklch(0.72 0.17 47);
-  --primary-foreground: oklch(0.16 0.02 40);
-  --secondary: oklch(0.27 0.012 45);
-  --secondary-foreground: oklch(0.9 0.01 75);
-  --muted: oklch(0.26 0.012 45);
-  --muted-foreground: oklch(0.68 0.012 60);
-  --accent: oklch(0.3 0.03 50);
-  --accent-foreground: oklch(0.93 0.02 70);
-  --destructive: oklch(0.704 0.191 22.2);
-  --destructive-foreground: oklch(0.16 0.02 40);
-  --border: oklch(0.3 0.014 48);
-  --input: oklch(0.32 0.014 48);
-  --ring: oklch(0.72 0.17 47);
-  --tanuki-rust: oklch(0.64 0.19 32);
-  --tanuki-orange: oklch(0.74 0.17 45);
-  --tanuki-amber: oklch(0.82 0.14 72);
+  --background: #0b100f;
+  --foreground: #eae5da;
+
+  --card: #121917;
+  --card-foreground: #eae5da;
+  --popover: #121917;
+  --popover-foreground: #eae5da;
+
+  /* One step up from the palette's #9e2b33, which measures 2.60:1 against this
+     ground and 2.42:1 against a card — under the 3:1 a control's own surface
+     needs to be seen as a control. Same hue, chosen for the dark ground rather
+     than inverted from the light one. */
+  --primary: #b23940;
+  --primary-foreground: #f6f2e9;
+  --primary-hover: #bd424a;
+
+  --secondary: #1b2422;
+  --secondary-foreground: #eae5da;
+
+  --muted: #1b2422;
+  --muted-foreground: #9a9585; /* the palette's soft ink */
+
+  --accent: #232d2b;
+  --accent-foreground: #eae5da;
+
+  --destructive: #f0836a; /* at full alpha, never at 50% — see button.tsx */
+  --destructive-foreground: #2a0f0a;
+
+  --border: #23302c;
+  --input: #63736d;
+  --ring: #eae5da;
+
+  --seal: #c9a227; /* the palette's brass */
 }
 
 @theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -63,6 +138,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -74,25 +150,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-tanuki-rust: var(--tanuki-rust);
-  --color-tanuki-orange: var(--tanuki-orange);
-  --color-tanuki-amber: var(--tanuki-amber);
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-}
-
-/* Gradiente da marca (rust -> laranja -> ambar), usado no medidor de horas e acentos */
-@utility bg-tanuki {
-  background-image: linear-gradient(
-    90deg,
-    var(--tanuki-rust),
-    var(--tanuki-orange) 55%,
-    var(--tanuki-amber)
-  );
+  --color-seal: var(--seal);
 }
 
 @layer base {
@@ -100,7 +158,30 @@
     @apply border-border outline-ring/50;
   }
 
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-background font-sans text-foreground antialiased;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /*
+   * Lets the browser skip layout and paint for rows scrolled out of view while
+   * keeping their space reserved — the day feed's answer to a long history.
+   */
+  .cv-auto {
+    content-visibility: auto;
+    contain: layout paint;
+  }
+
+  /* Tabular figures keep hour columns from shifting as values change. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }

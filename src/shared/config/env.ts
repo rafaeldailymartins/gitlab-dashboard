@@ -1,46 +1,49 @@
-import 'dotenv/config'
+const DEFAULT_BASE_URL = 'https://gitlab.com'
 
-import { z } from 'zod'
+export type ConfigResult =
+  | { readonly config: GitLabConfig; readonly kind: 'configured' }
+  | { readonly kind: 'missing-client-id' }
 
-const envSchema = z.object({
-  GITLAB_BASE_URL: z.string().min(1).default('https://gitlab.com'),
-  GITLAB_GROUP_PATH: z.string().min(1).optional(),
-  GITLAB_PROJECT_PATH: z.string().min(1).optional(),
-  GITLAB_TIME_ZONE: z.string().min(1).default('America/Sao_Paulo'),
-  GITLAB_TOKEN: z.string().min(1),
-})
-
-export type GitLabScope = {
-  fullPath: string
-  type: 'group' | 'project'
+export interface GitLabConfig {
+  /** No trailing slash, so paths can be appended without doubling it. */
+  readonly baseUrl: string
+  /**
+   * The OAuth application id. Public by design: this is a PKCE public client,
+   * so there is no secret, and the id ships inside the bundle.
+   */
+  readonly clientId: string
 }
 
-export type AppConfig = {
-  baseUrl: string
-  scope: GitLabScope
-  timeZone: string
-  token: string
+/** The configuration this build was compiled with. */
+export function gitLabConfig(): ConfigResult {
+  return readGitLabConfig(import.meta.env)
 }
 
-/** Le e valida as variaveis de ambiente. Chamar apenas no servidor. */
-export function readConfig(): AppConfig {
-  const parsed = envSchema.safeParse(process.env)
+/**
+ * Reads the configuration out of a plain record.
+ *
+ * The environment is passed in rather than reached for, so the rule that an
+ * absent client id is a distinguishable state — not a crash, and not a silent
+ * empty string — can be tested.
+ */
+export function readGitLabConfig(env: Record<string, string | undefined>): ConfigResult {
+  const clientId = env['VITE_GITLAB_CLIENT_ID']?.trim() ?? ''
 
-  if (!parsed.success) {
-    const missing = parsed.error.issues.map((issue) => issue.path.join('.')).join(', ')
-    throw new Error(`Configuracao invalida. Verifique no .env: ${missing}. Use .env.example como base.`)
+  if (clientId === '') {
+    return { kind: 'missing-client-id' }
   }
 
-  const { GITLAB_GROUP_PATH: groupPath, GITLAB_PROJECT_PATH: projectPath } = parsed.data
-
-  if (Boolean(groupPath) === Boolean(projectPath)) {
-    throw new Error('Configure exatamente um entre GITLAB_GROUP_PATH e GITLAB_PROJECT_PATH no .env.')
-  }
+  const baseUrl = env['VITE_GITLAB_BASE_URL']?.trim() ?? ''
 
   return {
-    baseUrl: parsed.data.GITLAB_BASE_URL.replace(/\/$/, ''),
-    scope: groupPath ? { fullPath: groupPath, type: 'group' } : { fullPath: projectPath!, type: 'project' },
-    timeZone: parsed.data.GITLAB_TIME_ZONE,
-    token: parsed.data.GITLAB_TOKEN,
+    config: {
+      baseUrl: withoutTrailingSlash(baseUrl === '' ? DEFAULT_BASE_URL : baseUrl),
+      clientId,
+    },
+    kind: 'configured',
   }
+}
+
+function withoutTrailingSlash(url: string): string {
+  return url.endsWith('/') ? url.slice(0, -1) : url
 }

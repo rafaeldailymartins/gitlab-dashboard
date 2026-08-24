@@ -1,8 +1,37 @@
 schema: spec-driven
 
 context: |
-  Dashboard de horas por dia baseado em timelogs do GitLab (GraphQL Query.timelogs).
-  Stack: React 19, TypeScript, TanStack Start/Router/Query/Table, Tailwind v4, shadcn/ui, zod.
-  Estrutura de pastas: Feature-Sliced Design (regra: camada so importa das camadas abaixo).
-  Arquitetura e convencoes: ver AGENTS.md na raiz.
-  Token do GitLab so existe no servidor (server functions).
+  Language: en
+  All artifacts must be written in English. Keep OpenSpec structural headings
+  and SHALL/MUST keywords in English.
+
+  Product: a personal dashboard of the hours the signed-in user logged in GitLab
+  issues and merge requests. Single user, no team or group aggregation.
+
+  Architecture: a static browser-only SPA. There is no backend and no database.
+  The browser authenticates with GitLab through OAuth 2.0 Authorization Code +
+  PKCE (public client, scope read_api) and calls gitlab.com/api/graphql
+  directly; GitLab allows both cross-origin. Deployed to Netlify as static
+  files.
+
+  Stack: React 19, TypeScript, Vite, TanStack Router (SPA, file-based) and
+  TanStack Query, Tailwind CSS v4, shadcn/ui on Base UI, Paraglide JS for
+  en/pt-BR, Bun as package manager and runtime.
+
+  Folder structure: Feature-Sliced Design with a Clean Architecture core.
+  Layers: shared, entities, features, widgets, pages, app. Inside a slice,
+  `model/` holds pure business rules and ports, `api/` holds adapters, `ui/`
+  holds components, and `index.ts` is the only public API. Architecture and
+  conventions: see AGENTS.md at the repository root.
+
+  Quality: every gate in docs/qa/quality-metrics.md is blocking. Notably
+  100% coverage and at least 85% mutation score on `model/`, zero dependency
+  vulnerabilities at any severity, and complexity ceilings enforced by ESLint.
+
+rules:
+  specs:
+    - 'Write every scenario so it can be transcribed into a Gherkin .feature file without rewording.'
+    - 'Give each requirement a stable id so a feature file can cite it in a trailing comment.'
+  tasks:
+    - 'Order tasks so the model layer is written test-first, before the adapter and the UI that consume it.'
+    - 'Every task that changes behaviour names the gate that proves it.'

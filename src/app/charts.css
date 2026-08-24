@@ -1,0 +1,114 @@
+/*
+ * Chart tokens.
+ *
+ * Separate from the interface tokens in `styles.css` because they answer to a
+ * different rule: an interface colour has to look right, a chart colour has to
+ * be *readable* — inside a lightness band, above a chroma floor, and far enough
+ * from its neighbours to survive colour-vision deficiency. Every value below was
+ * checked against this app's own card surfaces (`#fbfaf7` light, `#121917`
+ * dark) rather than against a generic white, and against the track a bar sits
+ * in, which is the tighter of the two. `scripts/check-contrast.ts` re-measures
+ * every one of those pairs on `bun run verify`, so the numbers are not written
+ * down here — a comment cannot fail, and one of these was wrong once.
+ *
+ * Roles, not hues. A widget says `bg-chart-scale-3`, never `#ad484b`, so the
+ * light and dark sets can differ — the dark set is stepped for the dark surface,
+ * never an automatic flip of the light one.
+ *
+ * The neutrals here are not derived from the surfaces. Measured in OKLCH the
+ * palette's structural darks are faintly cool — `#0b100f` sits at hue 182° —
+ * while its warm neutrals are at 86–93°. Taking the furniture from the panel
+ * would have smuggled a cool grey back in, so every neutral below is pinned to
+ * the palette's warm axis instead.
+ */
+
+:root {
+  /*
+   * One series, magnitude: the week strip. Today is marked with a ring and a
+   * label rather than its own colour — it is the same measure, not another one.
+   * The bar never touches the card directly; it sits inside a `--chart-empty`
+   * track, so both pairs are measured and the track is what the floor is held
+   * against.
+   */
+  --chart-bar: #8c232b; /* the accent itself */
+  --chart-target: #837d6d; /* the dashed target line */
+
+  /*
+   * Ordinal magnitude in four steps: the month heatmap. Validated as an ordinal
+   * ramp — one hue (spread 1°), monotone lightness, gaps of at least 0.06 L, and
+   * a light end clearing 2:1 against the surface so the lowest band is still a
+   * mark rather than a smudge. The ramp passes *through* the accent rather than
+   * beside it: band 4 is `--chart-bar`, so the week strip's bar and the heatmap's
+   * full day are literally the same oxblood.
+   */
+  --chart-scale-1: #d58f8e;
+  --chart-scale-2: #c97070;
+  --chart-scale-3: #ad484b;
+  --chart-scale-4: #8c232b;
+  /* A working day with nothing logged: absence reads as neutral, not as "a
+     little". Band 1 was deliberately deepened until it cleared this cell — at
+     the lighter value it measured 1.69:1, and "a little" has to be plainly more
+     than "nothing". */
+  --chart-empty: #e5dfd1;
+
+  /*
+   * Identity, not magnitude: hours per project. Assigned in this fixed order and
+   * never cycled — a project keeps its colour when the filter changes the set.
+   * The order is not decorative: it alternates the sign of OKLab b, because
+   * protan and deutan preserve b and flatten a, which is what moves the worst
+   * adjacent pair to ΔE 15.4. Reordering the slots to taste undoes the CVD
+   * result the validator measured.
+   *
+   * All six clear 3:1 on the card and inside their track. The split still ships
+   * direct labels, for a different reason than contrast: across non-adjacent
+   * rows the hues collapse under deutan (brass against brick, ΔE 4.4), and a
+   * reader comparing row 1 with row 5 has only the label. Six hues cannot pass
+   * the all-pairs check inside the 0.12–0.20 of usable lightness the 3:1 floor
+   * leaves, so labels are the answer rather than more colours.
+   */
+  --chart-series-1: #a73c2a; /* brick */
+  --chart-series-2: #0b8b9e; /* petrol */
+  --chart-series-3: #8a6d12; /* brass, the palette's own */
+  --chart-series-4: #4252a5; /* ink blue */
+  --chart-series-5: #518c54; /* moss */
+  --chart-series-6: #853e80; /* mulberry */
+}
+
+.dark {
+  --chart-bar: #c4525a;
+  --chart-target: #807a6c;
+
+  --chart-scale-1: #9e2b33; /* the palette's deep oxblood */
+  --chart-scale-2: #c4525a;
+  --chart-scale-3: #d37e80;
+  --chart-scale-4: #e0a9a9;
+  --chart-empty: #2e2922;
+
+  /* The same six hues, stepped for the dark surface: all six clear 3:1 here,
+     and on the track too. Brass is the one that moves rather than lightens —
+     the palette's #c9a227 sits above the dark lightness ceiling. */
+  --chart-series-1: #c05744;
+  --chart-series-2: #2ca4b9;
+  --chart-series-3: #a28000;
+  --chart-series-4: #5a6dc3;
+  --chart-series-5: #65a667;
+  --chart-series-6: #a55da0;
+}
+
+@theme inline {
+  --color-chart-bar: var(--chart-bar);
+  --color-chart-target: var(--chart-target);
+
+  --color-chart-scale-1: var(--chart-scale-1);
+  --color-chart-scale-2: var(--chart-scale-2);
+  --color-chart-scale-3: var(--chart-scale-3);
+  --color-chart-scale-4: var(--chart-scale-4);
+  --color-chart-empty: var(--chart-empty);
+
+  --color-chart-series-1: var(--chart-series-1);
+  --color-chart-series-2: var(--chart-series-2);
+  --color-chart-series-3: var(--chart-series-3);
+  --color-chart-series-4: var(--chart-series-4);
+  --color-chart-series-5: var(--chart-series-5);
+  --color-chart-series-6: var(--chart-series-6);
+}

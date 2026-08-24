@@ -1,0 +1,112 @@
+# Every gate that guards a merge, plus one that reports on a schedule.
+#
+# Bun runs everything except the two tools that cannot: Stryker's plugin loader
+# and the Playwright run itself, both of which need Node. The Playwright image
+# ships both runtimes, so `e2e` uses it and the rest use the Bun image.
+
+stages:
+  - verify
+  - test
+  - build
+  - quality
+
+default:
+  image: oven/bun:1.4
+  interruptible: true
+  cache:
+    key:
+      files:
+        - bun.lock
+    paths:
+      - node_modules/
+  before_script:
+    - bun install --frozen-lockfile --ignore-scripts
+
+# `--ignore-scripts` on every install: the `prepare` script installs git hooks,
+# which a runner has no use for and which fail outright in an image without git.
+# Nothing else in this project has a postinstall that matters here.
+#
+# No `BUN_INSTALL_CACHE_DIR` either. Pointing it inside the checkout put a copy
+# of every dependency where `prettier --check .` would walk it, and one of them
+# carries a config Prettier cannot resolve. `node_modules/` is what is cached.
+
+# Format, lint, ARIA, types, FSD layers, the dependency graph, dead code, type
+# coverage and `bun audit` — the whole fast gate, in one job, because any one of
+# them failing means the same thing: do not merge this.
+verify:
+  stage: verify
+  script:
+    - bun run verify
+
+# Coverage thresholds are enforced by the run itself: 90% overall, 100% on the
+# model layer.
+test:
+  stage: test
+  script:
+    - bun run test:coverage
+  coverage: '/All files\s*\|\s*([\d.]+)/'
+  artifacts:
+    when: always
+    expire_in: 1 week
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    paths:
+      - coverage/
+
+# The bundle budget fails the job rather than warning, and the CSP is written
+# here too, so a policy that cannot be generated stops the pipeline instead of
+# reaching a deploy.
+build:
+  stage: build
+  script:
+    - bun run build
+    - bun run size
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - dist/
+
+# Three browsers, axe on every route in both colour schemes, the 375-pixel pass
+# and the keyboard walk. This is the slow one; it is still blocking, because it
+# is the only level that sees what a reader sees.
+e2e:
+  stage: test
+  image: mcr.microsoft.com/playwright:v1.62.1-noble
+  variables:
+    # Any non-empty id will do: the OAuth flow is stubbed, and what this checks
+    # is that the app is configured rather than showing its not-configured
+    # screen. The real id is a Netlify environment variable, not a CI one.
+    VITE_GITLAB_CLIENT_ID: acceptance-suite-client-id
+  before_script:
+    - npm install -g bun
+    - bun install --frozen-lockfile --ignore-scripts
+  script:
+    - bun run test:e2e
+  artifacts:
+    when: on_failure
+    expire_in: 1 week
+    paths:
+      - playwright-report/
+      - test-results/
+
+# Mutation testing on the model layer. Scheduled rather than blocking: it takes
+# minutes rather than seconds, and its answer changes only when the rules change.
+# A merge request never waits for it; a schedule reports it.
+mutation:
+  stage: quality
+  image: oven/bun:1.4
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends nodejs
+    - bun install --frozen-lockfile --ignore-scripts
+  script:
+    - bun run test:mutation
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
+  allow_failure: true
+  artifacts:
+    when: always
+    expire_in: 1 month
+    paths:
+      - reports/mutation/
