@@ -21,16 +21,16 @@ a drift is visible without running anything.
 | Type coverage                      | ≥ 99%                            | 99.83%   | `bun run types:coverage`        | `verify`, CI             |
 | Dependency vulnerabilities         | **0, at any severity**           | 0        | `bun run security:audit`        | pre-push, `verify`, CI   |
 | Test coverage, statements          | ≥ 90%                            | 100%     | `bun run test:coverage`         | CI                       |
-| Test coverage, branches            | ≥ 90%                            | 99.09%   | `bun run test:coverage`         | CI                       |
+| Test coverage, branches            | ≥ 90%                            | 99.11%   | `bun run test:coverage`         | CI                       |
 | Test coverage, `model/`            | **100%**                         | 100%     | `bun run test:coverage`         | CI                       |
 | Mutation score, `model/`           | ≥ 85%                            | 97.34%   | `bun run test:mutation`         | scheduled CI             |
-| Initial bundle                     | ≤ 180 kB gzip                    | 114.8 kB | `bun run build && bun run size` | CI                       |
+| Initial bundle                     | ≤ 180 kB gzip                    | 133.2 kB | `bun run build && bun run size` | CI                       |
 | Accessibility (WCAG 2.1 AA)        | 0 axe violations, light and dark | pass     | `bun run test:e2e`              | CI                       |
 | Cumulative layout shift            | < 0.1, cold and warm             | pass     | `bun run test:e2e`              | CI                       |
 | No sideways scrolling at 375 px    | every screen                     | pass     | `bun run test:e2e`              | CI                       |
 
-Tests: 718 unit and component, 300 of them on the pure model layer and its Gherkin
-features, plus 144 acceptance runs across chromium, webkit and a mobile viewport.
+Tests: 721 unit and component, 300 of them on the pure model layer and its Gherkin
+features, plus 150 acceptance runs across chromium, webkit and a mobile viewport.
 
 ## Two linters, on purpose
 
@@ -172,7 +172,7 @@ linter — with coverage as the floor that stops whole paths going unexercised.
 - **Four `as` assertions remain**, each a smart constructor or a boundary the
   type system cannot see through: branding a validated `IsoDate`, narrowing a
   native select's value to the union it was rendered from, and two in test
-  support code. They are why type coverage is 99.91% rather than 100%.
+  support code. They are why type coverage is 99.83% rather than 100%.
 - **Coverage runs on istanbul, not v8.** The v8 provider's range-tree merge
   overflows the stack on a suite this size; istanbul instruments the source
   instead and also reports branch coverage more accurately through JSX.
@@ -201,3 +201,31 @@ linter — with coverage as the floor that stops whole paths going unexercised.
 The first green pipeline ran in **6.9 minutes**: verify 87s, test 66s, e2e 273s,
 build 51s. Comfortably inside the 400 compute minutes a month the Free plan
 allows, with mutation testing kept off the blocking path.
+
+- **The acceptance suite runs at two workers, locally as well as in CI.** Every
+  browser talks to one Vite dev server, and Playwright's default of a worker per
+  two cores puts more concurrent page loads on it than it can transform inside a
+  five-second expectation. Measured on one machine: the default failed 25 of 147
+  scenarios, all of them WebKit, all of them waiting for a control that does
+  render; two workers ran all 147 green in 3.5 minutes against the 6.7 the
+  failing run took. A suite that fails for its own reasons is worse than a slow
+  one.
+- **The initial-bundle figure was wrong until this revision, and too low.** The
+  budget globbed `dist/assets/index-*.js` plus the stylesheet — 2 of the 10 files
+  `dist/index.html` actually requests. It never saw the eight `modulepreload`
+  siblings the bundler emits beside the entry, so when a shared module moved out
+  of the entry into one of them the recorded size fell by 27 kB while the real
+  initial load did not move. `.size-limit.js` now reads the document and measures
+  everything it references. The true figure was 148.5 kB, not the 114.8 kB this
+  table used to claim and not the 87.6 kB the old glob reported after the palette
+  landed. Moving the signed-in header out of the root layout and into the
+  `_authenticated` layout then took it to 133.2 kB for real: the navigation, the
+  colour-scheme control and their icons are now in a route chunk a signed-out
+  reader never loads.
+- **The acceptance fixture counts days in the reader's zone, not in UTC.** It used
+  to place each entry at midday UTC on a day counted from UTC's today, and the
+  whole suite failed every evening after 21:00 in Brazil: UTC had already rolled
+  over, so "today" in the fixture was the reader's tomorrow and `today reads 6.5
+hours` found yesterday's three. Four scenarios, three browsers, twelve failures,
+  none of them about the code. The app buckets days in `America/Sao_Paulo`, so the
+  fixture does too.

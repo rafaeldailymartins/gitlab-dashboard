@@ -129,13 +129,26 @@ perform any operation that changes data in GitLab.
 ### Requirement: AUTH-8 — Protected screens require a session and remember intent
 
 A person without an active session SHALL be sent to sign-in, and after signing
-in SHALL arrive at the screen they originally asked for.
+in SHALL arrive at the screen they originally asked for. A person who already has
+a session SHALL NOT be shown the sign-in screen, and SHALL NOT be shown
+signed-in navigation while signed out.
 
 #### Scenario: Opening a deep link while signed out
 
 - **WHEN** a signed-out person opens a link to a specific day
 - **THEN** they are asked to sign in
 - **AND** after signing in they land on that day, not on the default screen
+
+#### Scenario: Opening sign-in with a session already active
+
+- **WHEN** a person who is signed in opens the sign-in screen
+- **THEN** they are sent on to the screen they asked for instead of being asked
+  to sign in again
+
+#### Scenario: The sign-in screen carries no signed-in navigation
+
+- **WHEN** a signed-out person is asked to sign in
+- **THEN** there is no navigation and no way to sign out on the screen
 
 ### Requirement: AUTH-9 — A refused or failed sign-in is explained
 

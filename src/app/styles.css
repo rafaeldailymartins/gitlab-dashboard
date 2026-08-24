@@ -5,68 +5,123 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design tokens. Base: Tailwind `slate`. Accent: Tailwind `indigo`.
+ * Design tokens. A ledger: warm paper and deep ink, one oxblood accent, and
+ * brass for the mark that says a total is closed.
+ *
  * Values are literal hex so every token can be audited against the palette.
+ * There are no contrast ratios in these comments on purpose: they used to be
+ * here, and one of them was wrong by a point and a half for as long as it took
+ * someone to check. `scripts/check-contrast.ts` measures every pair that has to
+ * stay legible — body text at 4.5:1, a control's own boundary at 3:1 (WCAG
+ * 1.4.11), recessive furniture at a stated house floor — and `bun run verify`
+ * fails when one drops below it. A number below is here only when it explains a
+ * value that was rejected, which no gate can hold.
+ *
+ * Four decisions here will look wrong until you know why:
+ *
+ * 1. `--input` is not `--border`. A control's boundary answers to 3:1; a divider
+ *    drawn at 3:1 would be a cage. So dividers are quiet and control edges are
+ *    not, and `button.tsx`'s outline variant uses `border-input`, not
+ *    `border-border`.
+ * 2. `--ring` is ink, not the brand. The ring is painted at 50% alpha, which
+ *    caps what any hue can reach over this ground: oxblood composites to 2.53:1
+ *    and brass to 2.24:1, both under 3:1, and no value of either hue can pass.
+ *    It also keeps focus from looking like the invalid state, which a red ring
+ *    would.
+ * 3. There is one quiet surface step, so `--secondary` and `--muted` share a
+ *    value and differ by role. Inventing a second, lighter one produced a fill
+ *    indistinguishable from the ground — an invisible ghost-button hover.
+ * 4. Two reds, separated by role rather than by hue. The oxblood is only ever a
+ *    filled surface carrying cream text; the error red is only ever ink and a
+ *    1px boundary beside the field it describes. They never occupy the same
+ *    role, so a reader is never asked to compare them. If a destructive action
+ *    ever ships, it takes a neutral fill with error ink — never a red fill.
+ *
  * Chart tokens live in `charts.css`, which this file imports.
  */
 :root {
   --radius: 0.625rem;
 
-  --background: #f8fafc; /* slate-50 */
-  --foreground: #0f172a; /* slate-900 */
+  --background: #efeeea; /* paper */
+  --foreground: #14100c; /* ink */
 
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
+  --card: #fbfaf7;
+  --card-foreground: #14100c;
+  --popover: #fbfaf7;
+  --popover-foreground: #14100c;
 
-  --primary: #4f46e5; /* indigo-600 */
-  --primary-foreground: #ffffff;
+  --primary: #8c232b; /* oxblood */
+  --primary-foreground: #f6f2e9; /* cream on oxblood */
+  /* A hover darkens here and lightens on dark, rather than thinning the fill
+     toward whatever is behind it. `bg-primary/80` was measured and rejected:
+     over the dark ground it composites to 2.45:1, so the button faded into the
+     page exactly when the reader pointed at it. */
+  --primary-hover: #7a1e25;
 
-  --secondary: #f1f5f9; /* slate-100 */
-  --secondary-foreground: #0f172a;
+  --secondary: #e5e0d3;
+  --secondary-foreground: #14100c;
 
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b; /* slate-500 */
+  --muted: #e5e0d3;
+  /* Carries almost every secondary string, so it was chosen against the worst
+     surface it can land on rather than the best: the ground, a card, and a muted
+     fill are all checked. Those strings are 12–14px, so the large-text
+     allowance never applies to them. */
+  --muted-foreground: #665f4f;
 
-  --accent: #eef2ff; /* indigo-50 */
-  --accent-foreground: #3730a3; /* indigo-800 */
+  /* Not the brand: shadcn uses this pair as the subtle hover surface and its
+     text. One warm step past `--muted`, with the ink unchanged — a hover moves
+     the surface, it never re-colours the text. */
+  --accent: #e0dbcd;
+  --accent-foreground: #14100c;
 
-  --destructive: #dc2626; /* red-600 */
-  --destructive-foreground: #ffffff;
+  --destructive: #b83a16; /* 18° of hue off the oxblood */
+  --destructive-foreground: #fbf7f0; /* kept for token parity; unused by design */
 
-  --border: #e2e8f0; /* slate-200 */
-  --input: #e2e8f0;
-  --ring: #4f46e5;
+  --border: #dcd6c8; /* a divider — quiet on purpose */
+  --input: #837c6d; /* a control boundary */
+  --ring: #14100c;
+
+  /* The seal: brass, for the one thing it means — a total that reached its
+     target. Deeper than the palette's #8a6d12 because this one carries words
+     rather than marking a bar: that lighter brass measures 4.70:1 on a card,
+     which clears the body floor by two hundredths and nothing more. */
+  --seal: #7e620e;
 }
 
 .dark {
-  --background: #020617; /* slate-950 */
-  --foreground: #f8fafc;
+  --background: #0b100f;
+  --foreground: #eae5da;
 
-  --card: #0f172a; /* slate-900 */
-  --card-foreground: #f8fafc;
-  --popover: #0f172a;
-  --popover-foreground: #f8fafc;
+  --card: #121917;
+  --card-foreground: #eae5da;
+  --popover: #121917;
+  --popover-foreground: #eae5da;
 
-  --primary: #818cf8; /* indigo-400 */
-  --primary-foreground: #1e1b4b; /* indigo-950 */
+  /* One step up from the palette's #9e2b33, which measures 2.60:1 against this
+     ground and 2.42:1 against a card — under the 3:1 a control's own surface
+     needs to be seen as a control. Same hue, chosen for the dark ground rather
+     than inverted from the light one. */
+  --primary: #b23940;
+  --primary-foreground: #f6f2e9;
+  --primary-hover: #bd424a;
 
-  --secondary: #1e293b; /* slate-800 */
-  --secondary-foreground: #f8fafc;
+  --secondary: #1b2422;
+  --secondary-foreground: #eae5da;
 
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8; /* slate-400 */
+  --muted: #1b2422;
+  --muted-foreground: #9a9585; /* the palette's soft ink */
 
-  --accent: #312e81; /* indigo-900 */
-  --accent-foreground: #e0e7ff; /* indigo-100 */
+  --accent: #232d2b;
+  --accent-foreground: #eae5da;
 
-  --destructive: #f87171; /* red-400 */
-  --destructive-foreground: #450a0a; /* red-950 */
+  --destructive: #f0836a; /* at full alpha, never at 50% — see button.tsx */
+  --destructive-foreground: #2a0f0a;
 
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #818cf8;
+  --border: #23302c;
+  --input: #63736d;
+  --ring: #eae5da;
+
+  --seal: #c9a227; /* the palette's brass */
 }
 
 @theme inline {
@@ -83,6 +138,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -94,6 +150,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-seal: var(--seal);
 }
 
 @layer base {

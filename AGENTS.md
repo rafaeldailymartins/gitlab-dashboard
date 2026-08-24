@@ -10,17 +10,19 @@ Paraglide.
 
 ## Commands
 
-| Command                           | What it does                                                                                        |
-| --------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `bun run dev`                     | Dev server on http://localhost:3000                                                                 |
-| `bun run verify`                  | Every fast gate: format, lint, ARIA, types, architecture, dead code, type coverage, vulnerabilities |
-| `bun run test`                    | Unit, component and Gherkin domain tests (`domain` + `ui` Vitest projects)                          |
-| `bun run test:coverage`           | Same, with coverage thresholds enforced                                                             |
-| `bun run test:e2e`                | Generates specs from `features/acceptance/*.feature`, then runs Playwright                          |
-| `bun run test:mutation`           | Stryker mutation testing on the model layer                                                         |
-| `bun run build` && `bun run size` | Production build, its Content-Security-Policy, and the 180 kB gzip budget                           |
-| `bun run arch:trace`              | Every scenario cites a requirement, and every requirement is cited                                  |
-| `bun run lint:a11y`               | Biome, ARIA rules only                                                                              |
+| Command                           | What it does                                                                                                                |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `bun run dev`                     | Dev server on http://localhost:3000                                                                                         |
+| `bun run verify`                  | Every fast gate: format, lint, ARIA, contrast, translations, types, architecture, dead code, type coverage, vulnerabilities |
+| `bun run test`                    | Unit, component and Gherkin domain tests (`domain` + `ui` Vitest projects)                                                  |
+| `bun run test:coverage`           | Same, with coverage thresholds enforced                                                                                     |
+| `bun run test:e2e`                | Generates specs from `features/acceptance/*.feature`, then runs Playwright                                                  |
+| `bun run test:mutation`           | Stryker mutation testing on the model layer                                                                                 |
+| `bun run build` && `bun run size` | Production build, its Content-Security-Policy, and the 180 kB gzip budget                                                   |
+| `bun run arch:trace`              | Every scenario cites a requirement, and every requirement is cited                                                          |
+| `bun run lint:a11y`               | Biome, ARIA rules only                                                                                                      |
+| `bun run a11y:contrast`           | Every colour pair that has to stay legible, measured against both schemes                                                   |
+| `bun run i18n:check`              | Every message exists in every language, and no message exists in only one                                                   |
 
 Run `bun run verify && bun run test` before calling any change finished.
 
@@ -46,7 +48,11 @@ src/
   app/          router, providers, global styles, and routes/ (TanStack Router
                 file-based routing lives inside the app layer, because route
                 files are wiring). `lib/runtime.ts` builds the session manager
-                and the timelog gateway once, from one configuration read.
+                and the timelog gateway once, from one configuration read;
+                `lib/query.ts` builds the cache and its persister. The
+                signed-in header lives in `routes/_authenticated.tsx`, so the
+                guard that proves there is a session is the same thing that
+                decides the chrome exists.
   pages/        screen composition. A block with one consumer lives here rather
                 than in widgets/, which is what steiger requires.
     dashboard/    the KPI row, the week strip, the day feed and their derivations
@@ -68,7 +74,8 @@ src/
     preferences/  daily target, time zone, theme choice
   shared/       ui (shadcn plus ours), api (the GraphQL client, the query client
                 and the cache persister), lib, i18n, config
-scripts/        build and gate tooling: the CSP writer, the traceability check
+scripts/        build and gate tooling: the CSP writer, the traceability check,
+                the contrast measurement, the translation-parity check
 ```
 
 `model/` and `api/` are FSD's own segment names; they carry the Clean
@@ -88,6 +95,8 @@ adapter. Both linters recognise them, which custom names like `domain/` and
 | Cyclomatic complexity ≤ 8, cognitive complexity ≤ 10, ≤ 40 lines per function (60 for components), ≤ 200 lines per file, ≤ 3 params | `config/eslint/limits.js`                             |
 | No unused export, file or dependency                                                                                                | `knip` (`bun run deadcode`)                           |
 | ARIA attributes are supported by the role they sit on                                                                               | `biome` (`bun run lint:a11y`)                         |
+| Every colour pair stays above its contrast floor, in both schemes                                                                   | `scripts/check-contrast.ts` (`bun run a11y:contrast`) |
+| Every message exists in every language                                                                                              | `scripts/check-messages.ts` (`bun run i18n:check`)    |
 | ≥ 99% of expressions carry a real type                                                                                              | `type-coverage`                                       |
 | Zero dependency vulnerabilities, at any severity                                                                                    | `bun audit`                                           |
 | Named exports only                                                                                                                  | `no-restricted-exports`                               |
@@ -145,7 +154,11 @@ one without reading the reason will reintroduce a bug that is already fixed.
 - **Imports**: sorted by `perfectionist`; run `bun run lint:fix`.
 - **UI components**: add them with `bunx shadcn@latest add <name>`; they land in
   `src/shared/ui` (style `base-nova`, Base UI primitives). Do not hand-write
-  what the CLI generates.
+  what the CLI generates — with two exceptions, both marked in place and both
+  measured: `button.tsx` and `input.tsx` carry contrast fixes to the invalid
+  border, the outline edge, and the solid and quiet hover states. Regenerating
+  either component means re-applying them. Three of the four are held by
+  `bun run a11y:contrast`, so undoing them fails `verify` rather than shipping.
 - **Design tokens**: CSS custom properties in `src/app/styles.css`. Light values
   on `:root`, dark on `.dark`. Never hardcode a colour in a component.
 - **Time**: GitLab reports seconds. Convert with `secondsToHours` and accumulate

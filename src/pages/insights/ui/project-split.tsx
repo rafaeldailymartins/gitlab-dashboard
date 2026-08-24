@@ -29,9 +29,12 @@ interface RowProps {
 /**
  * Where the period's hours went, by project.
  *
- * Every bar carries its project and its hours as text beside it: three of the
- * six colours sit below 3:1 on a light card, so the label is what carries the
- * meaning and the colour only ties the row to its share of the whole.
+ * Every bar carries its project and its hours as text beside it. All six colours
+ * clear 3:1 on their surface, so this is not about contrast: across rows that do
+ * not touch, the hues collapse under deutan — brass against brick measures ΔE
+ * 4.4 — and a reader comparing the first row with the fifth has only the label.
+ * So the label carries the meaning and the colour only ties the row to its share
+ * of the whole.
  */
 export function ProjectSplit({ days }: { readonly days: readonly DayTotal[] }) {
   const split = projectSplit(days, SERIES_CLASS.length)

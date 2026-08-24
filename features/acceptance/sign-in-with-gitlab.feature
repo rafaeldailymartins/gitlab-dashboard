@@ -8,6 +8,13 @@ Feature: Signing in with GitLab
     When I open the dashboard
     Then I am asked to sign in
     And there is nowhere to paste a token
+    And there is no navigation and no way to sign out
+
+  # Spec: gitlab-authentication / AUTH-8
+  Scenario: A reader who already has a session never sees the sign-in screen
+    Given I am signed in
+    When I open the sign-in screen
+    Then I see the dashboard
 
   # Spec: gitlab-authentication / AUTH-1
   Scenario: Signing in reaches the dashboard

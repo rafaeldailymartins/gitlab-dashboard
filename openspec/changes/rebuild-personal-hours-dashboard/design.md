@@ -331,6 +331,19 @@ for the month heatmap is one hue with monotone lightness and a light end that
 still clears the surface, and the categorical set for the project split keeps its
 adjacent pairs separable under colour-vision deficiency.
 
+The palette itself changed once, after the interface was built: the slate ground
+and indigo accent were replaced by a ledger — warm paper, deep ink, one oxblood
+accent, brass for a total that reached its target. Both stylesheets were re-derived
+and re-validated against the new surfaces rather than recoloured by hand, and two
+results are worth recording because they constrained the design rather than
+following it. The dark accent is one step lighter than the palette's own oxblood:
+`#9e2b33` measures 2.60:1 against the dark ground, under the 3:1 a control's own
+surface needs, so the fill is `#b23940` and the deeper value survives as what the
+hover state composites onto. And the focus ring is ink in both themes, not the
+brand: the ring is painted at 50% alpha, which caps an oxblood ring at 2.56:1 and
+a brass one at 2.24:1 — no value of either hue can pass, so the ring is the only
+place in the interface where the accent was the wrong answer.
+
 ### 16. Tests follow the spec, at two levels
 
 Each capability's scenarios become Gherkin, at whichever level can actually
@@ -344,6 +357,39 @@ so a requirement can be traced to the test that proves it.
 
 The acceptance suite drives the OAuth flow against a stubbed authorize endpoint,
 so it needs no real credentials and can run in CI.
+
+### 17. The sign-in screen is one button
+
+It first shipped as a heading, two paragraphs and a button in a narrow column.
+One paragraph explained that the dashboard reads hours using the reader's own
+account and asks for read-only access; the other said there was nothing to paste.
+Both were true and both were removed, because neither was doing the job the
+screen exists for: the button already names GitLab, GitLab's own consent screen
+states the scope in GitLab's words rather than in ours, and a reader who has
+never heard of a Personal Access Token cannot be reassured about one. What is
+left is the mark, the product's claim, the shape of the day feed as its own
+illustration, and the button.
+
+Three consequences worth recording:
+
+- **No header while signed out.** The application shell's header is the
+  signed-in chrome — it carries navigation and sign-out, which a signed-out
+  reader has no use for — so the sign-in screen is full-bleed and owns its own
+  colour-scheme control. That control is not decoration: it is the only one a
+  reader has before signing in, and after signing out they land back here. The
+  `/login` route redirects a reader who already has a session, because two
+  identical colour-scheme controls on one page is a duplicate control.
+- **"Sign in" is the level-1 heading and is set as a kicker.** It names the
+  screen for anyone arriving by heading, which is what an `h1` is for, while the
+  claim beside it is what the eye reads first. The alternative — promoting the
+  claim to the `h1` — would have left the screen without a heading that says
+  where you are.
+- **The illustration is `aria-hidden` and localised anyway.** It draws a week of
+  bars with weekday labels from the same `Intl` data the week strip uses, so it
+  belongs to the reader's language rather than to English, and it carries no
+  figures: a sign-in screen has no data, and printing hours nobody logged would
+  be a chart that lies. It contains nothing focusable, which is what keeps an
+  `aria-hidden` subtree out of the tab order.
 
 ## Risks / Trade-offs
 

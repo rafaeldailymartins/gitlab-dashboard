@@ -35,6 +35,13 @@ Feature: Using every screen
       | settings  |
       | a day     |
 
+  # Spec: dashboard-ui / UI-11
+  Scenario: The sign-in screen does not scroll sideways on a phone either
+    Given my viewport is 375 pixels wide
+    When I open the dashboard
+    Then I am asked to sign in
+    And the page does not scroll sideways
+
   # Spec: dashboard-ui / UI-8
   Scenario: The dashboard is operable with a keyboard alone
     Given I am signed in

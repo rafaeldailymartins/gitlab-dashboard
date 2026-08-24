@@ -136,6 +136,20 @@ Then('there is nowhere to paste a token', async ({ page }) => {
   await expect(page.locator('input')).toHaveCount(0)
 })
 
+When('I open the sign-in screen', async ({ page }) => {
+  await page.goto('/login')
+  await expect(page.getByRole('main')).toBeVisible()
+})
+
+Then('there is no navigation and no way to sign out', async ({ page }) => {
+  // The header is the signed-in chrome and belongs to the authenticated layout,
+  // so the guard that proves there is a session is the same thing that decides
+  // the header exists. Gating it on React state let the two disagree.
+  await expect(page.getByRole('banner')).toHaveCount(0)
+  await expect(page.getByRole('navigation')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /sign out|sair/i })).toHaveCount(0)
+})
+
 Then('I am told the sign-in did not complete', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: /did not complete/i })).toBeVisible()
 })

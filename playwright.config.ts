@@ -42,7 +42,15 @@ export default defineConfig({
     ...(isCi ? { timeout: 180_000 } : {}),
     url: 'http://localhost:3000',
   },
-  // `exactOptionalPropertyTypes` forbids passing `undefined` explicitly, so the
-  // local default (one worker per core) is expressed by omitting the key.
-  ...(isCi ? { workers: 2 } : {}),
+  /**
+   * Two workers everywhere, CI or not. The bottleneck is not the CPU: every
+   * browser talks to one Vite dev server, and Playwright's default of a worker
+   * per two cores puts more concurrent page loads on it than it can transform
+   * inside a five-second expectation. The measurement is recorded once, in
+   * `docs/qa/quality-metrics.md`; the short version is that the default failed
+   * 25 scenarios, every one of them WebKit, and two workers ran the whole suite
+   * green in half the wall-clock time. A suite that fails for its own reasons is
+   * worse than a slow one.
+   */
+  workers: 2,
 })

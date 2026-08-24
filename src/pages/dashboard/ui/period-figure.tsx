@@ -5,6 +5,7 @@ import type { PeriodSummary } from '@/entities/timelogs'
 import { targetProgress } from '@/entities/preferences'
 import { m, useActiveLocale } from '@/shared/i18n'
 import { formatHours } from '@/shared/lib/format'
+import { cn } from '@/shared/lib/utils'
 import { HourFigure } from '@/shared/ui/hour-figure'
 
 interface PeriodFigureProps {
@@ -62,15 +63,22 @@ export function PeriodFigure({ label, summary, target, waiting }: PeriodFigurePr
             </span>
           </span>
           {progress.ratio === null ? null : (
-            <span aria-hidden className="h-1.5 overflow-hidden rounded-full bg-muted">
+            /* Chart tokens, not interface ones: this is a bar, and the pair that
+               was validated for a bar inside a track is `--chart-bar` on
+               `--chart-empty`. `bg-primary` on `bg-muted` measured 2.69:1 on
+               dark, with a track invisible against the card behind it. */
+            <span aria-hidden className="h-1.5 overflow-hidden rounded-full bg-chart-empty">
               <span
-                className="block h-full rounded-full bg-primary"
+                className="block h-full rounded-full bg-chart-bar"
                 style={{ width: `${String(progress.ratio * PERCENT)}%` }}
               />
             </span>
           )}
           {waiting || progress.ratio === null ? null : (
-            <span className="text-xs text-muted-foreground">
+            /* Brass once the target is reached: the seal on a closed entry. It
+               is the only colour in the interface that means a state, and the
+               sentence beside it says the same thing in words. */
+            <span className={cn('text-xs', progress.isMet ? 'text-seal' : 'text-muted-foreground')}>
               {balanceText(progress.balanceHours, locale)}
             </span>
           )}

@@ -3,8 +3,10 @@ import type { ReactNode } from 'react'
 import { render } from '@testing-library/react'
 import { vi } from 'vitest'
 
+import { PreferencesProvider, preferencesStore } from '@/entities/preferences'
 import { type SessionManager, SessionProvider } from '@/entities/sessions'
 import { LocaleProvider } from '@/shared/i18n'
+import { memoryStorage } from '@/shared/lib/storage'
 
 interface SessionRenderOptions {
   readonly manager?: ReturnType<typeof fakeSessionManager>
@@ -24,7 +26,12 @@ export function fakeSessionManager(overrides: Partial<SessionManager> = {}) {
   }
 }
 
-/** Renders inside the session and locale providers, without a router. */
+/**
+ * Renders inside the providers the app mounts around a session, without a
+ * router. Preferences are in the stack because the sign-in screen carries the
+ * colour-scheme control, exactly as the real tree does — backed by in-memory
+ * storage so no test inherits what another one saved.
+ */
 export function renderWithSession(ui: ReactNode, options: SessionRenderOptions = {}) {
   const manager = options.manager ?? fakeSessionManager()
   const navigateAway = options.navigateAway ?? vi.fn()
@@ -33,11 +40,13 @@ export function renderWithSession(ui: ReactNode, options: SessionRenderOptions =
     manager,
     navigateAway,
     ...render(
-      <LocaleProvider>
-        <SessionProvider manager={manager} navigateAway={navigateAway}>
-          {ui}
-        </SessionProvider>
-      </LocaleProvider>,
+      <PreferencesProvider store={preferencesStore(memoryStorage())}>
+        <LocaleProvider>
+          <SessionProvider manager={manager} navigateAway={navigateAway}>
+            {ui}
+          </SessionProvider>
+        </LocaleProvider>
+      </PreferencesProvider>,
     ),
   }
 }

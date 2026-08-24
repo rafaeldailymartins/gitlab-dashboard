@@ -24,7 +24,13 @@ const SCENARIO_LINE = /^Scenario( Outline)?:/u
  * a gate rather than a test, or by a check a browser cannot make.
  */
 const UNCITED_BY_DESIGN = new Map([
-  ['I18N-5', 'Enforced by lint: no user-facing string may be a literal.'],
+  [
+    // This entry used to claim a lint rule that does not exist. Half of the
+    // requirement is now a real gate; the other half is a review matter, and
+    // saying so is better than crediting a check nobody wrote.
+    'I18N-5',
+    'A missing translation fails `bun run i18n:check`, which names the key and the language. A hardcoded literal is caught in review — no browser can tell a literal from a translation that happens to match.',
+  ],
   [
     'PREF-5',
     'An inline script sets the theme before the bundle loads; a flash is a visual property no assertion can see.',

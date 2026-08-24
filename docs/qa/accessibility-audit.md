@@ -20,14 +20,19 @@ So: run the manual pass. It is short.
 The acceptance suite already walks the tab order and asserts a focus indicator is
 drawn at every stop. What it cannot judge is whether the order makes sense.
 
-1. Load the dashboard and press Tab from the top. The order should be: skip
+1. Load `/` signed out. There is no header: the sign-in screen owns its own tab
+   order, and it should be the sign-in button first, then the colour-scheme
+   control. The decorative week is skipped entirely — if Tab stops on a bar, a
+   focusable element has been added inside an `aria-hidden` subtree, which is a
+   WCAG 4.1.2 failure axe will also report.
+2. Load the dashboard and press Tab from the top. The order should be: skip
    nothing, header, navigation, colour scheme, sign out, week strip left to
    right, then the feed newest first.
-2. On a day row, press Enter. It expands. Press Enter again: it collapses.
-3. Tab into an expanded day. The issue links come next, in the order shown.
-4. On `/insights`, Tab to a table header and press Enter. The sort changes, and
+3. On a day row, press Enter. It expands. Press Enter again: it collapses.
+4. Tab into an expanded day. The issue links come next, in the order shown.
+5. On `/insights`, Tab to a table header and press Enter. The sort changes, and
    focus stays on the header rather than jumping to the top of the table.
-5. Nowhere should Tab reach something invisible, and nowhere should it skip
+6. Nowhere should Tab reach something invisible, and nowhere should it skip
    something visible.
 
 ## With a screen reader
@@ -73,14 +78,26 @@ interface structure has changed.
 ## Colour and contrast
 
 13. In both colour schemes, check the chart tokens against their card: the
-    lightest heatmap band, the target line and the smallest bar. The palette in
-    `src/app/charts.css` was validated against these surfaces, so a failure here
-    means a token was edited without re-validating.
+    lightest heatmap band, the target line and the smallest bar. The contrast
+    gate measures all of it against both card surfaces on every `verify`, so
+    this step is looking for what a ratio cannot see: a band that
+    passes its floor and still reads as the one above it, or a mark that clears
+    3:1 and still disappears into the page.
 14. Turn on the operating system's high-contrast or forced-colours mode. Nothing
     should become invisible; bars may lose their fill, which is why every figure
     is also written out.
 15. Simulate protanopia and deuteranopia on `/insights`. The project split should
     still be readable — it always is, because each row is labelled.
+16. Read the sign-in screen's left panel in both colour schemes. It is the one
+    large branded surface in the app, and its decorative week is `aria-hidden`,
+    which means axe's `color-contrast` rule skips those labels entirely. This
+    step is their only automated-coverage gap: the weekday labels and the
+    positioning line have to be legible on the panel, not just present.
+17. Set a weekday target low enough to meet, and read the brass seal on the met
+    figure. `--seal` is the one interface colour axe has never evaluated: no
+    fixture day in the acceptance suite reaches its target, so the state that
+    uses it never renders in a browser under test. Its ratios are held by
+    `bun run a11y:contrast`; what it looks like beside the figure is not.
 
 ## What to do with a finding
 

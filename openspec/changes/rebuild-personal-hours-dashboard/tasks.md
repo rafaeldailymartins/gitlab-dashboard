@@ -112,3 +112,63 @@ considered done, and each task below names whatever additional gate proves it.
 - [x] 12.2 Run the full gate set — `bun run verify`, `bun run test:coverage`, `bun run test:e2e`, `bun run test:mutation`, `bun run build && bun run size` — and record the results
 - [x] 12.3 Rewrite `README.md` and `AGENTS.md` to describe the delivered app rather than the scaffold, including the data flow
 - [x] 12.4 Confirm every `.feature` scenario cites a requirement id and every requirement id is cited by at least one scenario. Made a gate rather than a one-off: `bun run arch:trace` fails in both directions, and the four requirements no browser can observe are listed with their reasons. 41 requirements, 37 cited by scenarios
+
+## 13. Revision: the ledger palette and the sign-in screen
+
+Asked for after the change was delivered: the sign-in screen looked unfinished and
+carried two paragraphs that explained nothing, and the slate-and-indigo palette was
+the most generic combination in software. A design pitch offered three directions;
+the chosen one is the split-screen sign-in of one, with the palette of another.
+
+- [x] 13.1 Rename the product to `GitLab Dashboard` everywhere it is the product's
+      name — both catalogues, the document title, the README, the package manifest
+      and the lockfile — and nowhere it is domain vocabulary. `secondsToHours`, the
+      `hours-report` slice, `Hours per weekday` and the twenty-odd other matches on
+      "hours" stay: the app is about hours, and two of those strings are asserted by
+      a green suite. The OpenSpec change directory keeps its name, which describes
+      what was done rather than what the product is called
+- [x] 13.2 Delete `sign_in_description` and `sign_in_no_token_notice` from both
+      catalogues and rebuild the screen as a split: the mark, a claim and the day
+      feed drawn as an illustration on one side, the heading and the single button
+      on the other. No spec requirement had to change — AUTH-7 locates the read-only
+      claim in the authorization request and in GitLab's account settings, never on
+      this screen — and the unit test that asserted the removed prose was deleted
+      rather than rewritten against something else (AUTH-1, AUTH-8)
+- [x] 13.3 Render the application shell's header only while signed in, and give the
+      sign-in screen its own colour-scheme control, since it is the only one a reader
+      has before signing in. Guard `/login` against a reader who already has a
+      session, which would otherwise put two identical controls on one page (PREF-4)
+- [x] 13.4 Re-derive both stylesheets for the ledger palette rather than recolouring
+      them: 109 interface pairs and 48 chart pairs measured, the ordinal ramp and the
+      categorical set re-run through the palette validator against the new card
+      surfaces. Two values could not follow the pitch — the dark accent is a step
+      lighter than `#9e2b33`, which measures 2.60:1 against the dark ground, and the
+      focus ring is ink, because at 50% alpha no oxblood or brass ring can reach 3:1
+- [x] 13.5 Fix two contrast defects the re-derivation exposed in the generated
+      components, both older than this revision: the outline button's edge used the
+      divider token at 1.25:1 where a control boundary needs 3:1, and the dark
+      invalid border was drawn at 50% alpha, which caps at 5.26:1 over a card even
+      in pure white and measured 2.63:1. Both deviations from what the shadcn CLI
+      writes are commented in place, so regenerating does not silently revert them
+- [x] 13.6 Add the missing 375-pixel scenario for the sign-in screen. UI-11 says
+      every screen, and the outline covered only the four signed-in routes, so a
+      full-bleed two-column layout that overflowed on a phone would have shipped
+      green (UI-11)
+- [x] 13.7 Act on an adversarial review of the whole revision: six independent
+      lenses raised 39 findings, a verifier refuted 18, and the 21 that survived
+      became the fixes below. The ones worth naming: the contrast numbers in the
+      token comments were partly wrong, so they are gone and
+      `scripts/check-contrast.ts` measures 76 pairs on every `verify`;
+      `scripts/check-messages.ts` makes the catalogue-parity claim in
+      `check-traceability.ts` true instead of crediting a lint rule nobody wrote;
+      the size budget was reading 2 of the 10 files `index.html` requests; and
+      signing out could hang forever on a revocation with no timeout, leaving the
+      reader looking signed out on a screen full of their own hours (AUTH-6)
+- [x] 13.8 Fix the four defects that were older than this revision and would not
+      have been found without it: the sign-in button latched itself disabled and
+      said nothing when `startSignIn` rejected (AUTH-9); the KPI progress bar was
+      built from interface tokens and measured 2.69:1 on dark; the acceptance
+      fixture counted days in UTC, so the suite failed every evening after 21:00
+      in Brazil; and Playwright's default worker count over-subscribed the one
+      Vite dev server every browser shares, failing 25 scenarios for its own
+      reasons. All four are recorded in `docs/qa/quality-metrics.md`

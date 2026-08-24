@@ -10,6 +10,13 @@ const SCOPE = 'read_api'
 /** GitLab rejects a credential it no longer accepts with this error code. */
 const INVALID_GRANT = 'invalid_grant'
 
+/**
+ * How long signing out waits for GitLab to acknowledge the revocation. Long
+ * enough for a slow connection, short enough that nobody stares at their own
+ * hours after asking to be signed out.
+ */
+const REVOKE_TIMEOUT_MS = 3000
+
 interface TokenResponse {
   readonly access_token: string
   readonly expires_in: number
@@ -117,10 +124,17 @@ async function requestToken(config: GitLabConfig, body: Record<string, string>):
 async function revoke(config: GitLabConfig, token: string): Promise<void> {
   // A revocation that cannot be delivered must not block signing out: the local
   // session is cleared either way, so the failure is swallowed here.
+  //
+  // The timeout is the point. Swallowing a rejection does nothing for a request
+  // that never settles, and signing out awaits this one before it clears the
+  // cached report and moves the reader off the dashboard — so a hung revocation
+  // used to leave someone looking signed out, on a screen full of their hours,
+  // with the cache still on the device.
   try {
     await fetch(new URL('/oauth/revoke', config.baseUrl), {
       body: new URLSearchParams({ client_id: config.clientId, token }),
       method: 'POST',
+      signal: AbortSignal.timeout(REVOKE_TIMEOUT_MS),
     })
   } catch {
     /* the credential expires on its own; nothing else to do */

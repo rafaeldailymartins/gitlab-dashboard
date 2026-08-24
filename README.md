@@ -1,4 +1,4 @@
-# GitLab Hours Dashboard
+# GitLab Dashboard
 
 A personal dashboard of the hours you logged in GitLab, built from the time
 tracking (`/spend`) on issues and merge requests. You sign in with your own
@@ -72,7 +72,7 @@ This is a one-time, self-service step in your own GitLab account. No
 administrator is involved.
 
 1. Open **GitLab → User Settings → Applications → Add new application**.
-2. Name it anything, for example `Hours Dashboard`.
+2. Name it anything, for example `GitLab Dashboard`.
 3. Redirect URI — add both, one per line:
    ```
    http://localhost:3000/auth/callback

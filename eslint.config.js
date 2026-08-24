@@ -196,4 +196,13 @@ export default defineConfig(
       '@typescript-eslint/no-unsafe-member-access': 'off',
     },
   },
+  {
+    files: ['.size-limit.js'],
+    rules: {
+      // size-limit loads this file as a module and reads its default export.
+      // Named exports are the rule everywhere a human imports from; a tool's
+      // config format is not ours to choose.
+      'no-restricted-exports': 'off',
+    },
+  },
 )

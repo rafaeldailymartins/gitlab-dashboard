@@ -29,7 +29,7 @@ export function DayRow({ day, scale }: DayRowProps) {
 
   return (
     <Collapsible className="border-b last:border-b-0">
-      <CollapsibleTrigger className="group flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+      <CollapsibleTrigger className="group flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
         <ChevronRight
           aria-hidden
           className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[panel-open]:rotate-90"

@@ -1,5 +1,5 @@
 {
-  "name": "gitlab-hours-dashboard",
+  "name": "gitlab-dashboard",
   "version": "2.0.0",
   "private": true,
   "type": "module",
@@ -29,7 +29,7 @@
     "types:coverage": "type-coverage",
     "security:audit": "bun audit",
     "size": "bun --bun size-limit",
-    "verify": "bun run format:check && bun run lint && bun run lint:a11y && bun run typecheck && bun run arch:layers && bun run arch:graph && bun run arch:trace && bun run deadcode && bun run types:coverage && bun run security:audit",
+    "verify": "bun run format:check && bun run lint && bun run lint:a11y && bun run a11y:contrast && bun run i18n:check && bun run typecheck && bun run arch:layers && bun run arch:graph && bun run arch:trace && bun run deadcode && bun run types:coverage && bun run security:audit",
     "pretest": "bun run i18n:compile",
     "test": "bun --bun vitest run",
     "test:watch": "bun --bun vitest",
@@ -39,7 +39,9 @@
     "test:e2e": "bun --bun bddgen && playwright test",
     "test:e2e:ui": "bun --bun bddgen && playwright test --ui",
     "test:mutation": "node ./node_modules/@stryker-mutator/core/bin/stryker.js run",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install",
+    "i18n:check": "bun --bun scripts/check-messages.ts",
+    "a11y:contrast": "bun --bun scripts/check-contrast.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

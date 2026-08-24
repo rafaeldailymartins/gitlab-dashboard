@@ -50,6 +50,7 @@
     "*.config.ts",
     "*.config.js",
     ".dependency-cruiser.cjs",
+    ".size-limit.js",
     "config/**/*.js",
     "scripts"
   ]

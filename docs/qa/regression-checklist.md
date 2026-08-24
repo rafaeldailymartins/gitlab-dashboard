@@ -9,6 +9,11 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
 ## Signing in
 
 - [ ] `/` redirects to the sign-in screen, and there is nowhere to paste a token.
+- [ ] The sign-in screen is full-bleed: no header above it, the mark and the
+      positioning line on one side, one button on the other.
+- [ ] Its own colour-scheme control works and the choice holds across a reload.
+      This is the first screen a new reader sees, so it is where the theme is
+      applied before first paint for the first time.
 - [ ] "Continue with GitLab" reaches GitLab's own authorization page.
 - [ ] Granting access returns to the dashboard with hours on it.
 - [ ] `localStorage` holds `gitlab.refreshToken` and nothing that looks like an
@@ -76,4 +81,6 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
 - [ ] At 375 pixels, no screen scrolls sideways.
 - [ ] A day row's issue title is readable — not squeezed to nothing by the
       project reference beside it.
-- [ ] The header's navigation is reachable.
+- [ ] Signed in, the header's navigation is reachable.
+- [ ] Signed out, the sign-in screen stacks its two panels rather than scrolling
+      sideways, and the decorative week keeps its labels legible.

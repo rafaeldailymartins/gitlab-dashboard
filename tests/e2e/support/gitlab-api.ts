@@ -4,6 +4,11 @@ const GRAPHQL = '**/api/graphql'
 
 const SECONDS_PER_HOUR = 3600
 
+/** `America/Sao_Paulo`, which is the app's default time-zone preference. */
+const ZONE_OFFSET_MS = 3 * 60 * 60 * 1000
+
+const DATE_LENGTH = 'YYYY-MM-DD'.length
+
 const PROJECT = {
   fullPath: 'invent-software/invent-apps-2/squad-fiscal/inventariofiscal',
   name: 'invent.fiscal.inventariofiscal',
@@ -39,15 +44,22 @@ export async function stubTimelogs(page: Page): Promise<void> {
 }
 
 /**
- * Midday UTC on a day relative to now, so the calendar date is the same in every
- * zone the suite runs in and the fixture does not drift across midnight.
+ * Midday in the reader's zone, on a day counted from the reader's today.
+ *
+ * This used to be midday UTC on a day counted from UTC's today, and the suite
+ * failed every evening after 21:00 in Brazil: UTC had already rolled over, so
+ * `middayUtc(0)` was the reader's tomorrow and "today reads 6.5 hours" found
+ * yesterday's three. The app buckets days in `America/Sao_Paulo`, which is the
+ * default preference, so the fixture has to count them there too. Brazil has had
+ * no daylight saving since 2019, which is what makes a fixed offset honest here.
  */
-function middayUtc(daysAgo: number): string {
-  const day = new Date()
-  day.setUTCDate(day.getUTCDate() - daysAgo)
-  day.setUTCHours(12, 0, 0, 0)
+function middayLocal(daysAgo: number): string {
+  const local = new Date(Date.now() - ZONE_OFFSET_MS)
+  local.setUTCDate(local.getUTCDate() - daysAgo)
 
-  return day.toISOString()
+  // Midday in a zone three hours behind UTC, so the entry sits mid-afternoon
+  // UTC and lands on the same calendar day whichever side of it is read.
+  return `${local.toISOString().slice(0, DATE_LENGTH)}T15:00:00.000Z`
 }
 
 function node(daysAgo: number, hours: number, iid: number) {
@@ -59,7 +71,7 @@ function node(daysAgo: number, hours: number, iid: number) {
     },
     mergeRequest: null,
     project: PROJECT,
-    spentAt: middayUtc(daysAgo),
+    spentAt: middayLocal(daysAgo),
     summary: '',
     timeSpent: hours * SECONDS_PER_HOUR,
   }
