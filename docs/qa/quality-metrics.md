@@ -259,3 +259,20 @@ hours` found yesterday's three. Four scenarios, three browsers, twelve failures,
   their own and contend for the machine. The end-to-end `verify` figure moves
   more with cache state than with anything either attempt changed, which is the
   honest reason there is no parallel runner in this repository.
+- **The component project shares one environment per worker (`isolate: false`).**
+  Most of what the suite cost was never the assertions: importing the module
+  graph and building a DOM 62 times over. Sharing them took `bun run test` from
+  28 seconds to 12 and `test:coverage` from 60 to 39, with the same 742 tests and
+  the same coverage. The three ways state could cross a file boundary were probed
+  rather than assumed — a deliberately leaked spy, a storage key, a switched
+  language and a `globalThis` value, all in a two-file experiment forced into one
+  worker. Spies do not survive a file (Vitest restores them), storage does not
+  (the `afterEach` in `tests/setup/ui.ts` clears it, which is also what stops
+  Paraglide's cached locale from carrying), and module scope does. That last one
+  is survivable structurally rather than by luck: the tested slices hold no
+  mutable module state, and the singletons that would be dangerous live in
+  `src/app/`, which has no tests and which no tested slice may import — the FSD
+  boundary rule forbids importing the top layer. Reverting is one line in
+  `vitest.config.ts`, and the reasoning is written beside it.
+- **`happy-dom`, not jsdom.** It has been the component project's environment
+  since the rebuild; a note elsewhere once said otherwise.

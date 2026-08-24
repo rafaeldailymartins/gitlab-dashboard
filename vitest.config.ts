@@ -69,6 +69,31 @@ export default defineConfig({
           environment: 'happy-dom',
           exclude: ['src/**/model/**'],
           include: ['src/**/*.test.tsx', 'src/**/*.test.ts', 'tests/ui/**/*.test.tsx'],
+          /**
+           * One environment per worker rather than one per file.
+           *
+           * Measured on this suite: 28 seconds to 12, and coverage from 60 to
+           * 39, because most of the cost was never the assertions — it was
+           * importing the module graph and building a DOM 62 times over.
+           *
+           * What it trades away is isolation between files in the same worker,
+           * so the three ways state could cross that boundary were each probed
+           * rather than assumed. Spies do NOT leak: Vitest restores them when a
+           * file ends, verified with an unrestored `vi.spyOn(console, 'error')`.
+           * Storage does NOT leak: the `afterEach` in `tests/setup/ui.ts` clears
+           * it, and that is also what keeps Paraglide's cached locale from
+           * carrying a language into the next file. Module scope DOES leak — a
+           * value written to `globalThis` in one file was read in the next.
+           *
+           * Which is survivable here for a structural reason rather than a lucky
+           * one: the tested slices hold no mutable module state (two Intl caches
+           * keyed by locale, one frozen Set), and the singletons that would be
+           * dangerous — the query client, its persister, the app runtime — live
+           * in `src/app/`, which has no tests and which no tested slice may
+           * import, because the FSD boundary rule forbids importing the top
+           * layer. If that ever changes, this line is what makes it a bug.
+           */
+          isolate: false,
           name: 'ui',
           setupFiles: ['./tests/setup/ui.ts'],
         },
