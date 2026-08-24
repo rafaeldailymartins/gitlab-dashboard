@@ -8,6 +8,11 @@
   BUN_VERSION = "1.4.0"
   # Still needed: Stryker and the Playwright run execute on Node.
   NODE_VERSION = "24"
+  # Netlify runs `bun install` before the build command. Without these it would
+  # resolve the lockfile again, and it would run the root `prepare` script,
+  # which installs git hooks a build agent has no use for. `.gitlab-ci.yml`
+  # installs with the same two flags, for the same reason.
+  BUN_FLAGS = "--frozen-lockfile --ignore-scripts"
 
 # Single-page app. Without this every deep link — and `/auth/callback`, which the
 # OAuth redirect lands on — would return 404 from the CDN instead of the app.
