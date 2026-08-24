@@ -204,10 +204,13 @@ the chosen one is the split-screen sign-in of one, with the palette of another.
 - [x] 15.3 Fix the date assertion that only held on Saturdays and Sundays:
       `\p{L}+` does not match the hyphen in `segunda-feira`, so the step passed
       for a week and failed the first Monday it saw
-- [ ] 15.4 NOT DONE, and deliberately: running `verify` and the pre-push hook in
-      parallel. Measured at 344s against 53s in series, because the gates are not
-      independent — `prelint`, `pretypecheck`, `pretest` and `prebuild` all run
-      `i18n:compile`, which WRITES `src/paraglide/` while the other gates read it.
-      Parallelising them is a race, not just contention. The real fix is to drop
-      the implicit `pre*` chain and compile once, which changes how every script
-      behaves and is worth doing on its own terms rather than smuggling in here
+- [x] 15.4 Guard `i18n:compile` behind a fingerprint instead of dropping the
+      `pre*` chain. Every entry point still asks for it and still works on a fresh
+      clone — nothing is invoked differently — but asking twice now costs a hash
+      rather than a rewrite of 184 files. Output verified byte-identical to the
+      command line's. Steady state on the three gates that carry the hook: 38s
+      without, 28s with
+- [x] 15.5 Re-measure the parallel gate runner now that nothing writes while the
+      others read. 33s against 29s in series: no advantage, because six of the
+      gates build a TypeScript program of their own. Rejected a second time, on
+      evidence rather than on the first attempt's race

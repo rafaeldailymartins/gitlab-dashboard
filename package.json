@@ -14,7 +14,7 @@
     "csp": "bun --bun scripts/write-csp.ts",
     "arch:trace": "bun --bun scripts/check-traceability.ts",
     "preview": "bun --bun vite preview",
-    "i18n:compile": "bun --bun paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --strategy localStorage preferredLanguage baseLocale --is-server false --emit-ts-declarations --silent",
+    "i18n:compile": "bun --bun scripts/compile-messages.ts",
     "format": "bun --bun prettier --write .",
     "format:check": "bun --bun prettier --check .",
     "prelint": "bun run i18n:compile",

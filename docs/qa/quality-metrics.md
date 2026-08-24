@@ -24,7 +24,7 @@ a drift is visible without running anything.
 | Test coverage, branches            | ≥ 90%                            | 99.11%   | `bun run test:coverage`         | CI                       |
 | Test coverage, `model/`            | **100%**                         | 100%     | `bun run test:coverage`         | CI                       |
 | Mutation score, `model/`           | ≥ 85%                            | 97.34%   | `bun run test:mutation`         | scheduled CI             |
-| Initial bundle                     | ≤ 180 kB gzip                    | 133.2 kB | `bun run build && bun run size` | CI                       |
+| Initial bundle                     | ≤ 180 kB gzip                    | 136.6 kB | `bun run build && bun run size` | CI                       |
 | Accessibility (WCAG 2.1 AA)        | 0 axe violations, light and dark | pass     | `bun run test:e2e`              | CI                       |
 | Cumulative layout shift            | < 0.1, cold and warm             | pass     | `bun run test:e2e`              | CI                       |
 | No sideways scrolling at 375 px    | every screen                     | pass     | `bun run test:e2e`              | CI                       |
@@ -241,3 +241,21 @@ hours` found yesterday's three. Four scenarios, three browsers, twelve failures,
   on a Sunday and looked green. Two clock-dependent defects in one suite is a
   pattern worth naming: an assertion that only holds on some days is a failing
   assertion that has not been run yet.
+- **`i18n:compile` only compiles when the catalogues have changed.** Six scripts
+  depend on it through `prelint`, `pretypecheck`, `pretest`, `pretest:coverage`,
+  `pretest:e2e` and `prebuild`, and each one used to rewrite all 184 generated
+  files to produce identical output — which cost 3.5 seconds and, worse, made
+  every gate that reads `src/paraglide/` unsafe to run beside one that writes it.
+  The compile is now guarded by a fingerprint over the catalogues, the project
+  settings, the compiler options and the compiler's version, and it refuses to
+  trust that fingerprint when the output is missing. Output is byte-identical to
+  the command line's across all 184 files — verified by hashing both. Measured
+  back to back on the three gates that carry the hook, steady state: 38s without
+  the guard, 28s with it.
+- **Running the gates in parallel was measured twice and rejected twice.** Before
+  the guard it took 344s against 53s in series, because the gates were racing
+  over generated sources. After the guard removed the race it took 33s against
+  29s — no advantage, because six of the gates build a TypeScript program of
+  their own and contend for the machine. The end-to-end `verify` figure moves
+  more with cache state than with anything either attempt changed, which is the
+  honest reason there is no parallel runner in this repository.

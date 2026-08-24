@@ -77,7 +77,9 @@ src/
   shared/       ui (shadcn plus ours), api (the GraphQL client, the query client
                 and the cache persister), lib, i18n, config
 scripts/        build and gate tooling: the CSP writer, the traceability check,
-                the contrast measurement, the translation-parity check
+                the contrast measurement, the translation-parity check, and the
+                message compiler, which every `pre*` script calls and which
+                rebuilds only when the catalogues change
 ```
 
 `model/` and `api/` are FSD's own segment names; they carry the Clean
