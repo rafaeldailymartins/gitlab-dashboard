@@ -69,7 +69,7 @@ When('I choose the Tokyo time zone', async ({ page }) => {
 
 Then('the dashboard is in Portuguese', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Painel' })).toBeVisible()
-  await expect(page.getByText(/atualizado com o gitlab/i)).toBeVisible()
+  await expect(page.getByText(/atualizado às \d{1,2}:\d{2}/i)).toBeVisible()
 })
 
 Then('the date reads as Portuguese writes it', async ({ page }) => {

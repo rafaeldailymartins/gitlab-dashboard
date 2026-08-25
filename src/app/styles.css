@@ -151,6 +151,20 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-seal: var(--seal);
+
+  /*
+   * One turn, for a sync GitLab answered before the reader let go of the
+   * button. `animate-spin` covers a request long enough to watch; this covers
+   * the one that is over in eighty milliseconds, which would otherwise read as
+   * a button that did nothing at all.
+   */
+  --animate-spin-once: spin-once 600ms linear;
+}
+
+@keyframes spin-once {
+  to {
+    transform: rotate(1turn);
+  }
 }
 
 @layer base {

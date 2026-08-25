@@ -12,7 +12,7 @@ Feature: Opening the dashboard
   Scenario: The summary shows the hours GitLab holds
     Given I am signed in
     Then today reads 6.5 hours
-    And the report says it is up to date
+    And the report says when it last synced
 
   # Spec: gitlab-authentication / AUTH-1
   Scenario Outline: The sign-in screen is accessible in both colour schemes

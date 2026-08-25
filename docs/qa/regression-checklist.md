@@ -41,7 +41,22 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
       request — and within five minutes there is no request at all.
 - [ ] Throttle the network to "Slow 3G" and reload. Same: figures first.
 - [ ] Leave the tab for more than five minutes, return, and the report says it is
-      checking GitLab while the old figures stay on screen.
+      updating while the old figures stay on screen.
+
+## Syncing
+
+- [ ] The dashboard, `/insights` and a day screen each name the time the hours
+      arrived, in the configured time zone.
+- [ ] Log time in GitLab, press sync, and the new hours appear without a reload.
+- [ ] While the request is in flight the icon turns and the text says the hours
+      are being updated; the old figures stay on screen throughout.
+- [ ] Turn the network off, press sync, and the failure is named beside the
+      button while the last-sync time stays where it was. Turn it back on and
+      press sync again: it recovers without a reload.
+- [ ] With "reduce motion" on in the operating system, the icon does not turn,
+      and the text alone reports the sync.
+- [ ] Leave the tab overnight and return: the time reads as a date and a time,
+      not as a bare clock time from yesterday.
 
 ## The session ending
 

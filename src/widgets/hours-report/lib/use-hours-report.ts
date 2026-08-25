@@ -15,6 +15,9 @@ import { addDays, endOfMonth, startOfMonth, startOfWeek, toIsoDate } from '@/sha
 
 const LAST_DAY_OF_WEEK = 6
 
+/** What the query reports for `dataUpdatedAt` before a response has ever arrived. */
+const NEVER = 0
+
 export interface HoursReport {
   /** True while an older page is on its way, over days already on screen. */
   readonly appending: boolean
@@ -25,12 +28,19 @@ export interface HoursReport {
   readonly failure: GraphQLFailure | null
   /** True once figures are on screen, whether fresh or restored from cache. */
   readonly hasFigures: boolean
-  /** Set while a request is in flight over figures already on screen. */
-  readonly isRefreshing: boolean
   /** Asks for the page before the oldest day loaded. */
   readonly loadOlder: () => void
   readonly month: PeriodSummary
-  readonly retry: () => void
+  /** Asks GitLab for the loaded history again, and is also how a failure is retried. */
+  readonly sync: () => void
+  /**
+   * When GitLab last answered, or null before it ever has. It survives a reload
+   * because the query cache is persisted with it — a failed request leaves it
+   * where it was, which is what makes it honest.
+   */
+  readonly syncedAt: Date | null
+  /** True while any request over the history is in flight, first or later. */
+  readonly syncing: boolean
   readonly today: PeriodSummary
   readonly week: PeriodSummary
 }
@@ -64,13 +74,14 @@ export function useHoursReport(): HoursReport {
     days: report.days,
     failure: failureOf(query.error),
     hasFigures: query.data !== undefined,
-    isRefreshing: query.isFetching,
     loadOlder: () => {
       void query.fetchNextPage()
     },
-    retry: () => {
+    sync: () => {
       void query.refetch()
     },
+    syncedAt: query.dataUpdatedAt === NEVER ? null : new Date(query.dataUpdatedAt),
+    syncing: query.isFetching,
   }
 }
 

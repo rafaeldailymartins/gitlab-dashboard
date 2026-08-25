@@ -95,5 +95,5 @@ Then('I am told GitLab could not be reached', async ({ page }) => {
 })
 
 Then('I am offered a retry', async ({ page }) => {
-  await expect(page.getByRole('button', { name: /try again/i })).toBeVisible()
+  await expect(page.getByRole('button', { name: /sync with gitlab/i })).toBeVisible()
 })

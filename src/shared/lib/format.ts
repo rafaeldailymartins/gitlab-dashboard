@@ -14,6 +14,7 @@ const DATE_STYLES = {
   full: { day: 'numeric', month: 'long', weekday: 'long', year: 'numeric' },
   long: { day: 'numeric', month: 'long', year: 'numeric' },
   month: { month: 'long', year: 'numeric' },
+  short: { day: 'numeric', month: 'short' },
   weekdayLong: { weekday: 'long' },
   weekdayShort: { weekday: 'short' },
 } as const satisfies Record<string, Intl.DateTimeFormatOptions>
@@ -27,6 +28,7 @@ type DateStyle = keyof typeof DATE_STYLES
  */
 const dateFormatters = new Map<string, Intl.DateTimeFormat>()
 const hourFormatters = new Map<string, Intl.NumberFormat>()
+const timeFormatters = new Map<string, Intl.DateTimeFormat>()
 
 /** A calendar date written out in full, as a heading — `Friday, 21 August 2026`. */
 export function formatFullDate(date: IsoDate, locale: string): string {
@@ -61,6 +63,16 @@ export function formatMonth(date: IsoDate, locale: string): string {
 }
 
 /**
+ * A calendar date in its shortest legible form — `21 Aug`, `21 de ago.`.
+ *
+ * For a timestamp that has to name its day without becoming a sentence: the
+ * year is left out, because the only dates written this way are recent ones.
+ */
+export function formatShortDate(date: IsoDate, locale: string): string {
+  return formatDate(date, locale, 'short')
+}
+
+/**
  * Hours with a spelled-out unit for assistive technology — `6.7 hours`,
  * `6,7 horas`. A bar chart announces this rather than describing its shape.
  */
@@ -71,6 +83,18 @@ export function formatSpokenHours(hours: number, locale: string): string {
     unit: 'hour',
     unitDisplay: 'long',
   }).format(hours)
+}
+
+/**
+ * The clock time of an instant, in the zone the reader keeps their days in —
+ * `2:32 PM` in English, `14:32` in Brazilian Portuguese.
+ *
+ * The zone is an argument rather than the machine's default for the same reason
+ * the rest of this module pins one: a timestamp rendered in the browser's zone
+ * would name an hour the reader never lived through.
+ */
+export function formatTimeOfDay(instant: Date, locale: string, timeZone: string): string {
+  return timeFormatter(locale, timeZone).format(instant)
 }
 
 /** The abbreviated name of an ISO weekday, for a column header — `Mon`, `seg.`. */
@@ -118,6 +142,21 @@ function hourFormatter(locale: string): Intl.NumberFormat {
   })
 
   hourFormatters.set(locale, created)
+
+  return created
+}
+
+function timeFormatter(locale: string, timeZone: string): Intl.DateTimeFormat {
+  const key = `${locale}|${timeZone}`
+  const cached = timeFormatters.get(key)
+
+  if (cached) {
+    return cached
+  }
+
+  const created = new Intl.DateTimeFormat(locale, { timeStyle: 'short', timeZone })
+
+  timeFormatters.set(key, created)
 
   return created
 }

@@ -10,7 +10,13 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 
-const CHANGE = 'openspec/changes/rebuild-personal-hours-dashboard'
+/**
+ * Where requirements live: the specs already merged, and every change that has
+ * not been archived. Naming one change here — as this used to — meant the
+ * second change's requirements were held to nothing at all, silently.
+ */
+const SPEC_ROOTS = ['openspec/specs', 'openspec/changes']
+const ARCHIVED = path.join('changes', 'archive') + path.sep
 const FEATURES = 'features'
 
 /** `I18N-3` has a digit inside the capability prefix, so the class needs both. */
@@ -92,7 +98,7 @@ function citationsIn(feature: string, text: string) {
 async function declaredRequirements(): Promise<Set<string>> {
   const ids = new Set<string>()
 
-  for (const spec of await filesUnder(path.join(CHANGE, 'specs'), '.md')) {
+  for (const spec of await specFiles()) {
     const text = await readFile(spec, 'utf8')
 
     for (const match of text.matchAll(REQUIREMENT)) {
@@ -113,6 +119,22 @@ async function filesUnder(directory: string, extension: string): Promise<string[
   return entries
     .filter((entry) => entry.isFile() && entry.name.endsWith(extension))
     .map((entry) => path.join(entry.parentPath, entry.name))
+}
+
+/**
+ * Every `spec.md` outside the archive. The name is the filter: a proposal or a
+ * design may quote a requirement heading, and only a specification declares one.
+ */
+async function specFiles(): Promise<string[]> {
+  const found: string[] = []
+
+  for (const root of SPEC_ROOTS) {
+    const files = await filesUnder(root, 'spec.md')
+
+    found.push(...files.filter((file) => !file.includes(ARCHIVED)))
+  }
+
+  return found
 }
 
 const declared = await declaredRequirements()
