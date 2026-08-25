@@ -1,5 +1,12 @@
-# Git hooks. Every gate here also runs in CI; running them locally means a bad
-# commit never reaches the remote in the first place.
+# Git hooks. What runs here is what is cheap enough to run on every commit and
+# every push; the test suites run in CI, where `main` will not take a merge
+# request whose pipeline has not passed.
+#
+# The split is deliberate. Formatting, lint, types, architecture, dead code and
+# the audit answer in seconds and catch a mistake before it costs a pipeline.
+# The unit, component and acceptance suites are minutes, and CI runs them on
+# every push regardless — running them locally too bought nothing but the wait.
+#
 # Managed by lefthook — installed by the `prepare` script on `bun install`.
 
 pre-commit:
@@ -13,23 +20,38 @@ commit-msg:
     - name: conventional commit message
       run: bun commitlint --edit {1}
 
+# Compiling the messages first is what makes the group below safe to run in
+# parallel. `pretypecheck` would otherwise rewrite all 184 files in
+# `src/paraglide/` while steiger, dependency-cruiser and knip are reading them —
+# the race `docs/qa/quality-metrics.md` records. Run once, up front, the group's
+# own `pre*` steps find the fingerprint current and do nothing.
+#
+# Measured on this repository, five interleaved runs each, steady state:
+# 43s in series, 22s this way. That is the opposite of what the same experiment
+# concluded for `verify`, and for a reason worth knowing: `verify` was CPU-bound
+# on six overlapping TypeScript programs, while here the machine spends its time
+# waiting on file reads, which is exactly what parallelism recovers.
 pre-push:
   parallel: false
   jobs:
-    - name: typecheck
-      run: bun run typecheck
+    - name: compile messages
+      run: bun run i18n:compile
 
-    - name: unit and component tests
-      run: bun run test
+    - name: gates
+      group:
+        parallel: true
+        jobs:
+          - name: typecheck
+            run: bun run typecheck
 
-    - name: architecture boundaries
-      run: bun run arch:layers
+          - name: architecture boundaries
+            run: bun run arch:layers
 
-    - name: dependency graph
-      run: bun run arch:graph
+          - name: dependency graph
+            run: bun run arch:graph
 
-    - name: dead code
-      run: bun run deadcode
+          - name: dead code
+            run: bun run deadcode
 
-    - name: dependency vulnerabilities
-      run: bun run security:audit
+          - name: dependency vulnerabilities
+            run: bun run security:audit
