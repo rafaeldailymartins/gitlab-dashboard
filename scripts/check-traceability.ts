@@ -7,7 +7,7 @@
  * nothing, or cites something that does not exist, and a requirement that no
  * scenario claims to cover.
  */
-import { readdir, readFile } from 'node:fs/promises'
+import { access, readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 
 /**
@@ -113,6 +113,13 @@ async function declaredRequirements(): Promise<Set<string>> {
   return ids
 }
 
+async function exists(directory: string): Promise<boolean> {
+  return access(directory).then(
+    () => true,
+    () => false,
+  )
+}
+
 async function filesUnder(directory: string, extension: string): Promise<string[]> {
   const entries = await readdir(directory, { recursive: true, withFileTypes: true })
 
@@ -124,11 +131,20 @@ async function filesUnder(directory: string, extension: string): Promise<string[
 /**
  * Every `spec.md` outside the archive. The name is the filter: a proposal or a
  * design may quote a requirement heading, and only a specification declares one.
+ *
+ * A root that is not there holds no specifications. `openspec/specs` fills up
+ * when a change is archived into it, and git does not track an empty directory
+ * — so it exists in a working copy that has had one and not in a fresh clone,
+ * which is what CI always has.
  */
 async function specFiles(): Promise<string[]> {
   const found: string[] = []
 
   for (const root of SPEC_ROOTS) {
+    if (!(await exists(root))) {
+      continue
+    }
+
     const files = await filesUnder(root, 'spec.md')
 
     found.push(...files.filter((file) => !file.includes(ARCHIVED)))
