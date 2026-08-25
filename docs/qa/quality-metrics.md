@@ -259,6 +259,16 @@ hours` found yesterday's three. Four scenarios, three browsers, twelve failures,
   their own and contend for the machine. The end-to-end `verify` figure moves
   more with cache state than with anything either attempt changed, which is the
   honest reason there is no parallel runner in this repository.
+- **The `pre-push` group is the exception, measured a third time and kept.** Five
+  interleaved runs each, steady state: 43s in series, 22s with the five gates in
+  a parallel group behind one serial `i18n:compile`. What changed is not the
+  conclusion above but the machine it was drawn on — a Windows working copy whose
+  gates spend their time waiting on file reads rather than saturating cores, so
+  there is idle time for parallelism to recover. The compile stays serial and
+  ahead of the group, which is what keeps the race the guard closed from
+  reopening: verified by deleting `src/paraglide/.fingerprint` and watching the
+  compile do the work before the group opened, with every gate inside it then
+  reporting the messages current.
 - **The component project shares one environment per worker (`isolate: false`).**
   Most of what the suite cost was never the assertions: importing the module
   graph and building a DOM 62 times over. Sharing them took `bun run test` from
