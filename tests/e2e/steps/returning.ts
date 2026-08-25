@@ -49,7 +49,7 @@ Then(
 Then('GitLab was not asked again', async ({ page }) => {
   // Inside the five-minute freshness window the cache is the answer, so a return
   // visit costs nothing at all.
-  await expect(page.getByRole('status')).toContainText(/up to date/i)
+  await expect(page.getByRole('status')).toContainText(/updated/i)
   expect(timesAsked(page)).toBe(0)
 })
 

@@ -4,7 +4,9 @@ import { isoDate } from './date'
 import {
   formatFullDate,
   formatHours,
+  formatShortDate,
   formatSpokenHours,
+  formatTimeOfDay,
   shortWeekdayName,
   weekdayName,
 } from './format'
@@ -92,5 +94,41 @@ describe('shortWeekdayName', () => {
 
   it('is shorter than the full name', () => {
     expect(shortWeekdayName(3, PT).length).toBeLessThan(weekdayName(3, PT).length)
+  })
+})
+
+describe('formatShortDate', () => {
+  it('names the day and abbreviates the month', () => {
+    expect(formatShortDate(isoDate('2026-08-21'), EN)).toMatch(/21/)
+    expect(formatShortDate(isoDate('2026-08-21'), EN)).toMatch(/Aug/)
+    expect(formatShortDate(isoDate('2026-08-21'), PT)).toMatch(/ago/i)
+  })
+
+  it('leaves the year out', () => {
+    expect(formatShortDate(isoDate('2026-08-21'), EN)).not.toMatch(/2026/)
+  })
+
+  it('reads the date as a calendar date, whatever the machine zone is', () => {
+    // Rendered in a negative-offset zone, UTC midnight on the 21st is the 20th.
+    expect(formatShortDate(isoDate('2026-08-21'), EN)).toMatch(/\b21\b/)
+  })
+})
+
+describe('formatTimeOfDay', () => {
+  /** 15:00 UTC, which is midday in São Paulo and 17:00 in Berlin. */
+  const INSTANT = new Date('2026-08-21T15:00:00Z')
+
+  it('reads the clock of the zone it is given, not of the machine', () => {
+    expect(formatTimeOfDay(INSTANT, PT, 'America/Sao_Paulo')).toBe('12:00')
+    expect(formatTimeOfDay(INSTANT, PT, 'Europe/Berlin')).toBe('17:00')
+  })
+
+  it('writes the clock the way the locale does', () => {
+    expect(formatTimeOfDay(INSTANT, 'en-US', 'America/Sao_Paulo')).toMatch(/12:00\s?PM/i)
+    expect(formatTimeOfDay(INSTANT, EN, 'America/Sao_Paulo')).toBe('12:00')
+  })
+
+  it('leaves the seconds out', () => {
+    expect(formatTimeOfDay(new Date('2026-08-21T15:00:42Z'), PT, 'UTC')).toBe('15:00')
   })
 })

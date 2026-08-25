@@ -5,7 +5,7 @@ import { m, useActiveLocale } from '@/shared/i18n'
 import { endOfMonth, startOfMonth, toIsoDate } from '@/shared/lib/date'
 import { formatHours, formatMonth } from '@/shared/lib/format'
 import { Skeleton } from '@/shared/ui/skeleton'
-import { useHoursReport } from '@/widgets/hours-report'
+import { SyncControl, useHoursReport } from '@/widgets/hours-report'
 
 import { MonthHeatmap } from './month-heatmap'
 import { ProjectSplit } from './project-split'
@@ -29,11 +29,14 @@ export function InsightsPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{formatMonth(today, locale)}</h1>
-        <p className="text-sm text-muted-foreground">
-          {m.insights_month_total({ hours: formatHours(report.month.hours, locale) })}
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight">{formatMonth(today, locale)}</h1>
+          <p className="text-sm text-muted-foreground">
+            {m.insights_month_total({ hours: formatHours(report.month.hours, locale) })}
+          </p>
+        </div>
+        <SyncControl report={report} />
       </header>
 
       {report.hasFigures ? (

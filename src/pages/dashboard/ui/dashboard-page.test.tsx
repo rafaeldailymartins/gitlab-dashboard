@@ -162,11 +162,11 @@ describe('DashboardPage', () => {
     expect(gateway.myTimelogs).toHaveBeenCalledTimes(3)
   })
 
-  it('says it is up to date once the report has settled', async () => {
+  it('says when the hours arrived once the report has settled', async () => {
     renderReport(<DashboardPage />)
 
     await waitFor(() => {
-      expect(screen.getByRole('status')).toHaveTextContent(/up to date/i)
+      expect(screen.getByRole('status')).toHaveTextContent(/updated at \d{1,2}:\d{2}/i)
     })
   })
 
@@ -178,7 +178,7 @@ describe('DashboardPage', () => {
     await waitFor(() => {
       expect(screen.getByRole('status')).toHaveTextContent(/could not be reached/i)
     })
-    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /sync with gitlab/i })).toBeInTheDocument()
   })
 
   it('asks the reader to sign in again when the credential is refused', async () => {
@@ -197,9 +197,9 @@ describe('DashboardPage', () => {
     renderReport(<DashboardPage />, { gateway })
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /sync with gitlab/i })).toBeInTheDocument()
     })
-    await userEvent.click(screen.getByRole('button', { name: /try again/i }))
+    await userEvent.click(screen.getByRole('button', { name: /sync with gitlab/i }))
 
     await waitFor(() => {
       expect(gateway.myTimelogs.mock.calls.length).toBeGreaterThan(1)
@@ -323,7 +323,7 @@ describe('DashboardPage', () => {
     })
   })
 
-  it('says it is checking GitLab while a refresh is in flight over the figures', async () => {
+  it('says it is updating while a refresh is in flight over the figures', async () => {
     const inFlight = deferred<TimelogPage>()
     const gateway = {
       myTimelogs: vi
@@ -340,7 +340,7 @@ describe('DashboardPage', () => {
     void client.refetchQueries()
 
     await waitFor(() => {
-      expect(screen.getByRole('status')).toHaveTextContent(/checking gitlab/i)
+      expect(screen.getByRole('status')).toHaveTextContent(/updating/i)
     })
     // The old figure stays put while the new one is on its way.
     expect(figure('Today').getByRole('definition')).toHaveTextContent('1')

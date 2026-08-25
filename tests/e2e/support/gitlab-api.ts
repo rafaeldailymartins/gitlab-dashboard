@@ -49,7 +49,9 @@ export async function stubSlowTimelogs(page: Page, delayMs: number): Promise<voi
  * mere presence of a number.
  */
 export async function stubTimelogs(page: Page): Promise<void> {
+  asked.set(page, { count: 0 })
   await page.route(GRAPHQL, async (route) => {
+    countAsk(page)
     await answer(route, payload())
   })
 }
@@ -134,7 +136,9 @@ const asked = new WeakMap<Page, { count: number }>()
 
 /** An endpoint that cannot be reached at all. */
 export async function failTimelogs(page: Page): Promise<void> {
+  asked.set(page, { count: 0 })
   await page.route(GRAPHQL, async (route) => {
+    countAsk(page)
     await route.abort('connectionfailed')
   })
 }

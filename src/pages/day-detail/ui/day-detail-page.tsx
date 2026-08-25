@@ -7,7 +7,7 @@ import { type IsoDate, weekdayOf } from '@/shared/lib/date'
 import { formatHours, formatLongDate, weekdayName } from '@/shared/lib/format'
 import { HourFigure } from '@/shared/ui/hour-figure'
 import { Skeleton } from '@/shared/ui/skeleton'
-import { useHoursReport } from '@/widgets/hours-report'
+import { SyncControl, useHoursReport } from '@/widgets/hours-report'
 
 import { WorkItemList } from './work-item-list'
 
@@ -38,9 +38,12 @@ export function DayDetailPage({ date }: { readonly date: IsoDate }) {
         {m.day_detail_back()}
       </Link>
 
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{formatLongDate(date, locale)}</h1>
-        <p className="text-sm text-muted-foreground">{weekdayName(weekdayOf(date), locale)}</p>
+      <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight">{formatLongDate(date, locale)}</h1>
+          <p className="text-sm text-muted-foreground">{weekdayName(weekdayOf(date), locale)}</p>
+        </div>
+        <SyncControl report={report} />
       </header>
 
       {report.hasFigures ? (
