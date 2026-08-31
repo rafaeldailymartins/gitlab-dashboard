@@ -52,8 +52,19 @@ export default defineConfig({
      * alone. Serving the build costs one `vite build` per run and pays for it
      * several times over — and it has the side benefit of exercising the
      * artefact that actually deploys rather than a development transform of it.
+     *
+     * The build runs on Bun; the server does not. Under `bun --bun`, Vite's
+     * preview server uses Bun's `node:http` compatibility layer, which dies with
+     * `ERR_STREAM_WRITE_AFTER_END` when a response is written after its
+     * connection closed — routine when Playwright closes a page mid-response.
+     * The whole process exits, so every scenario after that point fails for want
+     * of a server rather than for anything it asserts. Observed twice on the same
+     * commit in CI, crashing at test 13 in one run and 130 in the next, after
+     * passing on two earlier runs of the same suite: a race, not a scenario.
+     * `node` here is the third entry in the same list as Stryker and the
+     * Playwright run itself — see AGENTS.md § Runtime.
      */
-    command: `bun run build && bun --bun vite preview --port ${String(ACCEPTANCE_PORT)} --strictPort`,
+    command: `bun run build && node ./node_modules/vite/bin/vite.js preview --port ${String(ACCEPTANCE_PORT)} --strictPort`,
     /**
      * Never reused. A preview server left running from an earlier run serves an
      * earlier build, and a suite that passes against yesterday's bundle is worse
