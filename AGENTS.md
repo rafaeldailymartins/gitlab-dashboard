@@ -132,6 +132,29 @@ one without reading the reason will reintroduce a bug that is already fixed.
   `@tanstack/react-virtual` was installed, tried and removed: rows expand into
   their work items, and a measured list whose items change height is exactly
   where a virtualiser scrolls the reader somewhere they did not ask to be.
+- **A GraphQL answer carrying `data` and `errors` together is used, not thrown
+  away.** `GraphQLClient.request` returns both. GitLab answers `200` with the
+  entries it could resolve and errors for the rest, and `dataOf` used to throw on
+  any `errors` at all — which classified a partly usable answer as `rejected`, a
+  kind the query client does not retry, and left a reader's dashboard empty and
+  saying "GitLab refused the request" over three entries out of twenty-five. Only
+  an answer with no usable data is a failure now.
+- **There are two timelog query documents, and the second one is not dead
+  code.** `Timelog.project` is non-nullable in GitLab's schema while the
+  connection's items are not, so an entry whose project GitLab will not resolve
+  for this reader arrives as `null` and takes its hours with it.
+  `MY_TIMELOGS_WITHOUT_PROJECT` asks the same page again without that field, so
+  the resolver that failed is never reached and the hours can be read.
+  `TimelogEntry.project` is nullable because of it. The two answers are
+  reconciled by a bounded multiset difference in `model/reconcile.ts` — never by
+  position: the requests are not atomic, and on the newest page an entry logged
+  between them shifts every index, so a positional merge would count an entry
+  twice. The bound makes drift lose an entry at worst, which the report declares,
+  rather than invent one, which nothing would.
+- **"Short" is not "unsettled".** `settled` (REPORT-3) drives further page
+  requests; an entry GitLab withheld and nothing recovered never improves, so
+  routing it through that flag would page through the whole history forever. It
+  is reported as a count instead.
 - **There is no charting library.** The week strip, the heatmap and the project
   split are divs with a width or a background token. Colours come from
   `src/app/charts.css`, validated against this app's own card surfaces in both

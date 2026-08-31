@@ -24,11 +24,28 @@ export interface TimelogReport {
   readonly days: readonly DayTotal[]
   /** The oldest day loaded, or null when nothing has been loaded. */
   readonly oldestLoadedDate: IsoDate | null
+  /**
+   * Entries the provider withheld that nothing recovered.
+   *
+   * These are hours missing from every total here, and there is no way to know
+   * which days they belong to, because the provider returned nothing about them.
+   * Deliberately not folded into `settled`: that flag drives further requests,
+   * and an unread entry never improves however many pages are read.
+   */
+  readonly unread: number
+  /** Entries counted with no project, because the provider would not resolve it. */
+  readonly withoutProject: number
 }
 
 // Nothing loaded is not the same as nothing to load: an empty report claiming to
 // be complete would let a screen present zero hours as a final answer.
-const NOTHING_LOADED: TimelogReport = { complete: false, days: [], oldestLoadedDate: null }
+const NOTHING_LOADED: TimelogReport = {
+  complete: false,
+  days: [],
+  oldestLoadedDate: null,
+  unread: 0,
+  withoutProject: 0,
+}
 
 /**
  * The total for one bounded period, cut from the loaded days.
@@ -65,12 +82,23 @@ export function reportFrom(pages: readonly TimelogPage[], timeZone: string): Tim
     pages.flatMap((page) => page.entries),
     timeZone,
   )
+  const recovered = countOver(pages, (page) => page.recovered)
 
   return {
     complete: last.nextCursor === null,
     days,
     oldestLoadedDate: days.at(-1)?.date ?? null,
+    unread: countOver(pages, (page) => page.withheld) - recovered,
+    withoutProject: recovered,
   }
+}
+
+/** Sums one of the per-page counts, reading an absent one as zero. */
+function countOver(
+  pages: readonly TimelogPage[],
+  count: (page: TimelogPage) => number | undefined,
+): number {
+  return pages.reduce((total, page) => total + (count(page) ?? 0), 0)
 }
 
 /**

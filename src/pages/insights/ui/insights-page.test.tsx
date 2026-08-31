@@ -28,7 +28,7 @@ interface EntrySpec {
   readonly day: string
   readonly hours: number
   readonly iid: null | number
-  readonly project?: typeof FISCAL
+  readonly project?: null | typeof FISCAL
 }
 
 function entry({ day, hours, iid, project = FISCAL }: EntrySpec): TimelogEntry {
@@ -38,7 +38,7 @@ function entry({ day, hours, iid, project = FISCAL }: EntrySpec): TimelogEntry {
     spentAt: new Date(`${day}T15:00:00Z`),
     summary: null,
     workItem:
-      iid === null
+      iid === null || project === null
         ? null
         : {
             kind: 'issue',
@@ -315,5 +315,32 @@ describe('InsightsPage', () => {
     })
     // Six named rows plus the folded one, never a seventh colour.
     expect(section(/Hours by project/).getAllByRole('listitem')).toHaveLength(7)
+  })
+})
+
+describe('a project the reader cannot read', () => {
+  const withheld = { day: '2026-08-20', hours: 2, iid: null, project: null }
+
+  it('is named as one group in the split by project', async () => {
+    renderReport(<InsightsPage />, {
+      gateway: gatewayWith([entry(withheld), entry({ ...withheld, hours: 1 })]),
+      storage: inUtc(),
+    })
+
+    await waitFor(() => {
+      expect(section(/hours by project/i).getByText(/no project reported/i)).toBeInTheDocument()
+    })
+    expect(section(/hours by project/i).getAllByRole('listitem')).toHaveLength(1)
+  })
+
+  it('is named in the table of what took the time', async () => {
+    renderReport(<InsightsPage />, {
+      gateway: gatewayWith([entry(withheld)]),
+      storage: inUtc(),
+    })
+
+    await waitFor(() => {
+      expect(section(/what took the time/i).getByText(/no project reported/i)).toBeInTheDocument()
+    })
   })
 })

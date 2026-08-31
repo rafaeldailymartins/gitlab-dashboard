@@ -1,7 +1,6 @@
 import { ExternalLink } from 'lucide-react'
 
-import type { WorkItemTotal } from '@/entities/timelogs'
-
+import { projectPath, type WorkItemTotal } from '@/entities/timelogs'
 import { m } from '@/shared/i18n'
 import { HourFigure } from '@/shared/ui/hour-figure'
 
@@ -43,7 +42,7 @@ export function WorkItemRow({ item }: { readonly item: WorkItemTotal }) {
         </span>
       )}
       <span className="w-full truncate pl-17 text-xs text-muted-foreground sm:w-auto sm:pl-0">
-        {item.workItem?.reference ?? item.project.fullPath}
+        {item.workItem?.reference ?? projectPath(item.project)}
       </span>
     </li>
   )

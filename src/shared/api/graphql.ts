@@ -5,8 +5,23 @@ export interface Credentials {
   refresh(): Promise<string>
 }
 
+/**
+ * What an endpoint answered: its data, and whatever it would not resolve.
+ *
+ * Both, rather than one or the other. GraphQL reports a partly resolvable
+ * request as data and errors together, and a client that chose between them
+ * would either throw away entries the provider did answer with — which is the
+ * defect this shape exists to prevent — or pass a short answer on as if it were
+ * the whole of one.
+ */
+export interface GraphQLAnswer {
+  readonly data: unknown
+  /** Empty when the whole request resolved. */
+  readonly errors: readonly string[]
+}
+
 export interface GraphQLClient {
-  request(request: GraphQLRequest): Promise<unknown>
+  request(request: GraphQLRequest): Promise<GraphQLAnswer>
 }
 
 /** Why a GraphQL request did not produce data. */
@@ -55,7 +70,7 @@ export function graphQLClient(endpoint: string, credentials: Credentials): Graph
       const first = await send(endpoint, request, await credentials.accessToken())
 
       if (first.status !== UNAUTHORIZED) {
-        return dataOf(first)
+        return answerOf(first)
       }
 
       const retried = await send(endpoint, request, await credentials.refresh())
@@ -64,24 +79,32 @@ export function graphQLClient(endpoint: string, credentials: Credentials): Graph
         throw new GraphQLRequestError({ kind: 'unauthorized' })
       }
 
-      return dataOf(retried)
+      return answerOf(retried)
     },
   }
 }
 
-async function dataOf(response: Response): Promise<unknown> {
+/**
+ * The answer inside a response, or a failure when there is nothing in it.
+ *
+ * Errors alone are a refusal. Errors beside data are a partial answer, and the
+ * data in one is the reader's own: throwing it away is what left a dashboard
+ * empty over three entries out of twenty-five.
+ */
+async function answerOf(response: Response): Promise<GraphQLAnswer> {
   if (!response.ok) {
     throw new GraphQLRequestError({ kind: 'unavailable' })
   }
 
   const payload = await readJson(response)
   const errors = errorMessagesOf(payload)
+  const data = isRecord(payload) ? payload['data'] : undefined
 
-  if (errors.length > 0) {
+  if (errors.length > 0 && !isUsable(data)) {
     throw new GraphQLRequestError({ kind: 'rejected', messages: errors })
   }
 
-  return isRecord(payload) ? payload['data'] : undefined
+  return { data, errors }
 }
 
 /**
@@ -100,6 +123,16 @@ function errorMessagesOf(payload: unknown): string[] {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
+}
+
+/**
+ * Whether there is anything in `data` worth handing on.
+ *
+ * A provider that resolved nothing sends `data: null` — or no `data` at all —
+ * and errors saying why. Only that pairing is a refusal.
+ */
+function isUsable(data: unknown): boolean {
+  return data !== undefined && data !== null
 }
 
 async function readJson(response: Response): Promise<unknown> {

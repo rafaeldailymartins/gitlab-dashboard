@@ -33,7 +33,11 @@ function day(date: string, items: WorkItemTotal[]): DayTotal {
   }
 }
 
-function item(hours: number, reference: null | string, project = FISCAL): WorkItemTotal {
+function item(
+  hours: number,
+  reference: null | string,
+  project: WorkItemTotal['project'] = FISCAL,
+): WorkItemTotal {
   return {
     entryCount: 1,
     hours,
@@ -66,7 +70,7 @@ describe('projectTotals', () => {
   it('lists the busiest project first', () => {
     const days = [day('2026-08-20', [item(1, 'a'), item(5, 'b', OTHER_FISCAL)])]
 
-    expect(projectTotals(days).at(0)?.project.fullPath).toBe(OTHER_FISCAL.fullPath)
+    expect(projectTotals(days).at(0)?.project?.fullPath).toBe(OTHER_FISCAL.fullPath)
   })
 
   it('keeps two projects with the same name apart', () => {
@@ -192,5 +196,53 @@ describe('projectSplit', () => {
     // Two rows of 0.03 h are 0.06 h when rounded first, and 0.06 h here too —
     // but 200 seconds is what is actually carried.
     expect(projectSplit(days, 1).others).toMatchObject({ count: 2, seconds: 200 })
+  })
+})
+
+describe('projects that could not be read', () => {
+  it('are one group, however many they were', () => {
+    const days = [day('2026-08-20', [item(1, 'a', null), item(2, 'b', null)])]
+
+    const totals = projectTotals(days)
+
+    expect(totals).toHaveLength(1)
+    expect(totals.at(0)?.project).toBeNull()
+    expect(totals.at(0)?.hours).toBe(3)
+  })
+
+  it('stay apart from a project that could be read', () => {
+    const days = [day('2026-08-20', [item(1, 'a', null), item(2, 'b', FISCAL)])]
+
+    expect(projectTotals(days)).toHaveLength(2)
+  })
+
+  it('carry their share of the period like any other group', () => {
+    const days = [day('2026-08-20', [item(1, 'a', null), item(3, 'b', FISCAL)])]
+
+    expect(projectTotals(days).find((total) => total.project === null)?.share).toBe(0.25)
+  })
+
+  it('keep an item total figure, with no project on the row', () => {
+    const days = [day('2026-08-20', [item(2, 'a', null)])]
+
+    const totals = itemTotals(days)
+
+    expect(totals.at(0)?.project).toBeNull()
+    expect(totals.at(0)?.hours).toBe(2)
+  })
+})
+
+describe('unattributed time in a project that could not be read', () => {
+  it('is rolled up as one item rather than throwing', () => {
+    const days = [
+      day('2026-08-20', [item(2, null, null)]),
+      day('2026-08-19', [item(1, null, null)]),
+    ]
+
+    const totals = itemTotals(days)
+
+    expect(totals).toHaveLength(1)
+    expect(totals.at(0)?.days).toBe(2)
+    expect(totals.at(0)?.project).toBeNull()
   })
 })

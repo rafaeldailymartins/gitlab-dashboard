@@ -1,7 +1,6 @@
 import { ChevronRight } from 'lucide-react'
 
-import type { DayTotal } from '@/entities/timelogs'
-
+import { type DayTotal, NO_PROJECT } from '@/entities/timelogs'
 import { useActiveLocale } from '@/shared/i18n'
 import { weekdayOf } from '@/shared/lib/date'
 import { formatLongDate, weekdayName } from '@/shared/lib/format'
@@ -61,7 +60,10 @@ export function DayRow({ day, scale }: DayRowProps) {
       <CollapsibleContent>
         <ul className="px-4 pb-3 pl-11">
           {day.items.map((item) => (
-            <WorkItemRow item={item} key={item.workItem?.reference ?? item.project.fullPath} />
+            <WorkItemRow
+              item={item}
+              key={item.workItem?.reference ?? item.project?.fullPath ?? NO_PROJECT}
+            />
           ))}
         </ul>
       </CollapsibleContent>

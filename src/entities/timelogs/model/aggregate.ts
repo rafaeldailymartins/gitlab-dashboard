@@ -4,6 +4,14 @@ import type { ProjectRef, TimelogEntry, WorkItemRef } from './types'
 
 import { secondsToHours } from './duration'
 
+/**
+ * The grouping key for entries with no readable project.
+ *
+ * A real `fullPath` has no spaces, so this cannot collide with one and fold an
+ * unreadable entry into some real project's total.
+ */
+export const NO_PROJECT = 'no project'
+
 export interface DateRange {
   readonly from: IsoDate
   readonly to: IsoDate
@@ -30,7 +38,8 @@ export interface PeriodTotal {
 export interface WorkItemTotal {
   readonly entryCount: number
   readonly hours: number
-  readonly project: ProjectRef
+  /** Null when the provider would not resolve it; the hours still count. */
+  readonly project: null | ProjectRef
   readonly seconds: number
   /** Null for time logged without an issue or merge request. */
   readonly workItem: null | WorkItemRef
@@ -115,7 +124,7 @@ function workItemTotals(entries: readonly TimelogEntry[]): WorkItemTotal[] {
   const byItem = new Map<string, { first: TimelogEntry; grouped: TimelogEntry[] }>()
 
   for (const entry of entries) {
-    const key = entry.workItem?.reference ?? `unattributed:${entry.project.fullPath}`
+    const key = entry.workItem?.reference ?? `unattributed:${entry.project?.fullPath ?? NO_PROJECT}`
     const existing = byItem.get(key)
 
     if (existing) {

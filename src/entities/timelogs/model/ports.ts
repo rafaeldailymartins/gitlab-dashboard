@@ -25,6 +25,21 @@ export interface TimelogPage {
   readonly entries: readonly TimelogEntry[]
   /** Pass to the next request. Null when there is nothing older. */
   readonly nextCursor: null | string
+  /**
+   * How many of the withheld entries were read back without their project.
+   *
+   * Optional, like `withheld`, and absent for the same reason.
+   */
+  readonly recovered?: number
+  /**
+   * How many entries the provider withheld from this page entirely.
+   *
+   * Optional because a page restored from the device cache carries neither
+   * count. That reads as zero and is provably right: the code that wrote those
+   * pages threw a partial answer away rather than persisting it, so every
+   * persisted page is a whole one.
+   */
+  readonly withheld?: number
 }
 
 /** What to ask the provider for. */

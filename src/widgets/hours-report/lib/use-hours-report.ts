@@ -42,7 +42,17 @@ export interface HoursReport {
   /** True while any request over the history is in flight, first or later. */
   readonly syncing: boolean
   readonly today: PeriodSummary
+  /**
+   * Entries GitLab withheld that nothing recovered.
+   *
+   * These are hours missing from every figure here. Deliberately separate from
+   * `settled`: that one drives further requests, and an unread entry never
+   * improves however many pages are read.
+   */
+  readonly unread: number
   readonly week: PeriodSummary
+  /** Entries counted with no project, because GitLab would not resolve it. */
+  readonly withoutProject: number
 }
 
 /**
@@ -82,6 +92,8 @@ export function useHoursReport(): HoursReport {
     },
     syncedAt: query.dataUpdatedAt === NEVER ? null : new Date(query.dataUpdatedAt),
     syncing: query.isFetching,
+    unread: report.unread,
+    withoutProject: report.withoutProject,
   }
 }
 

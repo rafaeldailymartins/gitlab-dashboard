@@ -218,7 +218,7 @@ describe('dayTotals', () => {
 
     expect(day?.items).toHaveLength(2)
     expect(day?.items[0]?.seconds).toBe(5400)
-    expect(day?.items[0]?.project.fullPath).toBe(FISCAL.fullPath)
+    expect(day?.items[0]?.project?.fullPath).toBe(FISCAL.fullPath)
   })
 
   it('keeps attributed and unattributed time apart on the same day', () => {
@@ -236,5 +236,71 @@ describe('dayTotals', () => {
     const [day] = dayTotals(entries, SAO_PAULO)
 
     expect(day?.items[0]?.project).toEqual(WEB)
+  })
+})
+
+describe('an entry whose project could not be read', () => {
+  it('counts towards its day like any other', () => {
+    const entries = [entry({ project: null, seconds: 1800 }), entry({ seconds: 3600 })]
+
+    const [day] = dayTotals(entries, SAO_PAULO)
+
+    expect(day?.seconds).toBe(5400)
+    expect(day?.entryCount).toBe(2)
+  })
+
+  it('counts towards a period total', () => {
+    expect(periodTotal([entry({ project: null, seconds: 1800 })]).seconds).toBe(1800)
+  })
+
+  it('appears in the breakdown with no project rather than being omitted', () => {
+    const entries = [entry({ project: null, seconds: 1800, workItem: null })]
+
+    const [day] = dayTotals(entries, SAO_PAULO)
+
+    expect(day?.items).toHaveLength(1)
+    expect(day?.items[0]?.project).toBeNull()
+    expect(day?.items[0]?.seconds).toBe(1800)
+  })
+
+  /**
+   * The unattributed key falls back to the project path, so two entries with no
+   * work item and no project have nothing left to tell them apart — and nothing
+   * here knows whether they came from one project or two.
+   */
+  it('groups unattributed time with no project into one row', () => {
+    const entries = [
+      entry({ project: null, seconds: 1800, workItem: null }),
+      entry({ project: null, seconds: 900, workItem: null }),
+    ]
+
+    const [day] = dayTotals(entries, SAO_PAULO)
+
+    expect(day?.items).toHaveLength(1)
+    expect(day?.items[0]?.seconds).toBe(2700)
+  })
+
+  it('stays apart from unattributed time in a project that could be read', () => {
+    const entries = [
+      entry({ project: null, seconds: 1800, workItem: null }),
+      entry({ project: FISCAL, seconds: 900, workItem: null }),
+    ]
+
+    const [day] = dayTotals(entries, SAO_PAULO)
+
+    expect(day?.items).toHaveLength(2)
+  })
+
+  it('still groups by work item when it has one', () => {
+    const onItem = issue('invent-software/inventariofiscal#128')
+    const entries = [
+      entry({ project: null, seconds: 1800, workItem: onItem }),
+      entry({ project: FISCAL, seconds: 900, workItem: onItem }),
+    ]
+
+    const [day] = dayTotals(entries, SAO_PAULO)
+
+    expect(day?.items).toHaveLength(1)
+    expect(day?.items[0]?.seconds).toBe(2700)
   })
 })

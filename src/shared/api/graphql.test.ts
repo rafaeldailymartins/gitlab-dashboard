@@ -51,7 +51,8 @@ describe('graphQLClient', () => {
     const client = graphQLClient(ENDPOINT, credentials())
 
     await expect(client.request({ query: QUERY, variables: {} })).resolves.toEqual({
-      currentUser: { username: 'rafael' },
+      data: { currentUser: { username: 'rafael' } },
+      errors: [],
     })
   })
 
@@ -82,7 +83,7 @@ describe('graphQLClient', () => {
 
     await expect(
       graphQLClient(ENDPOINT, account).request({ query: QUERY, variables: {} }),
-    ).resolves.toEqual({ ok: true })
+    ).resolves.toEqual({ data: { ok: true }, errors: [] })
     expect(account.refresh).toHaveBeenCalledTimes(1)
   })
 
@@ -183,11 +184,63 @@ describe('graphQLClient', () => {
     ).rejects.toThrow(DOMException)
   })
 
-  it('returns undefined data without inventing a failure', async () => {
+  it('returns empty data without inventing a failure', async () => {
     server.use(respondWith({ data: null }))
 
     await expect(
       graphQLClient(ENDPOINT, credentials()).request({ query: QUERY, variables: {} }),
-    ).resolves.toBeNull()
+    ).resolves.toEqual({ data: null, errors: [] })
+  })
+})
+
+/**
+ * GitLab answers a partly resolvable request with `200`, the entries it could
+ * resolve in `data`, and the rest as errors beside them. Treating that as total
+ * failure emptied a reader's dashboard in production, permanently, over three
+ * entries out of twenty-five.
+ */
+describe('an answer that is partly usable', () => {
+  const WITHHELD = 'Cannot return null for non-nullable field Timelog.project'
+
+  it('returns the data, with the error messages beside it', async () => {
+    server.use(
+      respondWith({ data: { nodes: [{ ok: true }, null] }, errors: [{ message: WITHHELD }] }),
+    )
+
+    await expect(
+      graphQLClient(ENDPOINT, credentials()).request({ query: QUERY, variables: {} }),
+    ).resolves.toEqual({ data: { nodes: [{ ok: true }, null] }, errors: [WITHHELD] })
+  })
+
+  it('is used however many errors came with it', async () => {
+    const errors = [{ message: WITHHELD }, { message: WITHHELD }, { message: WITHHELD }]
+    server.use(respondWith({ data: { nodes: [] }, errors }))
+
+    const answer = await graphQLClient(ENDPOINT, credentials()).request({
+      query: QUERY,
+      variables: {},
+    })
+
+    expect(answer.data).toEqual({ nodes: [] })
+    expect(answer.errors).toHaveLength(3)
+  })
+
+  it('is a failure when the errors came with no data at all', async () => {
+    server.use(respondWith({ data: null, errors: [{ message: WITHHELD }] }))
+
+    await expect(
+      graphQLClient(ENDPOINT, credentials()).request({ query: QUERY, variables: {} }),
+    ).rejects.toMatchObject({ failure: { kind: 'rejected', messages: [WITHHELD] } })
+  })
+
+  it('reports no errors when the whole request resolved', async () => {
+    server.use(respondWith({ data: { ok: true } }))
+
+    const answer = await graphQLClient(ENDPOINT, credentials()).request({
+      query: QUERY,
+      variables: {},
+    })
+
+    expect(answer.errors).toEqual([])
   })
 })

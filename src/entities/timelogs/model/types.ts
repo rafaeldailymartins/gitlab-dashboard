@@ -1,4 +1,10 @@
-/** The project a timelog belongs to. GitLab always reports one. */
+/**
+ * The project a timelog belongs to.
+ *
+ * GitLab reports one for every entry it is willing to resolve. An entry whose
+ * project it refuses is withheld entirely and recovered without one, so a
+ * reference is absent rather than incomplete.
+ */
 export interface ProjectRef {
   /** Group and project, for disambiguating two projects with the same name. */
   readonly fullPath: string
@@ -14,7 +20,11 @@ export interface ProjectRef {
  * on the reader's time zone, and only `dayTotals` decides that.
  */
 export interface TimelogEntry {
-  readonly project: ProjectRef
+  /**
+   * Null when the provider would not resolve the project. The entry's hours are
+   * still the reader's own, so they still count; see `reconcile.ts`.
+   */
+  readonly project: null | ProjectRef
   /** GitLab reports whole seconds. Negative values correct a mistaken entry. */
   readonly seconds: number
   readonly spentAt: Date

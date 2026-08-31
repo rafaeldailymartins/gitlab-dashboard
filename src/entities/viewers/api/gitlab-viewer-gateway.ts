@@ -30,7 +30,7 @@ export function gitLabViewerGateway(client: GraphQLClient): ViewerGateway {
       // which is not something the caller gets to name. The signal is spread
       // rather than passed because `exactOptionalPropertyTypes` distinguishes an
       // absent property from one that is `undefined`.
-      const data = await client.request({
+      const { data } = await client.request({
         query: ME,
         variables: {},
         ...(signal ? { signal } : {}),

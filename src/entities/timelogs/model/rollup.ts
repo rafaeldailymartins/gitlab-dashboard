@@ -1,13 +1,15 @@
 import type { DayTotal, WorkItemTotal } from './aggregate'
 import type { ProjectRef, WorkItemRef } from './types'
 
+import { NO_PROJECT } from './aggregate'
 import { secondsToHours } from './duration'
 
 /** Everything logged against one work item over a set of days. */
 export interface ItemTotal {
   readonly days: number
   readonly hours: number
-  readonly project: ProjectRef
+  /** Null when the provider would not resolve it; the hours still count. */
+  readonly project: null | ProjectRef
   readonly seconds: number
   /** Null for time logged without an issue or merge request. */
   readonly workItem: null | WorkItemRef
@@ -31,7 +33,8 @@ export interface ProjectSplit {
 /** Everything logged against one project over a set of days. */
 export interface ProjectTotal {
   readonly hours: number
-  readonly project: ProjectRef
+  /** Null when the provider would not resolve it; the hours still count. */
+  readonly project: null | ProjectRef
   readonly seconds: number
   /** Fraction of the period's seconds, or 0 when the period is empty. */
   readonly share: number
@@ -48,7 +51,7 @@ export function itemTotals(days: readonly DayTotal[]): ItemTotal[] {
 
   for (const day of days) {
     for (const item of day.items) {
-      const key = item.workItem?.reference ?? `unattributed:${item.project.fullPath}`
+      const key = item.workItem?.reference ?? `unattributed:${item.project?.fullPath ?? NO_PROJECT}`
       const existing = byItem.get(key)
 
       if (existing) {
@@ -103,18 +106,20 @@ export function projectSplit(days: readonly DayTotal[], limit: number): ProjectS
  *
  * Projects are keyed by their full path rather than their name: two projects in
  * different groups can share a name, and merging them would invent a total that
- * belongs to neither.
+ * belongs to neither. Entries with no readable project are one group: there is
+ * nothing to tell them apart by, and a row each would say they were different
+ * projects, which nothing here knows.
  */
 export function projectTotals(days: readonly DayTotal[]): ProjectTotal[] {
   const byProject = new Map<string, { first: WorkItemTotal; seconds: number }>()
 
   for (const item of days.flatMap((day) => day.items)) {
-    const existing = byProject.get(item.project.fullPath)
+    const existing = byProject.get(projectKeyOf(item))
 
     if (existing) {
       existing.seconds += item.seconds
     } else {
-      byProject.set(item.project.fullPath, { first: item, seconds: item.seconds })
+      byProject.set(projectKeyOf(item), { first: item, seconds: item.seconds })
     }
   }
 
@@ -128,4 +133,8 @@ export function projectTotals(days: readonly DayTotal[]): ProjectTotal[] {
       share: total === 0 ? 0 : seconds / total,
     }))
     .toSorted((left, right) => right.seconds - left.seconds)
+}
+
+function projectKeyOf(item: WorkItemTotal): string {
+  return item.project?.fullPath ?? NO_PROJECT
 }

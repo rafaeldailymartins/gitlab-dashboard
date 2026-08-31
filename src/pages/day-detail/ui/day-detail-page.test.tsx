@@ -34,6 +34,11 @@ function entry(day: string, seconds: number, iid: null | number): TimelogEntry {
   }
 }
 
+/** The same entry as GitLab returns one whose project it will not resolve. */
+function withoutProject(source: TimelogEntry): TimelogEntry {
+  return { ...source, project: null }
+}
+
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(NOW)
@@ -135,6 +140,20 @@ describe('DayDetailPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/no target today/i)).toBeInTheDocument()
+    })
+  })
+})
+
+describe('a day holding an entry whose project could not be read', () => {
+  it('names the missing project rather than leaving the place blank', async () => {
+    const gateway = fakeGateway([
+      { entries: [withoutProject(entry('2026-08-20', 3600, null))], nextCursor: null },
+    ])
+
+    renderRoutedReport(<DayDetailPage date={isoDate('2026-08-20')} />, { gateway })
+
+    await waitFor(() => {
+      expect(screen.getByText(/no project reported/i)).toBeInTheDocument()
     })
   })
 })

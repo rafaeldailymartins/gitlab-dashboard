@@ -29,7 +29,9 @@ function reportWith(overrides: Partial<HoursReport> = {}): HoursReport {
     syncedAt: NOW,
     syncing: false,
     today: NOTHING,
+    unread: 0,
     week: NOTHING,
+    withoutProject: 0,
     ...overrides,
   }
 }
@@ -115,5 +117,40 @@ describe('SyncControl', () => {
     await userEvent.click(screen.getByRole('button', { name: SYNC }))
 
     expect(sync).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('what the answer could not tell us', () => {
+  it('says how many entries were counted without their project', () => {
+    renderReport(<SyncControl report={reportWith({ withoutProject: 3 })} />)
+
+    expect(screen.getByRole('status')).toHaveTextContent(/without their project: 3/i)
+  })
+
+  it('says the figures are short when an entry could not be read at all', () => {
+    renderReport(<SyncControl report={reportWith({ unread: 1 })} />)
+
+    expect(screen.getByRole('status')).toHaveTextContent(/could not read: 1/i)
+    expect(screen.getByRole('status')).toHaveTextContent(/short/i)
+  })
+
+  it('keeps saying when the hours arrived, beside what was missing', () => {
+    renderReport(<SyncControl report={reportWith({ withoutProject: 2 })} />)
+
+    expect(screen.getByRole('status')).toHaveTextContent(/updated at 12:00/i)
+  })
+
+  it('reports both counts when both happened', () => {
+    renderReport(<SyncControl report={reportWith({ unread: 1, withoutProject: 2 })} />)
+
+    expect(screen.getByRole('status')).toHaveTextContent(/without their project: 2/i)
+    expect(screen.getByRole('status')).toHaveTextContent(/could not read: 1/i)
+  })
+
+  it('says nothing about it when every entry was read in full', () => {
+    renderReport(<SyncControl report={reportWith()} />)
+
+    expect(screen.getByRole('status')).not.toHaveTextContent(/project/i)
+    expect(screen.getByRole('status')).not.toHaveTextContent(/could not read/i)
   })
 })

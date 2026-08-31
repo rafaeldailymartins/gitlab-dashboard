@@ -37,6 +37,8 @@ describe('reportFrom', () => {
       complete: false,
       days: [],
       oldestLoadedDate: null,
+      unread: 0,
+      withoutProject: 0,
     })
   })
 
@@ -45,6 +47,8 @@ describe('reportFrom', () => {
       complete: true,
       days: [],
       oldestLoadedDate: null,
+      unread: 0,
+      withoutProject: 0,
     })
   })
 
@@ -161,5 +165,53 @@ describe('periodSummary', () => {
 
   it('is unsettled before anything has loaded', () => {
     expect(periodSummary(reportFrom([], SAO_PAULO), AUGUST).settled).toBe(false)
+  })
+})
+
+describe('what the report could not read', () => {
+  it('is nothing when every page came back whole', () => {
+    const report = reportFrom([page([entry('2026-08-20')])], SAO_PAULO)
+
+    expect(report.unread).toBe(0)
+    expect(report.withoutProject).toBe(0)
+  })
+
+  it('counts the entries recovered without their project', () => {
+    const withheld = { ...page([entry('2026-08-20')]), recovered: 3, withheld: 3 }
+
+    expect(reportFrom([withheld], SAO_PAULO).withoutProject).toBe(3)
+  })
+
+  it('counts what was withheld and never recovered as unread', () => {
+    const withheld = { ...page([entry('2026-08-20')]), recovered: 1, withheld: 3 }
+
+    expect(reportFrom([withheld], SAO_PAULO).unread).toBe(2)
+  })
+
+  it('sums both counts across the loaded pages', () => {
+    const first = { ...page([entry('2026-08-20')], 'cursor-1'), recovered: 2, withheld: 3 }
+    const second = { ...page([entry('2026-08-10')]), recovered: 1, withheld: 1 }
+
+    const report = reportFrom([first, second], SAO_PAULO)
+
+    expect(report.withoutProject).toBe(3)
+    expect(report.unread).toBe(1)
+  })
+
+  /**
+   * A page restored from the device cache carries neither count. It was written
+   * by code that threw a partial answer away rather than persisting one, so a
+   * page with no counts is a whole page, and zero is the right reading.
+   */
+  it('reads a page with no counts as a page that withheld nothing', () => {
+    const report = reportFrom([page([entry('2026-08-20')])], SAO_PAULO)
+
+    expect(report.unread).toBe(0)
+  })
+
+  it('leaves a period settled or not on its own terms', () => {
+    const withheld = { ...page([entry('2026-08-20')]), recovered: 0, withheld: 1 }
+
+    expect(periodSummary(reportFrom([withheld], SAO_PAULO), AUGUST).settled).toBe(true)
   })
 })
