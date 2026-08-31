@@ -78,7 +78,19 @@ function lastSync(syncedAt: Date, locale: string, timeZone: string): string {
     : m.sync_updated_on({ date: formatShortDate(day, locale), time })
 }
 
+/**
+ * The sync state, and what the answer could not tell us.
+ *
+ * One region rather than two: a reader hears one status per screen, and what is
+ * missing from a figure belongs beside the figure's own state, not in a notice of
+ * its own. When nothing was withheld there is nothing to add, and nothing is
+ * added — an empty or zero notice would be noise on every ordinary visit.
+ */
 function statusOf(report: HoursReport, locale: string, timeZone: string): string {
+  return [syncState(report, locale, timeZone), ...withheldNotices(report)].join(' ')
+}
+
+function syncState(report: HoursReport, locale: string, timeZone: string): string {
   if (report.failure) {
     return failureMessage(report.failure.kind)
   }
@@ -101,4 +113,18 @@ function turnClass(syncing: boolean, presses: number): string | undefined {
   }
 
   return presses > 0 ? 'motion-safe:animate-spin-once' : undefined
+}
+
+function withheldNotices(report: HoursReport): string[] {
+  const notices: string[] = []
+
+  if (report.withoutProject > 0) {
+    notices.push(m.report_without_project({ count: report.withoutProject }))
+  }
+
+  if (report.unread > 0) {
+    notices.push(m.report_unread({ count: report.unread }))
+  }
+
+  return notices
 }

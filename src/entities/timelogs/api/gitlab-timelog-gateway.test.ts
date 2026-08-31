@@ -1,7 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
-import { mergeRequestNode, timelogNode, timelogsPayload } from '~tests/support/gitlab-timelogs'
+import {
+  mergeRequestNode,
+  recordedTimelogNodes,
+  recoveredTimelogsAnswer,
+  timelogNode,
+  timelogsPayload,
+  WITHHELD_POSITIONS,
+  withheldTimelogsAnswer,
+} from '~tests/support/gitlab-timelogs'
 
-import type { GraphQLClient } from '@/shared/api'
+import type { GraphQLAnswer, GraphQLClient } from '@/shared/api'
 
 import { gitLabTimelogGateway } from './gitlab-timelog-gateway'
 
@@ -9,14 +17,30 @@ const NEWEST_FIRST = { after: null }
 
 type RequestMock = ReturnType<typeof clientReturning>['request']
 
-function clientReturning(data: unknown) {
-  const request = vi.fn<GraphQLClient['request']>(() => Promise.resolve(data))
+/** A client that answers each request in turn, as GitLab does over the two. */
+function clientAnswering(answers: readonly GraphQLAnswer[]) {
+  let asked = 0
+  const request = vi.fn<GraphQLClient['request']>(() => {
+    const answer = answers.at(Math.min(asked, answers.length - 1))
+    asked += 1
+
+    return Promise.resolve(answer ?? { data: null, errors: [] })
+  })
 
   return { client: { request } satisfies GraphQLClient, request }
 }
 
+function clientReturning(data: unknown) {
+  return clientAnswering([{ data, errors: [] }])
+}
+
 function sentBy(request: RequestMock) {
   return request.mock.calls.at(0)?.at(0)
+}
+
+/** The two answers GitLab gives for a page it withheld entries from. */
+function withheldClient() {
+  return clientAnswering([withheldTimelogsAnswer(), recoveredTimelogsAnswer()])
 }
 
 describe('gitLabTimelogGateway', () => {
@@ -192,5 +216,177 @@ describe('gitLabTimelogGateway', () => {
     const { client } = clientReturning({ currentUser: { timelogs: null } })
 
     await expect(gitLabTimelogGateway(client).myTimelogs(NEWEST_FIRST)).rejects.toThrow()
+  })
+})
+
+/**
+ * The shape recorded from production: `200`, entries in `data`, and errors
+ * beside them for the three GitLab would not resolve a project for. Every
+ * fixture in this suite used to be shaped from an answer that succeeded, which is
+ * why a green suite sat over an empty dashboard.
+ */
+describe('a page GitLab withheld entries from', () => {
+  it('reports the entries it could read rather than failing', async () => {
+    const { client } = withheldClient()
+
+    const page = await gitLabTimelogGateway(client).myTimelogs(NEWEST_FIRST)
+
+    expect(page.entries.length).toBeGreaterThan(0)
+  })
+
+  it('counts every entry of the page, including the withheld ones', async () => {
+    const { client } = withheldClient()
+
+    const page = await gitLabTimelogGateway(client).myTimelogs(NEWEST_FIRST)
+
+    expect(page.entries).toHaveLength(recordedTimelogNodes().length)
+  })
+
+  it('recovers the withheld hours exactly', async () => {
+    const { client } = withheldClient()
+    const logged = recordedTimelogNodes().reduce((total, node) => total + node.timeSpent, 0)
+
+    const page = await gitLabTimelogGateway(client).myTimelogs(NEWEST_FIRST)
+
+    expect(page.entries.reduce((total, entry) => total + entry.seconds, 0)).toBe(logged)
+  })
+
+  it('leaves the recovered entries with no project', async () => {
+    const { client } = withheldClient()
+
+    const page = await gitLabTimelogGateway(client).myTimelogs(NEWEST_FIRST)
+
+    expect(page.entries.filter((entry) => entry.project === null)).toHaveLength(
+      WITHHELD_POSITIONS.length,
+    )
+  })
+
+  it('says how many were withheld and how many came back', async () => {
+    const { client } = withheldClient()
+
+    const page = await gitLabTimelogGateway(client).myTimelogs(NEWEST_FIRST)
+
+    expect(page.withheld).toBe(WITHHELD_POSITIONS.length)
+    expect(page.recovered).toBe(WITHHELD_POSITIONS.length)
+  })
+
+  it('keeps the merged entries newest first', async () => {
+    const { client } = withheldClient()
+
+    const page = await gitLabTimelogGateway(client).myTimelogs(NEWEST_FIRST)
+    const instants = page.entries.map((entry) => entry.spentAt.getTime())
+
+    expect(instants).toEqual(instants.toSorted((left, right) => right - left))
+  })
+
+  it('asks for the same page again, without the project', async () => {
+    const { client, request } = withheldClient()
+
+    await gitLabTimelogGateway(client).myTimelogs({ after: 'cursor-1' })
+    const second = request.mock.calls.at(1)?.at(0)
+
+    expect(second?.variables).toEqual({ after: 'cursor-1', first: 100 })
+    expect(second?.query).toContain('timelogs')
+    expect(second?.query).not.toContain('project')
+  })
+
+  it('asks exactly twice, not once per withheld entry', async () => {
+    const { client, request } = withheldClient()
+
+    await gitLabTimelogGateway(client).myTimelogs(NEWEST_FIRST)
+
+    expect(request).toHaveBeenCalledTimes(2)
+  })
+
+  it('forwards the cancellation signal to the second request too', async () => {
+    const { client, request } = withheldClient()
+    const controller = new AbortController()
+
+    await gitLabTimelogGateway(client).myTimelogs(NEWEST_FIRST, controller.signal)
+
+    expect(request.mock.calls.at(1)?.at(0)?.signal).toBe(controller.signal)
+  })
+})
+
+describe('a page GitLab answered whole', () => {
+  it('is not asked for a second time', async () => {
+    const { client, request } = clientReturning(timelogsPayload())
+
+    await gitLabTimelogGateway(client).myTimelogs(NEWEST_FIRST)
+
+    expect(request).toHaveBeenCalledTimes(1)
+  })
+
+  it('reports no counts at all, because there is nothing to report', async () => {
+    const { client } = clientReturning(timelogsPayload())
+
+    const page = await gitLabTimelogGateway(client).myTimelogs(NEWEST_FIRST)
+
+    expect(page.withheld).toBeUndefined()
+    expect(page.recovered).toBeUndefined()
+  })
+})
+
+/**
+ * The worst case, and the one a fixture would never think to cover: GitLab
+ * resolves nothing in the page. Inventing an entry here would be worse than
+ * reporting none, because a figure that is too high makes every other figure
+ * untrustworthy.
+ */
+describe('a page GitLab withheld entirely', () => {
+  const nodes = [null, null]
+
+  it('reports what came back from the second request', async () => {
+    const { client } = clientAnswering([
+      { data: timelogsPayload({ nodes }), errors: ['withheld', 'withheld'] },
+      recoveredTimelogsAnswer(),
+    ])
+
+    const page = await gitLabTimelogGateway(client).myTimelogs(NEWEST_FIRST)
+
+    expect(page.entries).toHaveLength(2)
+    expect(page.withheld).toBe(2)
+    expect(page.recovered).toBe(2)
+  })
+
+  it('neither throws nor invents an entry when the second request fails too', async () => {
+    const { client } = clientAnswering([
+      { data: timelogsPayload({ nodes }), errors: ['withheld', 'withheld'] },
+      { data: timelogsPayload({ nodes }), errors: ['unreadable', 'unreadable'] },
+    ])
+
+    const page = await gitLabTimelogGateway(client).myTimelogs(NEWEST_FIRST)
+
+    expect(page.entries).toEqual([])
+    expect(page.withheld).toBe(2)
+    expect(page.recovered).toBe(0)
+  })
+})
+
+/**
+ * The error that would be worst to swallow. An error can null `currentUser`
+ * itself, and `data.currentUser: null` with no errors already means "GitLab
+ * accepted the token and resolved nobody". Reading the two the same way would
+ * tell a reader they logged no hours, as a fact, because of an error nobody
+ * passed on.
+ */
+describe('an answer whose errors took the whole person with them', () => {
+  it('is reported as refused rather than as an empty history', async () => {
+    const { client } = clientAnswering([
+      { data: { currentUser: null }, errors: ['Something went wrong'] },
+    ])
+
+    await expect(gitLabTimelogGateway(client).myTimelogs(NEWEST_FIRST)).rejects.toMatchObject({
+      failure: { kind: 'rejected', messages: ['Something went wrong'] },
+    })
+  })
+
+  it('still reads a null person with no errors as an empty report', async () => {
+    const { client } = clientReturning({ currentUser: null })
+
+    await expect(gitLabTimelogGateway(client).myTimelogs(NEWEST_FIRST)).resolves.toEqual({
+      entries: [],
+      nextCursor: null,
+    })
   })
 })

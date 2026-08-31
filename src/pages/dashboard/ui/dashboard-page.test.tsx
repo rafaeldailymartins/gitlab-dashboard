@@ -347,3 +347,51 @@ describe('DashboardPage', () => {
     inFlight.settle({ entries: [entry('2026-08-21', 7200)], nextCursor: null })
   })
 })
+
+describe('a page GitLab withheld entries from', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(NOW)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  /**
+   * An unread entry is permanent: the page it was withheld from will never
+   * improve, however many older pages are read. Routing it through the settled
+   * flag, which is what drives paging, would ask GitLab for the rest of the
+   * reader's history one page at a time and never stop.
+   */
+  it('does not keep asking for older pages because an entry could not be read', async () => {
+    const gateway = fakeGateway([
+      { entries: [entry('2026-07-25', 3600)], nextCursor: 'older', recovered: 0, withheld: 1 },
+    ])
+
+    renderReport(<DashboardPage />, { gateway })
+
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toHaveTextContent(/could not read: 1/i)
+    })
+    expect(gateway.myTimelogs).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows the hours it could read rather than a refusal', async () => {
+    const gateway = fakeGateway([
+      {
+        entries: [entry('2026-08-21', 7200), { ...entry('2026-08-21', 3600), project: null }],
+        nextCursor: null,
+        recovered: 1,
+        withheld: 1,
+      },
+    ])
+
+    renderReport(<DashboardPage />, { gateway })
+
+    await waitFor(() => {
+      expect(figure('Today').getByRole('definition')).toHaveTextContent('3')
+    })
+    expect(screen.getByRole('status')).toHaveTextContent(/without their project: 1/i)
+  })
+})

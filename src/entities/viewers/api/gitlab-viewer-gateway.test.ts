@@ -5,7 +5,7 @@ import type { GraphQLClient } from '@/shared/api'
 import { gitLabViewerGateway } from './gitlab-viewer-gateway'
 
 function clientReturning(data: unknown) {
-  const request = vi.fn<GraphQLClient['request']>(() => Promise.resolve(data))
+  const request = vi.fn<GraphQLClient['request']>(() => Promise.resolve({ data, errors: [] }))
 
   return { client: { request } satisfies GraphQLClient, request }
 }

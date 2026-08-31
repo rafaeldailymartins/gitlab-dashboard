@@ -10,7 +10,7 @@ import {
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import { useMemo } from 'react'
 
-import { type DayTotal, type ItemTotal, itemTotals } from '@/entities/timelogs'
+import { type DayTotal, type ItemTotal, itemTotals, projectName } from '@/entities/timelogs'
 import { m, useActiveLocale } from '@/shared/i18n'
 import { formatHours } from '@/shared/lib/format'
 
@@ -106,7 +106,7 @@ function buildColumns(locale: string) {
       id: 'item',
       sortFn: 'alphanumeric',
     }),
-    helper.accessor((item) => item.project.name, {
+    helper.accessor((item) => projectName(item.project), {
       header: m.insights_column_project(),
       id: 'project',
       sortFn: 'alphanumeric',

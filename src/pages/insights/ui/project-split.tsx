@@ -1,4 +1,10 @@
-import { type DayTotal, type OtherProjects, projectSplit } from '@/entities/timelogs'
+import {
+  type DayTotal,
+  NO_PROJECT,
+  type OtherProjects,
+  projectName,
+  projectSplit,
+} from '@/entities/timelogs'
 import { m } from '@/shared/i18n'
 import { HourFigure } from '@/shared/ui/hour-figure'
 
@@ -48,11 +54,13 @@ export function ProjectSplit({ days }: { readonly days: readonly DayTotal[] }) {
       {split.top.map((total, rank) => (
         <Row
           bar={SERIES_CLASS[rank] ?? SERIES_CLASS[0]}
-          detail={total.project.fullPath}
           hours={total.hours}
-          key={total.project.fullPath}
-          label={total.project.name}
+          key={total.project?.fullPath ?? NO_PROJECT}
+          label={projectName(total.project)}
           share={total.share}
+          // No detail for the group with no readable project: the path would
+          // repeat the label word for word, and there is no path to show.
+          {...(total.project ? { detail: total.project.fullPath } : {})}
         />
       ))}
       {split.others ? <Others others={split.others} /> : null}

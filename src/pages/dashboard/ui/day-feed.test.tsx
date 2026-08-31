@@ -53,11 +53,15 @@ function feed(days: DayTotal[], overrides: Partial<Parameters<typeof DayFeed>[0]
   )
 }
 
-function item(hours: number, reference: null | string): WorkItemTotal {
+function item(
+  hours: number,
+  reference: null | string,
+  project: WorkItemTotal['project'] = PROJECT,
+): WorkItemTotal {
   return {
     entryCount: 1,
     hours,
-    project: PROJECT,
+    project,
     seconds: hours * SECONDS_PER_HOUR,
     workItem:
       reference === null
@@ -201,5 +205,25 @@ describe('DayFeed', () => {
 
     expect(full).toBe('100%')
     expect(quarter).toBe('25%')
+  })
+})
+
+describe('a row whose project could not be read', () => {
+  it('names it rather than leaving the place blank', async () => {
+    renderReport(feed([day('2026-08-20', [item(2, null, null)])]))
+
+    await userEvent.click(screen.getByRole('button'))
+
+    expect(screen.getByText(/no project reported/i)).toBeInTheDocument()
+  })
+
+  it('still names the work item when there is one', async () => {
+    const reference = `${PROJECT.fullPath}#128`
+
+    renderReport(feed([day('2026-08-20', [item(2, reference, null)])]))
+
+    await userEvent.click(screen.getByRole('button'))
+
+    expect(screen.getByText(reference)).toBeInTheDocument()
   })
 })

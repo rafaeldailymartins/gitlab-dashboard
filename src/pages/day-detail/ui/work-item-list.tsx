@@ -1,5 +1,4 @@
-import type { WorkItemTotal } from '@/entities/timelogs'
-
+import { NO_PROJECT, projectPath, type WorkItemTotal } from '@/entities/timelogs'
 import { m, useActiveLocale } from '@/shared/i18n'
 import { formatHours } from '@/shared/lib/format'
 
@@ -21,7 +20,7 @@ export function WorkItemList({ items }: { readonly items: readonly WorkItemTotal
       {items.map((item) => (
         <li
           className="flex flex-col gap-1 p-4"
-          key={item.workItem?.reference ?? item.project.fullPath}
+          key={item.workItem?.reference ?? item.project?.fullPath ?? NO_PROJECT}
         >
           <div className="flex items-baseline gap-3">
             <span className="tabular w-14 shrink-0 text-right font-medium">
@@ -45,7 +44,7 @@ export function WorkItemList({ items }: { readonly items: readonly WorkItemTotal
             )}
           </div>
           <p className="pl-17 text-xs text-muted-foreground">
-            {item.workItem?.reference ?? item.project.fullPath}
+            {item.workItem?.reference ?? projectPath(item.project)}
           </p>
         </li>
       ))}
