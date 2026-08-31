@@ -54,4 +54,4 @@
 
 - [x] 9.1 Run `bun run verify && bun run test`, then `bun run test:coverage`, `bun run test:mutation` and `bun run test:e2e`
 - [x] 9.2 Run `bun run build && bun run size` and confirm the 180 kB gzip budget still holds
-- [ ] 9.3 Confirm the fix against the real account that reported it: her history contains the withheld entries, so the deployed dashboard either shows her hours with the counts beside them or it does not
+- [x] 9.3 Confirm the fix against the real account that reported it: her history contains the withheld entries, so the deployed dashboard either shows her hours with the counts beside them or it does not
