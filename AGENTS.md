@@ -34,9 +34,16 @@ deliberate and both marked in `package.json`:
 - **Stryker runs on Node** (`node ./node_modules/@stryker-mutator/core/bin/stryker.js`).
   Its plugin loader cannot resolve its own TestRunner plugins under Bun.
 - **Playwright runs on Node.** `bddgen` runs on Bun; the test run does not.
+- **The acceptance suite's preview server runs on Node**
+  (`node ./node_modules/vite/bin/vite.js preview`, in `playwright.config.ts`).
+  Under `bun --bun` it dies with `ERR_STREAM_WRITE_AFTER_END` when a response is
+  written after its connection closed — which a browser closing a page
+  mid-response does routinely. The process exits, and every scenario after that
+  point fails for want of a server rather than for anything it asserts. The
+  `vite build` before it still runs on Bun.
 
 Everything else uses `bun --bun`. `bunfig.toml` is deliberately absent: a global
-`[run] bun = true` symlinks `node` to Bun, which silently breaks the two tools
+`[run] bun = true` symlinks `node` to Bun, which silently breaks the three tools
 above.
 
 ## Architecture
