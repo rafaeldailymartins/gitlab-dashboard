@@ -4,8 +4,12 @@ import {
   addDays,
   datesBetween,
   endOfMonth,
+  endOfWeek,
   isoDate,
+  isoWeekOf,
+  isoWeekYearOf,
   isValidTimeZone,
+  spanInstantsIn,
   startOfMonth,
   startOfWeek,
   toIsoDate,
@@ -52,6 +56,13 @@ describe('isValidTimeZone', () => {
 
   it.each(['Mars/Olympus', 'Not/AZone', '', 'America/Sao Paulo'])('rejects %o', (timeZone) => {
     expect(isValidTimeZone(timeZone)).toBe(false)
+  })
+
+  it('gives the same answer when asked again, from the remembered one', () => {
+    expect(isValidTimeZone(TOKYO)).toBe(true)
+    expect(isValidTimeZone(TOKYO)).toBe(true)
+    expect(isValidTimeZone('Mars/Olympus')).toBe(false)
+    expect(isValidTimeZone('Mars/Olympus')).toBe(false)
   })
 })
 
@@ -200,5 +211,104 @@ describe('datesBetween', () => {
       '2026-09-01',
       '2026-09-02',
     ])
+  })
+})
+
+describe('endOfWeek', () => {
+  it('returns the Sunday of the week', () => {
+    // 2026-05-13 is a Wednesday.
+    expect(endOfWeek(isoDate('2026-05-13'))).toBe('2026-05-17')
+  })
+
+  it('leaves a Sunday where it is', () => {
+    expect(endOfWeek(isoDate('2026-05-17'))).toBe('2026-05-17')
+  })
+
+  it('crosses a month boundary', () => {
+    expect(endOfWeek(isoDate('2026-04-30'))).toBe('2026-05-03')
+  })
+})
+
+describe('isoWeekOf', () => {
+  it('numbers the weeks of a month', () => {
+    expect(isoWeekOf(isoDate('2026-05-01'))).toBe(18)
+    expect(isoWeekOf(isoDate('2026-05-04'))).toBe(19)
+    expect(isoWeekOf(isoDate('2026-05-25'))).toBe(22)
+  })
+
+  it('gives every day of one week the same number', () => {
+    expect(
+      datesBetween(isoDate('2026-05-04'), isoDate('2026-05-10')).map((date) => isoWeekOf(date)),
+    ).toEqual([19, 19, 19, 19, 19, 19, 19])
+  })
+})
+
+describe('isoWeekYearOf', () => {
+  it('agrees with the calendar year in the middle of a year', () => {
+    expect(isoWeekYearOf(isoDate('2026-05-12'))).toBe(2026)
+  })
+
+  it('puts the first days of January in the previous week-numbering year', () => {
+    // 2027-01-01 is a Friday, so it belongs to week 53 of 2026.
+    expect(isoWeekOf(isoDate('2027-01-01'))).toBe(53)
+    expect(isoWeekYearOf(isoDate('2027-01-01'))).toBe(2026)
+  })
+
+  it('puts the last days of December in the next week-numbering year', () => {
+    // 2025-12-29 is a Monday, so it opens week 1 of 2026.
+    expect(isoWeekOf(isoDate('2025-12-29'))).toBe(1)
+    expect(isoWeekYearOf(isoDate('2025-12-29'))).toBe(2026)
+  })
+})
+
+describe('spanInstantsIn', () => {
+  it('opens a day at its own first instant in the reader’s zone', () => {
+    const span = spanInstantsIn(isoDate('2026-09-14'), isoDate('2026-09-14'), 'America/Sao_Paulo')
+
+    expect(span.from).toBe('2026-09-14T03:00:00.000Z')
+  })
+
+  it('closes one microsecond before the next day opens', () => {
+    const span = spanInstantsIn(isoDate('2026-09-14'), isoDate('2026-09-14'), 'America/Sao_Paulo')
+
+    expect(span.to).toBe('2026-09-15T02:59:59.999999Z')
+  })
+
+  it('spans a run of days from the first to the last', () => {
+    const span = spanInstantsIn(isoDate('2026-09-14'), isoDate('2026-09-20'), 'UTC')
+
+    expect(span).toEqual({
+      from: '2026-09-14T00:00:00.000Z',
+      to: '2026-09-20T23:59:59.999999Z',
+    })
+  })
+
+  it('leaves no gap and no overlap between one day and the next', () => {
+    const monday = spanInstantsIn(isoDate('2026-09-14'), isoDate('2026-09-14'), 'Asia/Tokyo')
+    const tuesday = spanInstantsIn(isoDate('2026-09-15'), isoDate('2026-09-15'), 'Asia/Tokyo')
+
+    // A microsecond apart: adjacent, and sharing no instant. Both of GitLab's
+    // bounds are inclusive, so a shared instant would be counted twice.
+    expect(Date.parse(tuesday.from) - Date.parse(monday.to.replace('999999', '999'))).toBe(1)
+  })
+
+  it('opens a day whose local midnight the zone skipped over', () => {
+    // São Paulo advanced its clocks at midnight every spring until 2019, so
+    // 2018-11-04 has no 00:00 at all. Constructing one would ask for a time
+    // that never happened; the day in fact began at 01:00.
+    const span = spanInstantsIn(isoDate('2018-11-04'), isoDate('2018-11-04'), 'America/Sao_Paulo')
+
+    expect(toIsoDate(new Date(span.from), 'America/Sao_Paulo')).toBe('2018-11-04')
+    expect(toIsoDate(new Date(Date.parse(span.from) - 1), 'America/Sao_Paulo')).toBe('2018-11-03')
+  })
+
+  it('agrees with the day an instant is bucketed into, at both ends', () => {
+    const zone = 'Pacific/Kiritimati'
+    const span = spanInstantsIn(isoDate('2026-09-14'), isoDate('2026-09-14'), zone)
+
+    expect(toIsoDate(new Date(span.from), zone)).toBe('2026-09-14')
+    expect(toIsoDate(new Date(Date.parse(span.to.replace('999999', '999'))), zone)).toBe(
+      '2026-09-14',
+    )
   })
 })

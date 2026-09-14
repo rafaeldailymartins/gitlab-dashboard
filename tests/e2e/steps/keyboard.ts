@@ -17,6 +17,7 @@ const SCREENS: Record<string, string> = {
   dashboard: '/',
   insights: '/insights',
   settings: '/settings',
+  team: '/team?group=invent-software%2Fsquad-fiscal&month=2026-05&by=days',
 }
 
 interface Stop {

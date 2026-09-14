@@ -2,8 +2,10 @@
 
 ## Purpose
 
-The screens a person uses to see how much they worked and what they worked on,
-built for one person reading their own hours rather than for comparing a team.
+The screens a person uses to see how much they worked and what they worked on.
+Most of them answer for one reader about their own hours; the requirements here
+are cross-cutting, and bind every screen the app has, including the one that
+reports a whole group.
 
 ## Requirements
 

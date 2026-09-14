@@ -1,3 +1,4 @@
+import { defaultShouldDehydrateQuery, type Query } from '@tanstack/react-query'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { createRootRoute, Outlet } from '@tanstack/react-router'
 
@@ -12,6 +13,18 @@ import { LocaleProvider } from '@/shared/i18n'
 import { persistentStorage } from '@/shared/lib/storage'
 
 export const Route = createRootRoute({ component: RootLayout })
+
+/**
+ * Only what the reader is entitled to keep reaches the device's storage.
+ *
+ * Persisting an answer is what makes a return visit paint before any request
+ * goes out, and for the reader's own hours that is the whole point. A query
+ * that holds somebody else's says so on itself, so this rule needs to know
+ * nothing about which screen asked.
+ */
+function shouldDehydrateQuery(query: Query): boolean {
+  return query.meta?.['persist'] !== false && defaultShouldDehydrateQuery(query)
+}
 
 /**
  * Built once, at module scope, so the whole app reads and writes the same
@@ -42,7 +55,7 @@ function RootLayout() {
   return (
     <PersistQueryClientProvider
       client={appQueryClient}
-      persistOptions={{ persister: appCachePersister }}
+      persistOptions={{ dehydrateOptions: { shouldDehydrateQuery }, persister: appCachePersister }}
     >
       <PreferencesProvider store={store}>
         <LocaleProvider>

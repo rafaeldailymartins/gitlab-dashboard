@@ -5,7 +5,7 @@ import { m, useActiveLocale } from '@/shared/i18n'
 import { endOfMonth, startOfMonth, toIsoDate } from '@/shared/lib/date'
 import { formatHours, formatMonth } from '@/shared/lib/format'
 import { Skeleton } from '@/shared/ui/skeleton'
-import { SyncControl, useHoursReport } from '@/widgets/hours-report'
+import { SyncControl, useHoursReport, withheldNotices } from '@/widgets/hours-report'
 
 import { MonthHeatmap } from './month-heatmap'
 import { ProjectSplit } from './project-split'
@@ -36,7 +36,7 @@ export function InsightsPage() {
             {m.insights_month_total({ hours: formatHours(report.month.hours, locale) })}
           </p>
         </div>
-        <SyncControl report={report} />
+        <SyncControl notices={withheldNotices(report)} status={report} />
       </header>
 
       {report.hasFigures ? (

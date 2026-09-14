@@ -54,8 +54,11 @@ Feature-Sliced Design on the outside, Clean Architecture inside each slice.
 src/
   app/          router, providers, global styles, and routes/ (TanStack Router
                 file-based routing lives inside the app layer, because route
-                files are wiring). `lib/runtime.ts` builds the session manager
-                and the timelog gateway once, from one configuration read;
+                files are wiring). `lib/runtime.ts` builds the session manager,
+                the timelog gateway and the data client once, from one
+                configuration read — it hands out the client rather than a third
+                gateway, so a screen most readers never open keeps its adapter
+                out of the bundle everybody downloads;
                 `lib/query.ts` builds the cache and its persister. The
                 signed-in header lives in `routes/_authenticated.tsx`, so the
                 guard that proves there is a session is the same thing that
@@ -66,6 +69,8 @@ src/
     day-detail/   one day, addressable
     insights/     the month heatmap, the project split, the top-items table
     settings/     the preference fields
+    team-hours/   a group’s month as a person × day matrix, its controls and
+                  its notices
     login/, auth-callback/, not-configured/
   widgets/      composed blocks with more than one consumer
     hours-report/ the query, the report and the status notice — used by the
@@ -81,6 +86,9 @@ src/
     viewers/      who is signed in, on its own query so a screen that wants a
                   name does not load a season of hours to get one
     preferences/  daily target, time zone, theme choice
+    group-timelogs/ one group’s month: the widened window, the roster union, the
+                  grid, the shortfall measured against GitLab’s own totals, and
+                  the column probe that puts a withheld hour on its own day
   shared/       ui (shadcn plus ours), api (the GraphQL client, the query client
                 and the cache persister), lib, i18n, config
 scripts/        build and gate tooling: the CSP writer, the traceability check,
@@ -174,6 +182,162 @@ one without reading the reason will reintroduce a bug that is already fixed.
 - **A section's heading id comes from `useId`.** A hardcoded id works only while
   the section renders once, and `aria-labelledby` breaks silently when it does
   not. Biome's `useUniqueElementIds` enforces this.
+- **The group report asks for a period; the personal one still does not.** They
+  read the provider differently on purpose. `startDate`/`endDate` are truncated
+  to UTC calendar days — that is `TimelogResolver#parse_datetime_args` calling
+  `beginning_of_day` — but `startTime`/`endTime`, when both are given, are passed
+  to the query untouched. So a bounded month is askable. It is still asked one
+  whole UTC day wider at each end and cut locally by `entriesWithin`: rounding
+  can only move a start earlier and an end later, so the answer stays a superset
+  of the reader's month under every reading of the range, and the same cached
+  answer stays right if the reader changes time zone. Never send `startTime`
+  with `endDate` — `validate_args!` permits that pair and it silently truncates
+  one end only.
+- **A group figure is checked against GitLab's own count, not against nothing.**
+  `TimelogConnection.count` and `totalSpentTime` are computed in SQL over the
+  whole unpaginated relation, _before_ `remove_unauthorized` deletes the entries
+  the reader may not read from the node array — silently, with no null and no
+  error. The difference between the two is the only instrument that can see that
+  removal at all, and `timelogs(username:)` makes it per person, which is what
+  lets a row say it is short rather than the footer say the group is. The
+  difference is reported **signed**: a withheld correction makes the figures too
+  high, and clamping at zero would turn that into "nothing is missing".
+- **The grid is handed the whole window and cuts the month itself.** It needs two
+  answers out of one set of entries, and they are not over the same span. The
+  cells, the roster union and every total on screen are the reader's month. The
+  per-person shortfall is not: it is measured against what the provider declared,
+  and the provider declared over the window it was asked about, which is the month
+  widened by a day at each end. Cutting before the grid — which is what it used to
+  do — compared a declaration over the window against hours drawn for the month,
+  and so reported every hour logged on a padding day as an hour withheld from the
+  reader. A person who logged eight hours on 31 August had "+8 h hidden" against
+  their September row. It is exact this way round because a connection's
+  aggregate and its nodes are the same relation under the same range: whatever the
+  provider took the range to mean, the two agree, so their difference is the
+  removal and nothing else.
+- **There is no `user`-recovery document, and there should not be.** The obvious
+  mirror of `MY_TIMELOGS_WITHOUT_PROJECT` is unreachable: `TimelogType#user`
+  resolves through a batch loader whose default is the Ghost user, and
+  `read_user` is enabled for any authenticated caller, so a node nulled by an
+  unresolvable `user` cannot happen. An earlier draft carried one, along with a
+  permanent `person: null` branch through the whole model that no real answer
+  could produce.
+- **A cell past the read frontier is `pending`, and that beats `logged`.** Pages
+  arrive oldest first, so until a column has been read to its end more entries
+  may still land in it. Showing what has arrived so far would put a figure that
+  is about to change next to somebody's name — and for the twenty seconds a
+  large group takes to page, "logged nothing" beside a real colleague is the
+  worst thing this screen could say.
+- **Bars on the team screen measure against a stated constant, not the reader's
+  own target.** Eight hours Monday to Friday, named in the legend. Using the
+  reader's `dailyTarget` would draw a part-time teammate's every day as visibly
+  short, which is an assertion about somebody else's working arrangement that
+  this app has no basis for. Over the reference is drawn as the bar crossing a
+  dashed rule rather than changing colour: `charts.css` records that brass
+  against brick collapses under deutan, which is exactly the pair a colour-coded
+  version would have used.
+- **A row is for figures; whoever has none is named under the table.** The
+  roster union still puts everybody in the report — that is what tells "logged
+  nothing" apart from "not in this group", and every total is computed before
+  anything is dropped. What the screen leaves out is the row: thirty-one dashes
+  between two lines of figures cost a reader scanning across more than they
+  tell them. Two rows survive having no figures anyway. A person whose hours the
+  provider counted and would not show keeps theirs, because the row is what says
+  which days the shortfall belongs to. And nobody is dropped until the month has
+  been read in full, since until then "logged nothing" is only "not read yet".
+- **A weekend column is drawn from `share`, not from the cell's kind.** A cell is
+  only `non-working` once its column has been read and nobody logged in it, so a
+  weekend still loading — or one later this month — would lose its tint and its
+  narrow width, and the table would change shape as the pages landed. `share` is
+  null exactly when the reference expects nothing, which is the fact the column
+  is drawn from. The widths live in a `<colgroup>`: a fixed table takes its
+  widths from the first row, and the first row here is the week bands, whose
+  cells span several columns and say nothing about any one of them.
+- **The chosen group is remembered, and the address still wins.** `lib/remembered.ts`
+  keeps the path — never a figure, which `persist: false` forbids — so a return
+  visit does not begin by picking your own team out of a list. An address that
+  names a group is never overridden, because a link somebody sent outranks this
+  reader's habit; one that names none is completed by **redirecting** rather than
+  by filling the screen in behind it, so what you are looking at stays what you
+  can send somebody else.
+  (A second control, naming a wider group to read and a narrower one to draw, was
+  built and reverted. It answered a real question — a squad member logging in a
+  sibling squad — but two group pickers on one screen is a price the answer did
+  not justify. The group filter is the group filter.)
+- **The key lists only the marks the table uses.** A legend entry for something
+  that is nowhere on screen sends the reader hunting for it, and finding nothing
+  is indistinguishable from having missed it. Read off the grid in
+  `pages/team-hours/lib/legend.ts`. The reference bar is always listed: it
+  explains every figure there is.
+- **No sentence on the team screen says somebody logged nothing.** Every figure
+  there comes from `group(fullPath:) { timelogs }`, which GitLab scopes to that
+  group and its descendants through `Timelog.in_group` — so an hour logged on an
+  issue in another group is not missing from the answer, it was never asked for.
+  The cells used to read "No time logged", which is a claim about a person made
+  from a measurement of a group, and a reader who reaches the table by landmark
+  never passes the subtitle that qualified it. Every one of those strings now
+  names the group, and the table caption carries the scope so it is announced
+  where the figures are. Widening the scope is possible — `user(username:) {
+timelogs }` is the same resolver with a User parent, and it is the only door,
+  since the root `Query.timelogs` refuses any username but your own — but it
+  would cost the screen its instrument: `count`/`totalSpentTime` on a
+  user-parented connection is computed before redaction and would publish the
+  volume of work in namespaces the reader cannot open (gitlab-org/gitlab#425747).
+  Without it, every total on the screen would be collected rather than checked.
+- **The sync control carries no caveats.** It answers three questions — when the
+  hours arrived, whether they are arriving now, whether asking failed — and owns
+  the screen's one status region. Sentences about what a figure could not include
+  were appended to it and read as part of the sync state: announced on every
+  refresh, and nowhere near the number they were about. They live on the row now.
+  The reader's own access level is not explained at all: it is not something the
+  screen measured, it does not change between visits, and it is not what somebody
+  opened a month of hours to find out.
+- **A withheld hour is added into its cell, not drawn beside it.** `model/withheld.ts`
+  replaces the cell's figure with the provider's own total for that day and
+  rebuilds every total from the summed cells, so the rows, the columns and the
+  corner still agree. `share` is recomputed with it — a bar still drawn against
+  the visible hours under a figure that grew would be the one mark on the screen
+  disagreeing with the number beside it. The cell says what part of itself cannot
+  be opened only to assistive technology: a bracketed second figure was tried and
+  read as clutter, but a screen that folds an unreadable hour into a number and
+  says nothing at all is vouching for something it cannot open.
+- **Withheld hours are placed by asking the same aggregate one column at a
+  time.** The entries are unrecoverable and always will be: `TimelogType`
+  carries `authorize :read_issuable`, and a node the reader may not read is
+  spliced out of the array — no id, no `spentAt`, nothing to recover. But
+  `count` and `totalSpentTime` resolve over the finder relation _after_ the time
+  filter and _before_ that removal, so the same instrument that says "3 h are
+  missing from this month" says "3 h are missing from the 11th" when asked over
+  one day. Asking is conditional on `shortfall.entryCount !== 0`, which the
+  per-person probe already answers for free, so a group with nothing withheld
+  costs no extra request at all. One request per short row, capped at six.
+  A whole grid is not askable: each alias costs 7 of GitLab’s 250-point
+  complexity budget, so 31 columns plus the period check is 224 and fits, while
+  31 x 40 scores over eight thousand and is refused before it reaches the
+  database.
+- **A placement is checked before it is drawn, and refusing costs only the
+  marks.** `model/withheld.ts` requires the columns to account for the period
+  exactly, no column to declare fewer entries than were shown in it, and the
+  period to declare at least what the row draws. The first of those is what sees
+  the provider reading a span differently from this app: rounded-out spans
+  overlap and the sum comes in high, a span a millisecond short leaves a gap and
+  it comes in low. Every check is on entry counts, never seconds, because counts
+  cannot cancel — an entry and its correction net to zero seconds and remain two
+  entries. No hour on screen depends on any of it: the figures still come from
+  entries the pages carried, cut in the reader’s zone, and a refused placement
+  leaves the row saying hours are missing without saying where.
+- **A day span is found by bisection, not by constructing local midnight.**
+  `spanInstantsIn` in `shared/lib/date.ts`. São Paulo advanced its clocks at
+  midnight every spring until 2019, so the local day began at 01:00 and 00:00
+  never happened; bisecting `toIsoDate` finds the first instant that is in the
+  day whatever the zone did. The span ends one **microsecond** before the next
+  begins: GitLab compares `spent_at >= ?` and `<= ?`, so spans sharing an
+  instant count an entry twice and spans a millisecond apart lose one a day.
+- **The team report is never written to the device.** Its queries carry
+  `meta: { persist: false }` and `__root.tsx` reads that rather than a key it has
+  to recognise. The reader's own hours are persisted because that is what paints
+  a return visit before any request; a group's belong to other people, and a
+  shared machine must not keep them.
 - **Two linters.** ESLint carries the type-aware, React and testing-library
   rules; Biome carries the ARIA rules and the unique-id rule. Replacing ESLint
   with Biome was measured twice and rejected — `docs/qa/quality-metrics.md` has

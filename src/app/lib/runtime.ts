@@ -7,7 +7,7 @@ import {
 } from '@/entities/sessions'
 import { gitLabTimelogGateway, type TimelogGateway } from '@/entities/timelogs'
 import { gitLabViewerGateway, type ViewerGateway } from '@/entities/viewers'
-import { graphQLClient } from '@/shared/api'
+import { type GraphQLClient, graphQLClient } from '@/shared/api'
 import { gitLabConfig, type GitLabConfig } from '@/shared/config'
 import { persistentStorage } from '@/shared/lib/storage'
 
@@ -17,13 +17,21 @@ const CALLBACK_PATH = '/auth/callback'
 const GRAPHQL_PATH = '/api/graphql'
 
 export type AppRuntime =
-  | { readonly kind: 'missing-client-id' }
   | {
+      /**
+       * The data client behind the session.
+       *
+       * Handed out rather than another gateway beside the two below, so a
+       * screen most readers never open does not put its adapter in the bundle
+       * everybody downloads. The team screen builds its own from this.
+       */
+      readonly client: GraphQLClient
       readonly kind: 'ready'
       readonly manager: SessionManager
       readonly timelogs: TimelogGateway
       readonly viewer: ViewerGateway
     }
+  | { readonly kind: 'missing-client-id' }
 
 /**
  * Built once for the page.
@@ -33,6 +41,21 @@ export type AppRuntime =
  * own manager and gateway instead of reaching for these.
  */
 export const appRuntime: AppRuntime = createRuntime()
+
+/**
+ * The data client behind the session.
+ *
+ * @throws Error when the build has no application id. Every caller sits behind
+ *   the session guard, which cannot pass without a configured runtime, so this
+ *   is a contract rather than a case a screen has to render.
+ */
+export function apiClient(): GraphQLClient {
+  if (appRuntime.kind !== 'ready') {
+    throw new Error('apiClient was called before GitLab was configured')
+  }
+
+  return appRuntime.client
+}
 
 /**
  * The redirect URI this origin needs registered in GitLab. Shown to the reader
@@ -66,6 +89,7 @@ function createRuntime(): AppRuntime {
   const client = graphQLClient(result.config.baseUrl + GRAPHQL_PATH, manager)
 
   return {
+    client,
     kind: 'ready',
     manager,
     timelogs: gitLabTimelogGateway(client),

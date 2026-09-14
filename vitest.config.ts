@@ -47,17 +47,42 @@ export default defineConfig({
           lines: 100,
           statements: 100,
         },
+        /**
+         * The one place seconds become hours. It is model code by nature and
+         * carries the model floor; it sits in shared only because two entity
+         * slices need it and FSD forbids one reaching into the other.
+         */
+        'src/shared/lib/duration.ts': {
+          branches: 100,
+          functions: 100,
+          lines: 100,
+          statements: 100,
+        },
         statements: 90,
       },
     },
 
     projects: [
       {
-        // Pure business rules: no DOM, no network, no React.
+        /**
+         * Pure business rules: no DOM, no network, no React.
+         *
+         * `shared/lib/duration.ts` is named explicitly because it is model code
+         * that lives outside a `model/` directory — two entity slices need it
+         * and FSD forbids one reaching into the other. Left to the glob it
+         * would run in the `ui` project instead, and Stryker’s per-test
+         * coverage would stop associating its mutants with the tests that kill
+         * them: the mutation score on the one place seconds become hours would
+         * quietly drop.
+         */
         resolve: { alias },
         test: {
           environment: 'node',
-          include: ['src/**/model/**/*.test.ts', 'tests/domain/**/*.test.ts'],
+          include: [
+            'src/**/model/**/*.test.ts',
+            'src/shared/lib/duration.test.ts',
+            'tests/domain/**/*.test.ts',
+          ],
           name: 'domain',
         },
       },
@@ -67,7 +92,7 @@ export default defineConfig({
         resolve: { alias },
         test: {
           environment: 'happy-dom',
-          exclude: ['src/**/model/**'],
+          exclude: ['src/**/model/**', 'src/shared/lib/duration.test.ts'],
           include: ['src/**/*.test.tsx', 'src/**/*.test.ts', 'tests/ui/**/*.test.tsx'],
           /**
            * One environment per worker rather than one per file.

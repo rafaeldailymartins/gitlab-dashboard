@@ -1,13 +1,19 @@
 import { RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 
+import type { GraphQLFailure } from '@/shared/api'
+
 import { usePreferences } from '@/entities/preferences'
 import { m, useActiveLocale } from '@/shared/i18n'
 import { toIsoDate } from '@/shared/lib/date'
 import { formatShortDate, formatTimeOfDay } from '@/shared/lib/format'
 import { Button } from '@/shared/ui/button'
 
-import type { HoursReport } from '../lib/use-hours-report'
+interface SyncControlProps {
+  /** Sentences about what the answer could not tell us, in the order to read them. */
+  readonly notices: readonly string[]
+  readonly status: SyncStatus
+}
 
 /**
  * When the hours on screen last came from GitLab, and the way to ask again.
@@ -22,7 +28,15 @@ import type { HoursReport } from '../lib/use-hours-report'
  * row, does not move under the reader's pointer when the state changes: the
  * text grows leftwards into empty space instead.
  */
-export function SyncControl({ report }: { readonly report: HoursReport }) {
+/** The part of a report this control needs. Any report satisfies it. */
+interface SyncStatus {
+  readonly failure: GraphQLFailure | null
+  readonly sync: () => void
+  readonly syncedAt: Date | null
+  readonly syncing: boolean
+}
+
+export function SyncControl({ notices, status }: SyncControlProps) {
   const { preferences } = usePreferences()
   const { locale } = useActiveLocale()
   const [presses, setPresses] = useState(0)
@@ -30,7 +44,7 @@ export function SyncControl({ report }: { readonly report: HoursReport }) {
   return (
     <div className="flex max-w-full flex-wrap items-center justify-end gap-x-2 gap-y-1">
       <p className="text-right text-xs text-muted-foreground" role="status">
-        {statusOf(report, locale, preferences.timeZone)}
+        {statusOf({ notices, status }, locale, preferences.timeZone)}
       </p>
       {/* Deliberately never disabled: disabling blurs the control, which would
           take focus off it at the moment a keyboard reader pressed it. A second
@@ -39,7 +53,7 @@ export function SyncControl({ report }: { readonly report: HoursReport }) {
         aria-label={m.sync_action()}
         onClick={() => {
           setPresses((count) => count + 1)
-          report.sync()
+          status.sync()
         }}
         size="icon-sm"
         title={m.sync_action()}
@@ -48,7 +62,7 @@ export function SyncControl({ report }: { readonly report: HoursReport }) {
       >
         {/* The key is the press count, so a second press restarts the turn:
             a CSS animation on an element that stayed mounted would not. */}
-        <RefreshCw aria-hidden className={turnClass(report.syncing, presses)} key={presses} />
+        <RefreshCw aria-hidden className={turnClass(status.syncing, presses)} key={presses} />
       </Button>
     </div>
   )
@@ -86,20 +100,20 @@ function lastSync(syncedAt: Date, locale: string, timeZone: string): string {
  * its own. When nothing was withheld there is nothing to add, and nothing is
  * added — an empty or zero notice would be noise on every ordinary visit.
  */
-function statusOf(report: HoursReport, locale: string, timeZone: string): string {
-  return [syncState(report, locale, timeZone), ...withheldNotices(report)].join(' ')
+function statusOf(props: SyncControlProps, locale: string, timeZone: string): string {
+  return [syncState(props.status, locale, timeZone), ...props.notices].join(' ')
 }
 
-function syncState(report: HoursReport, locale: string, timeZone: string): string {
-  if (report.failure) {
-    return failureMessage(report.failure.kind)
+function syncState(status: SyncStatus, locale: string, timeZone: string): string {
+  if (status.failure) {
+    return failureMessage(status.failure.kind)
   }
 
-  if (report.syncing) {
+  if (status.syncing) {
     return m.sync_in_progress()
   }
 
-  return report.syncedAt === null ? m.sync_never() : lastSync(report.syncedAt, locale, timeZone)
+  return status.syncedAt === null ? m.sync_never() : lastSync(status.syncedAt, locale, timeZone)
 }
 
 /**
@@ -113,18 +127,4 @@ function turnClass(syncing: boolean, presses: number): string | undefined {
   }
 
   return presses > 0 ? 'motion-safe:animate-spin-once' : undefined
-}
-
-function withheldNotices(report: HoursReport): string[] {
-  const notices: string[] = []
-
-  if (report.withoutProject > 0) {
-    notices.push(m.report_without_project({ count: report.withoutProject }))
-  }
-
-  if (report.unread > 0) {
-    notices.push(m.report_unread({ count: report.unread }))
-  }
-
-  return notices
 }

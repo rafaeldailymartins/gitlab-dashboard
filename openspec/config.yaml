@@ -5,8 +5,9 @@ context: |
   All artifacts must be written in English. Keep OpenSpec structural headings
   and SHALL/MUST keywords in English.
 
-  Product: a personal dashboard of the hours the signed-in user logged in GitLab
-  issues and merge requests. Single user, no team or group aggregation.
+  Product: a dashboard of hours logged in GitLab issues and merge requests. Its
+  first audience is one person reading their own; it also reports a GitLab
+  group’s hours per person and per day, for somebody who leads that group.
 
   Architecture: a static browser-only SPA. There is no backend and no database.
   The browser authenticates with GitLab through OAuth 2.0 Authorization Code +
@@ -14,9 +15,10 @@ context: |
   directly; GitLab allows both cross-origin. Deployed to Netlify as static
   files.
 
-  Stack: React 19, TypeScript, Vite, TanStack Router (SPA, file-based) and
-  TanStack Query, Tailwind CSS v4, shadcn/ui on Base UI, Paraglide JS for
-  en/pt-BR, Bun as package manager and runtime.
+  Stack: React 19, TypeScript, Vite, TanStack Router (SPA, file-based),
+  TanStack Query and TanStack Table, zod at every provider boundary, date-fns
+  on a UTC-pinned TZDate, Tailwind CSS v4, shadcn/ui on Base UI, Paraglide JS
+  for en/pt-BR, Bun as package manager and runtime.
 
   Folder structure: Feature-Sliced Design with a Clean Architecture core.
   Layers: shared, entities, features, widgets, pages, app. Inside a slice,
@@ -31,7 +33,7 @@ context: |
 rules:
   specs:
     - 'Write every scenario so it can be transcribed into a Gherkin .feature file without rewording.'
-    - 'Give each requirement a stable id so a feature file can cite it in a trailing comment.'
+    - 'Give each requirement a stable id so a feature file can cite it in a comment on the line above its Scenario.'
   tasks:
     - 'Order tasks so the model layer is written test-first, before the adapter and the UI that consume it.'
     - 'Every task that changes behaviour names the gate that proves it.'

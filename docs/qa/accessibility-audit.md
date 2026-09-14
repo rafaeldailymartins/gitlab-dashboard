@@ -67,33 +67,64 @@ interface structure has changed.
 9. The table should be announced as a table with a header row, and the sort state
    of the sorted column should be audible.
 
+### The team report
+
+The matrix is the only two-dimensional table in the app, and the only place the
+reader's own screen-reader table keys — `Ctrl+Alt+arrows` in NVDA and JAWS,
+`VO+arrows` in VoiceOver — are the intended way to read. Everything below is
+about whether they work, which no automated check can tell us.
+
+10. Tab to the table. The scroll region should take focus, draw a visible ring,
+    and scroll with the arrow keys.
+11. Move right across a row with the table keys. Each move should announce the
+    day and the hours — and should **not** re-announce the person. Hearing the
+    name on all thirty-one cells is the failure this is looking for.
+12. Move down a column. Each move should announce the person and not repeat the
+    date.
+13. Enter a new week. Confirm the band above is announced, or at minimum not
+    misattributed to the wrong columns. Support for a spanning column header is
+    uneven; the week is also in each day heading's spoken text, so the band is an
+    enhancement rather than the only carrier.
+14. Find a working day nobody logged. It should say "no time logged". Find a
+    Saturday. It should say nothing beyond its column heading — absence of
+    expectation is not a fact worth announcing thirty-one times.
+15. Activate the Person and Total headings. The ordering should be audible, and
+    should change when the same heading is activated again.
+16. Confirm no data cell is a tab stop: Tab from the last control should leave
+    the table entirely rather than walking a thousand cells.
+17. With hours held back, confirm the shortfall is spoken as part of the row it
+    belongs to and not only in the status region.
+
 ### Settings
 
-10. Each weekday input should announce its own weekday and its current value.
-11. Enter 30 in one. The error should be announced without moving focus, and the
+18. Each weekday input should announce its own weekday and its current value.
+19. Enter 30 in one. The error should be announced without moving focus, and the
     field should read as invalid.
-12. Change the language. Everything should be re-announced in the new language,
+20. Change the language. Everything should be re-announced in the new language,
     including the error still on screen.
 
 ## Colour and contrast
 
-13. In both colour schemes, check the chart tokens against their card: the
+21. In both colour schemes, check the chart tokens against their card: the
     lightest heatmap band, the target line and the smallest bar. The contrast
     gate measures all of it against both card surfaces on every `verify`, so
     this step is looking for what a ratio cannot see: a band that
     passes its floor and still reads as the one above it, or a mark that clears
     3:1 and still disappears into the page.
-14. Turn on the operating system's high-contrast or forced-colours mode. Nothing
+22. Turn on the operating system's high-contrast or forced-colours mode. Nothing
     should become invisible; bars may lose their fill, which is why every figure
     is also written out.
-15. Simulate protanopia and deuteranopia on `/insights`. The project split should
-    still be readable — it always is, because each row is labelled.
-16. Read the sign-in screen's left panel in both colour schemes. It is the one
+23. Simulate protanopia and deuteranopia on `/insights` and on `/team`. The
+    project split should still be readable — it always is, because each row is
+    labelled. On the team report, a day above the reference should still be
+    distinguishable from one that met it: the bar crosses a dashed rule, which
+    is a difference in shape rather than in hue.
+24. Read the sign-in screen's left panel in both colour schemes. It is the one
     large branded surface in the app, and its decorative week is `aria-hidden`,
     which means axe's `color-contrast` rule skips those labels entirely. This
     step is their only automated-coverage gap: the weekday labels and the
     positioning line have to be legible on the panel, not just present.
-17. Set a weekday target low enough to meet, and read the brass seal on the met
+25. Set a weekday target low enough to meet, and read the brass seal on the met
     figure. `--seal` is the one interface colour axe has never evaluated: no
     fixture day in the acceptance suite reaches its target, so the state that
     uses it never renders in a browser under test. Its ratios are held by

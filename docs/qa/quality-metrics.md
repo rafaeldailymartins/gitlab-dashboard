@@ -17,20 +17,21 @@ a drift is visible without running anything.
 | FSD conventions                    | 0 problems                       | pass     | `bun run arch:layers`           | pre-push, `verify`, CI   |
 | Dependency graph (cycles, orphans) | 0 violations                     | pass     | `bun run arch:graph`            | pre-push, `verify`, CI   |
 | Dead code (files, exports, deps)   | 0 findings                       | pass     | `bun run deadcode`              | pre-push, `verify`, CI   |
-| Requirement traceability           | every requirement cited          | 41/41    | `bun run arch:trace`            | `verify`, CI             |
-| Type coverage                      | ≥ 99%                            | 99.83%   | `bun run types:coverage`        | `verify`, CI             |
+| Requirement traceability           | every requirement cited          | 67/67    | `bun run arch:trace`            | `verify`, CI             |
+| Type coverage                      | ≥ 99%                            | 99.87%   | `bun run types:coverage`        | `verify`, CI             |
 | Dependency vulnerabilities         | **0, at any severity**           | 0        | `bun run security:audit`        | pre-push, `verify`, CI   |
-| Test coverage, statements          | ≥ 90%                            | 100%     | `bun run test:coverage`         | CI                       |
-| Test coverage, branches            | ≥ 90%                            | 99.11%   | `bun run test:coverage`         | CI                       |
+| Test coverage, statements          | ≥ 90%                            | 98.32%   | `bun run test:coverage`         | CI                       |
+| Test coverage, branches            | ≥ 90%                            | 93.78%   | `bun run test:coverage`         | CI                       |
 | Test coverage, `model/`            | **100%**                         | 100%     | `bun run test:coverage`         | CI                       |
-| Mutation score, `model/`           | ≥ 85%                            | 97.34%   | `bun run test:mutation`         | scheduled CI             |
-| Initial bundle                     | ≤ 180 kB gzip                    | 136.6 kB | `bun run build && bun run size` | CI                       |
+| Mutation score, `model/`           | ≥ 85%                            | 96.25%   | `bun run test:mutation`         | scheduled CI             |
+| Initial bundle                     | ≤ 180 kB gzip                    | 170.5 kB | `bun run build && bun run size` | CI                       |
 | Accessibility (WCAG 2.1 AA)        | 0 axe violations, light and dark | pass     | `bun run test:e2e`              | CI                       |
 | Cumulative layout shift            | < 0.1, cold and warm             | pass     | `bun run test:e2e`              | CI                       |
 | No sideways scrolling at 375 px    | every screen                     | pass     | `bun run test:e2e`              | CI                       |
 
-Tests: 721 unit and component, 300 of them on the pure model layer and its Gherkin
-features, plus 150 acceptance runs across chromium, webkit and a mobile viewport.
+Tests: 1174 unit and component, 387 of them on the pure model layer and its
+Gherkin features, plus acceptance runs across chromium, webkit and a mobile
+viewport.
 
 ## Two linters, on purpose
 

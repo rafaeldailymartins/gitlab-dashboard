@@ -83,12 +83,43 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
 - [ ] Set the scheme to "Follow my system", then change the system setting. The
       app follows without a reload.
 
+## The team report
+
+- [ ] Open `/team` with no group. It asks you to choose one rather than failing.
+- [ ] Choose a group from the picker. The field opens a list on click, filters
+      as you type, and shows the chosen group's name once the popup closes.
+- [ ] Rows appear for everybody who logged something. Anybody on the membership
+      who logged nothing is named in one line under the table instead, and
+      anybody whose hours GitLab withheld keeps their row.
+- [ ] On a group where GitLab holds hours back, the cells carry a bracketed
+      `(+n)` on the days it counted them, and the row note disappears once every
+      withheld entry has a day. Confirm the row total did **not** change.
+- [ ] On a group where nothing is withheld, watch the network: no
+      `GroupColumnProbe` request is made at all.
+- [ ] While the month is still reading, no per-person figure is shown: the cells
+      and the totals hold reserved space. Confirm no name is ever beside a zero
+      that later changes.
+- [ ] Scroll the matrix sideways. The person column and the total column stay
+      put; the two header rows stay put when it scrolls down.
+- [ ] Switch to Weeks and back. The address changes both times, and reloading it
+      shows the same axis.
+- [ ] Order by Total, twice. The ordering reverses, and the heading says which.
+- [ ] Move a month back and forward. The address follows, and the figures change.
+- [ ] Open `/team?group=<a group you cannot read>`. It says so, and shows no
+      figures.
+- [ ] Open `/team?month=1999-99`. It recovers to a real month.
+- [ ] With a group where GitLab holds hours back, the status region says how many
+      and the affected row says how much.
+- [ ] Sign out and back in. No group figures are restored from the device before
+      GitLab has answered.
+
 ## Deep links
 
 - [ ] Open `/days/<a date with hours>` directly. It loads that day.
 - [ ] Open `/days/2000-01-01`. It says nothing was logged rather than failing.
 - [ ] Open `/insights` directly, signed out. Sign in, and the app lands on
       `/insights` rather than on the dashboard.
+- [ ] Open `/team?group=…&month=…&by=weeks` directly. It loads that exact view.
 - [ ] Hard-refresh any deep link. The Netlify SPA fallback serves it.
 
 ## The phone
@@ -96,6 +127,9 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
 - [ ] At 375 pixels, no screen scrolls sideways.
 - [ ] A day row's issue title is readable — not squeezed to nothing by the
       project reference beside it.
-- [ ] Signed in, the header's navigation is reachable.
+- [ ] Signed in, the header's navigation is reachable, and its four links wrap
+      rather than pushing the row sideways.
+- [ ] On the team report, the matrix scrolls inside its own bounds and the page
+      does not.
 - [ ] Signed out, the sign-in screen stacks its two panels rather than scrolling
       sideways, and the decorative week keeps its labels legible.

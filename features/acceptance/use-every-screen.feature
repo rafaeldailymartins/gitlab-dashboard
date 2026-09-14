@@ -20,6 +20,8 @@ Feature: Using every screen
       | settings  | dark   |
       | a day     | light  |
       | a day     | dark   |
+      | team      | light  |
+      | team      | dark   |
 
   # Spec: dashboard-ui / UI-11
   Scenario Outline: No screen scrolls sideways on a phone
@@ -34,6 +36,7 @@ Feature: Using every screen
       | insights  |
       | settings  |
       | a day     |
+      | team      |
 
   # Spec: dashboard-ui / UI-11
   Scenario: The sign-in screen does not scroll sideways on a phone either

@@ -1,10 +1,11 @@
 import type { IsoDate } from '@/shared/lib/date'
 
+import { secondsToHours } from '@/shared/lib/duration'
+
 import type { DateRange, DayTotal, PeriodTotal } from './aggregate'
 import type { TimelogPage } from './ports'
 
 import { dayTotals } from './aggregate'
-import { secondsToHours } from './duration'
 
 /**
  * A bounded period, and whether the report can answer it yet.

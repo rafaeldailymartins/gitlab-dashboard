@@ -1,8 +1,7 @@
 import { type IsoDate, toIsoDate } from '@/shared/lib/date'
+import { secondsToHours } from '@/shared/lib/duration'
 
 import type { ProjectRef, TimelogEntry, WorkItemRef } from './types'
-
-import { secondsToHours } from './duration'
 
 /**
  * The grouping key for entries with no readable project.

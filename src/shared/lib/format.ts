@@ -11,6 +11,13 @@ const CALENDAR_ZONE = 'UTC'
 const REFERENCE_MONDAY = isoDate('2026-08-17')
 
 const DATE_STYLES = {
+  /**
+   * A day and its weekday, with no year — `Tuesday, 12 May`.
+   *
+   * `full` carries the year, and a column header that announces "2026" on every
+   * one of a month's days is noise a screen-reader reader has to sit through.
+   */
+  dayWithWeekday: { day: 'numeric', month: 'long', weekday: 'long' },
   full: { day: 'numeric', month: 'long', weekday: 'long', year: 'numeric' },
   long: { day: 'numeric', month: 'long', year: 'numeric' },
   month: { month: 'long', year: 'numeric' },
@@ -28,7 +35,18 @@ type DateStyle = keyof typeof DATE_STYLES
  */
 const dateFormatters = new Map<string, Intl.DateTimeFormat>()
 const hourFormatters = new Map<string, Intl.NumberFormat>()
+const spokenHourFormatters = new Map<string, Intl.NumberFormat>()
+const listFormatters = new Map<string, Intl.ListFormat>()
 const timeFormatters = new Map<string, Intl.DateTimeFormat>()
+
+/**
+ * A day and its weekday, for a column that names one — `Tuesday, 12 May`.
+ *
+ * The year is deliberately absent; see `DATE_STYLES.dayWithWeekday`.
+ */
+export function formatDayWithWeekday(date: IsoDate, locale: string): string {
+  return formatDate(date, locale, 'dayWithWeekday')
+}
 
 /** A calendar date written out in full, as a heading — `Friday, 21 August 2026`. */
 export function formatFullDate(date: IsoDate, locale: string): string {
@@ -45,6 +63,18 @@ export function formatFullDate(date: IsoDate, locale: string): string {
  */
 export function formatHours(hours: number, locale: string): string {
   return hourFormatter(locale).format(hours)
+}
+
+/**
+ * Names joined the way the reader's language joins them — "Ana, Bruno and
+ * Carla" in English, "Ana, Bruno e Carla" in Brazilian Portuguese.
+ *
+ * Through `Intl` rather than a translated separator: the conjunction, the comma
+ * before it and whether there is one at all are all language-specific, and a
+ * message with a hand-written `, ` would get every language but one wrong.
+ */
+export function formatList(items: readonly string[], locale: string): string {
+  return listFormatter(locale).format(items)
 }
 
 /**
@@ -77,12 +107,7 @@ export function formatShortDate(date: IsoDate, locale: string): string {
  * `6,7 horas`. A bar chart announces this rather than describing its shape.
  */
 export function formatSpokenHours(hours: number, locale: string): string {
-  return new Intl.NumberFormat(locale, {
-    maximumFractionDigits: 2,
-    style: 'unit',
-    unit: 'hour',
-    unitDisplay: 'long',
-  }).format(hours)
+  return spokenHourFormatter(locale).format(hours)
 }
 
 /**
@@ -142,6 +167,46 @@ function hourFormatter(locale: string): Intl.NumberFormat {
   })
 
   hourFormatters.set(locale, created)
+
+  return created
+}
+
+function listFormatter(locale: string): Intl.ListFormat {
+  const existing = listFormatters.get(locale)
+
+  if (existing) {
+    return existing
+  }
+
+  const formatter = new Intl.ListFormat(locale, { style: 'long', type: 'conjunction' })
+
+  listFormatters.set(locale, formatter)
+
+  return formatter
+}
+
+/**
+ * Cached like its three neighbours, and for the same reason.
+ *
+ * Every hour figure in the interface carries a spoken form beside it, so a
+ * screen of a team's month calls this once per cell. Constructing the formatter
+ * each time dominated the cost of rendering that screen.
+ */
+function spokenHourFormatter(locale: string): Intl.NumberFormat {
+  const cached = spokenHourFormatters.get(locale)
+
+  if (cached) {
+    return cached
+  }
+
+  const created = new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 2,
+    style: 'unit',
+    unit: 'hour',
+    unitDisplay: 'long',
+  })
+
+  spokenHourFormatters.set(locale, created)
 
   return created
 }
