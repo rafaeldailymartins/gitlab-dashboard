@@ -41,6 +41,15 @@ const INTERFACE: readonly Row[] = [
   ['primary-foreground', 'primary-hover', 4.5, 'the label on a hovered solid button'],
   ['accent', 'card', 1.15, 'a hovered quiet control against a card'],
   ['accent-foreground', 'accent', 4.5, 'text on a hovered quiet control'],
+  // A hovered row of the team matrix repaints the ground under a string the rest
+  // of the interface only ever sets on a card.
+  //
+  // `seal` was measured here first, for the hidden-hours note, and rejected at
+  // 4.17:1 in the light scheme. Deepening it was not the answer either: brass
+  // means one thing in this interface — a total that reached its target — and a
+  // note saying hours are missing is not that. The note is words on the quiet
+  // ink, which is what carries every other caveat here.
+  ['muted-foreground', 'accent', 4.5, 'secondary text on a hovered row'],
   ['destructive', 'card', 4.5, 'error text on a card'],
   ['input', 'card', 3, 'a field boundary on a card'],
   ['input', 'background', 3, 'a field boundary on the ground'],
@@ -61,6 +70,10 @@ const CHARTS: readonly Row[] = [
   ['chart-scale-1', 'card', 2, 'the lowest heatmap band on a card'],
   ['chart-scale-1', 'chart-empty', 1.5, 'a little against nothing'],
   ['chart-empty', 'card', 1.15, 'an empty working day against a card'],
+  // The team matrix tints a column nothing is expected of with `chart-empty`,
+  // and somebody can still log time on one — so a figure can land on that tint.
+  // `muted` was measured here first and rejected: 1.12 against a dark card.
+  ['card-foreground', 'chart-empty', 4.5, 'an hour figure in a tinted cell'],
   ...[1, 2, 3, 4, 5, 6].flatMap((slot): readonly Row[] => [
     [`chart-series-${String(slot)}`, 'card', 3, `series ${String(slot)} on a card`],
     [`chart-series-${String(slot)}`, 'chart-empty', 3, `series ${String(slot)} inside its track`],

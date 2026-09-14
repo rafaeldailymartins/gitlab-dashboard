@@ -89,6 +89,23 @@ export default defineConfig(
   { files: ['**/*.tsx'], ...react.configs.flat.recommended },
   { files: ['**/*.tsx'], ...react.configs.flat['jsx-runtime'] },
   { files: ['**/*.tsx'], ...jsxA11y.flatConfigs.strict },
+  {
+    files: ['**/*.tsx'],
+    rules: {
+      /**
+       * A scrollable region has to take focus, or a keyboard reader cannot
+       * scroll it — axe's `scrollable-region-focusable` is WCAG 2.1.1 and the
+       * acceptance suite runs it. This rule reads the markup and cannot know
+       * the element scrolls, so the two disagree; the one measuring the
+       * rendered page wins. Only `region` is added, and only because that is
+       * the role a scroll container carries here.
+       */
+      'jsx-a11y/no-noninteractive-tabindex': [
+        'error',
+        { allowExpressionValues: true, roles: ['region', 'tabpanel'], tags: [] },
+      ],
+    },
+  },
   { files: ['**/*.tsx'], ...reactHooks.configs.flat['recommended-latest'] },
   {
     files: ['**/*.tsx'],

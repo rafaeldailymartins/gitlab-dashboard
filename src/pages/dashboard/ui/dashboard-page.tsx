@@ -5,7 +5,7 @@ import { ViewerGreeting } from '@/entities/viewers'
 import { useActiveLocale } from '@/shared/i18n'
 import { type IsoDate, toIsoDate } from '@/shared/lib/date'
 import { formatFullDate } from '@/shared/lib/format'
-import { SyncControl, useHoursReport } from '@/widgets/hours-report'
+import { SyncControl, useHoursReport, withheldNotices } from '@/widgets/hours-report'
 
 import { DayFeed } from './day-feed'
 import { KpiRow } from './kpi-row'
@@ -36,7 +36,7 @@ export function DashboardPage() {
           <ViewerGreeting />
           <h1 className="text-2xl font-semibold tracking-tight">{formatFullDate(today, locale)}</h1>
         </div>
-        <SyncControl report={report} />
+        <SyncControl notices={withheldNotices(report)} status={report} />
       </header>
 
       <KpiRow

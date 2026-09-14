@@ -24,7 +24,14 @@ Given('GitLab withholds an entry nothing can recover', async ({ page }) => {
 })
 
 When('I open the day GitLab withheld an entry from', async ({ page }) => {
-  const day = page.getByRole('button', { name: new RegExp(`${String(HOURS_YESTERDAY)} hours`) })
+  // `expanded` picks the feed row rather than the week strip's bar for the same
+  // day. Both announce the hours, and whether they collide depends on the day of
+  // the week the suite runs on: yesterday is inside the current week from
+  // Tuesday onwards. Only the feed row expands, so that is what identifies it.
+  const day = page.getByRole('button', {
+    expanded: false,
+    name: new RegExp(`${String(HOURS_YESTERDAY)} hours`),
+  })
 
   await day.scrollIntoViewIfNeeded()
   await day.click()

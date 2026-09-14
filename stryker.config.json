@@ -1,11 +1,11 @@
 {
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
-  "_comment": "Mutation testing proves the model tests actually detect broken behaviour rather than merely executing it. Scoped to the pure model layer, where mutants are cheap to run and failures are unambiguous.",
+  "_comment": "Mutation testing proves the model tests actually detect broken behaviour rather than merely executing it. Scoped to the pure model layer, where mutants are cheap to run and failures are unambiguous — plus src/shared/lib/duration.ts, which is model code by nature: it is the one place seconds become hours, and it lives in shared only because two entity slices need it and FSD forbids one reaching into the other.",
   "testRunner": "vitest",
   "vitest": {
     "configFile": "vitest.config.ts"
   },
-  "mutate": ["src/**/model/**/*.ts", "!src/**/*.test.ts"],
+  "mutate": ["src/**/model/**/*.ts", "src/shared/lib/duration.ts", "!src/**/*.test.ts"],
   "coverageAnalysis": "perTest",
   "reporters": ["clear-text", "progress", "html", "json"],
   "htmlReporter": {

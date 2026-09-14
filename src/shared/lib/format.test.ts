@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import { isoDate } from './date'
 import {
+  formatDayWithWeekday,
   formatFullDate,
   formatHours,
+  formatList,
   formatShortDate,
   formatSpokenHours,
   formatTimeOfDay,
@@ -50,6 +52,26 @@ describe('formatSpokenHours', () => {
 
   it('uses the singular where the locale does', () => {
     expect(formatSpokenHours(1, EN)).toMatch(/\bhour\b/)
+  })
+
+  it('gives the same answer on a repeat call, now that the formatter is cached', () => {
+    expect(formatSpokenHours(6.7, EN)).toBe(formatSpokenHours(6.7, EN))
+    expect(formatSpokenHours(6.7, PT)).not.toBe(formatSpokenHours(6.7, EN))
+  })
+})
+
+describe('formatDayWithWeekday', () => {
+  it('names the weekday and the day without the year', () => {
+    // 2026-05-12 is a Tuesday.
+    const spoken = formatDayWithWeekday(isoDate('2026-05-12'), EN)
+
+    expect(spoken).toMatch(/Tuesday/)
+    expect(spoken).toMatch(/12/)
+    expect(spoken).not.toMatch(/2026/)
+  })
+
+  it('writes it in the locale', () => {
+    expect(formatDayWithWeekday(isoDate('2026-05-12'), PT)).toMatch(/terça/i)
   })
 })
 
@@ -130,5 +152,19 @@ describe('formatTimeOfDay', () => {
 
   it('leaves the seconds out', () => {
     expect(formatTimeOfDay(new Date('2026-08-21T15:00:42Z'), PT, 'UTC')).toBe('15:00')
+  })
+})
+
+describe('formatList', () => {
+  it('joins names the way English joins them', () => {
+    expect(formatList(['Ana', 'Bruno', 'Carla'], 'en')).toBe('Ana, Bruno, and Carla')
+  })
+
+  it('joins them the way Brazilian Portuguese does, which is not the same', () => {
+    expect(formatList(['Ana', 'Bruno', 'Carla'], 'pt-BR')).toBe('Ana, Bruno e Carla')
+  })
+
+  it('leaves a single name alone', () => {
+    expect(formatList(['Ana'], 'pt-BR')).toBe('Ana')
   })
 })

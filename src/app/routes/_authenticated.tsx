@@ -50,18 +50,26 @@ function AuthenticatedLayout() {
     <>
       <header className="border-b">
         {/* Wraps rather than overflowing: at 375 pixels the brand and the two
-            controls fill the first row and the navigation takes the second. */}
+            controls fill the first row and the navigation takes the second,
+            which itself wraps once four links no longer fit across it. */}
         <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
           <Wordmark />
           <nav
             aria-label={m.nav_label()}
-            className="order-last flex w-full items-center gap-1 sm:order-none sm:w-auto"
+            className="order-last flex w-full flex-wrap items-center gap-1 sm:order-none sm:w-auto"
           >
             <Link className={NAVIGATION_LINK_CLASS} to="/">
               {m.nav_dashboard()}
             </Link>
             <Link className={NAVIGATION_LINK_CLASS} to="/insights">
               {m.nav_insights()}
+            </Link>
+            <Link
+              className={NAVIGATION_LINK_CLASS}
+              search={{ by: 'days', group: '', month: '' }}
+              to="/team"
+            >
+              {m.nav_team()}
             </Link>
             <Link className={NAVIGATION_LINK_CLASS} to="/settings">
               {m.nav_settings()}

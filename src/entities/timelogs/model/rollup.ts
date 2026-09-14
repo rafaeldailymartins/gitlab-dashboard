@@ -1,8 +1,9 @@
+import { secondsToHours } from '@/shared/lib/duration'
+
 import type { DayTotal, WorkItemTotal } from './aggregate'
 import type { ProjectRef, WorkItemRef } from './types'
 
 import { NO_PROJECT } from './aggregate'
-import { secondsToHours } from './duration'
 
 /** Everything logged against one work item over a set of days. */
 export interface ItemTotal {

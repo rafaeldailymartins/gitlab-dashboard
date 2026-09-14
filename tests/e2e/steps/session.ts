@@ -2,6 +2,7 @@ import { expect, type Page } from '@playwright/test'
 import { createBdd } from 'playwright-bdd'
 
 import { failTimelogs, stubEmptyTimelogs, stubTimelogs } from '../support/gitlab-api'
+import { stubGroupHours } from '../support/gitlab-groups'
 import { ACCEPTANCE_ORIGIN } from '../support/origin'
 
 const { Given, Then, When } = createBdd()
@@ -101,6 +102,9 @@ Given('GitLab cannot be reached', async ({ page }) => {
 Given('I am signed in', async ({ page }) => {
   await stubAuthorization(page, { outcome: 'granted' })
   await stubTimelogs(page)
+  // The group endpoint too: it is the same endpoint, and the screen sweep opens
+  // the team report like any other screen.
+  await stubGroupHours(page)
   await page.goto('/')
   await page.getByRole('button', { name: /continue with gitlab/i }).click()
   await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible()

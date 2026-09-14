@@ -93,7 +93,19 @@ export async function stubTimelogs(page: Page): Promise<void> {
  * viewer query would fail its schema and greet nobody, without saying why.
  */
 async function answer(route: Route, hours: unknown): Promise<void> {
-  await route.fulfill({ json: queryOf(route).includes('timelogs') ? hours : VIEWER_ANSWER })
+  await route.fulfill({ json: isPersonalHours(route) ? hours : VIEWER_ANSWER })
+}
+
+/**
+ * Whether this request is the signed-in person's own history.
+ *
+ * The operation name decides, not the query text: `GroupHoursPage` also contains
+ * the substring `timelogs`, and answering it with this payload would hand the
+ * team screen the personal fixture — which parses, renders, and would make the
+ * suite pass on entirely the wrong data.
+ */
+function isPersonalHours(route: Route): boolean {
+  return operationOf(route) === 'MyTimelogs'
 }
 
 /**
@@ -148,6 +160,11 @@ function onePage(entries: unknown[]) {
       },
     },
   }
+}
+
+/** The GraphQL operation a request carries, or an empty string. */
+function operationOf(route: Route): string {
+  return /query\s+(\w+)/u.exec(queryOf(route))?.[1] ?? ''
 }
 
 /** One page of hours, ending the history. */
@@ -227,15 +244,13 @@ export function timesAsked(page: Page): number {
 
 /** Answers the recovery request with `recovery`, and the first one withheld. */
 async function answerWithheld(route: Route, recovery: unknown): Promise<void> {
-  const query = queryOf(route)
-
-  if (!query.includes('timelogs')) {
+  if (!isPersonalHours(route)) {
     await route.fulfill({ json: VIEWER_ANSWER })
 
     return
   }
 
-  await route.fulfill({ json: query.includes('project') ? withheldPayload() : recovery })
+  await route.fulfill({ json: queryOf(route).includes('project') ? withheldPayload() : recovery })
 }
 
 function countAsk(page: Page): void {
