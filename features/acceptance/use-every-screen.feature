@@ -38,6 +38,19 @@ Feature: Using every screen
       | a day     |
       | team      |
 
+  # Spec: dashboard-ui / UI-16
+  Scenario Outline: The navigation says which screen I am on
+    Given I am signed in
+    When I open the "<screen>" screen
+    Then the navigation marks "<screen>" as the screen I am on
+
+    Examples:
+      | screen    |
+      | dashboard |
+      | insights  |
+      | settings  |
+      | team      |
+
   # Spec: dashboard-ui / UI-11
   Scenario: The sign-in screen does not scroll sideways on a phone either
     Given my viewport is 375 pixels wide
