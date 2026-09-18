@@ -20,6 +20,18 @@ const SCREENS: Record<string, string> = {
   team: '/team?group=invent-software%2Fsquad-fiscal&month=2026-05&by=days',
 }
 
+/**
+ * What the navigation calls each screen. Kept apart from `SCREENS` because the
+ * two are not the same list: a day is a screen the reader can open and not a
+ * place the navigation goes.
+ */
+const NAVIGATION_NAMES: Record<string, string> = {
+  dashboard: 'Dashboard',
+  insights: 'Insights',
+  settings: 'Settings',
+  team: 'Team',
+}
+
 interface Stop {
   readonly focusVisible: boolean
   readonly isDayRow: boolean
@@ -81,6 +93,21 @@ When('I open the {string} screen', async ({ page }, screen: string) => {
   // Measuring while a skeleton is still standing measures the loading layout,
   // not the one the reader ends up with.
   await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0)
+})
+
+/**
+ * Asked of the whole navigation rather than of one link, because the failure this
+ * guards against marks nothing rather than marking the wrong thing — and a
+ * single-link assertion would also pass on a navigation that marked all four.
+ */
+Then('the navigation marks {string} as the screen I am on', async ({ page }, screen: string) => {
+  const expected = NAVIGATION_NAMES[screen] ?? ''
+
+  expect(expected, `No navigation name is registered for the "${screen}" screen`).not.toBe('')
+
+  const current = page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link')
+
+  await expect(current.and(page.locator('[aria-current="page"]'))).toHaveText([expected])
 })
 
 Then('the page does not scroll sideways', async ({ page }) => {

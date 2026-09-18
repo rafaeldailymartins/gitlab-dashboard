@@ -46,8 +46,13 @@ When('I order the rows by total', async ({ page }) => {
   await page.getByRole('button', { name: /^total$/i }).click()
 })
 
-Then('the report is headed {string}', async ({ page }, name: string) => {
-  await expect(page.getByRole('heading', { level: 1, name })).toBeVisible()
+/**
+ * Read off the picker, not off the heading. The heading names the screen and
+ * stays put; what proves the address was honoured is the control that says which
+ * group is being reported.
+ */
+Then('the group shown is {string}', async ({ page }, name: string) => {
+  await expect(page.getByRole('combobox', { name: /group|grupo/iu })).toHaveValue(name)
 })
 
 Then('the month shown is May 2026', async ({ page }) => {

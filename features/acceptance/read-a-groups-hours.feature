@@ -9,7 +9,7 @@ Feature: Reading a group's hours
   # Spec: group-timelog-report / GROUP-14
   Scenario: Opening a report by its address
     When I open the team report for "invent-software/squad-fiscal" in "2026-05"
-    Then the report is headed "squad-fiscal"
+    Then the group shown is "squad-fiscal"
     And the month shown is May 2026
 
   # Spec: group-timelog-report / GROUP-1

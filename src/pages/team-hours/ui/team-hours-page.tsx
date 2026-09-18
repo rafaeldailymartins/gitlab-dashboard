@@ -64,9 +64,11 @@ export function TeamHoursPage({ onChange, search }: TeamHoursPageProps) {
     <main className="mx-auto flex w-full max-w-[100rem] flex-col gap-4 px-4 py-8">
       <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {report.group?.name ?? m.team_title()}
-          </h1>
+          {/* The screen is named, not the group. The group is named twice
+              below — in the picker that chose it and in the table's caption —
+              and a heading that changed with the choice made the one fixed
+              landmark on the page move under a reader navigating by headings. */}
+          <h1 className="text-2xl font-semibold tracking-tight">{m.team_heading()}</h1>
           <p className="text-sm text-muted-foreground">{m.team_scope()}</p>
         </div>
         {/* No notices. This control says when the hours arrived, whether they

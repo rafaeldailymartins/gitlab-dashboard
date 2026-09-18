@@ -91,6 +91,7 @@
   "not_configured_step_redirect": "Adicione {redirectUri} como redirect URI.",
   "not_configured_step_env": "Coloque o Application ID em VITE_GITLAB_CLIENT_ID e refaça a build.",
   "nav_team": "Equipe",
+  "team_heading": "Equipe",
   "team_title": "Horas por pessoa",
   "team_scope": "Cobre issues e merge requests deste grupo e de seus subgrupos.",
   "team_table_caption": "Horas lançadas por pessoa e por dia. {group}, {month}. As linhas são pessoas, as colunas são dias do mês agrupados por semana ISO. Os valores são horas decimais; cobrem apenas issues e merge requests deste grupo e de seus subgrupos, e podem incluir tempo lançado em trabalho que esta conta não pode abrir.",
