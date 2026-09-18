@@ -19,11 +19,16 @@ const gateway = gitLabAuthGateway(CONFIG, REDIRECT_URI)
 /** Captures what was actually sent, so the encoding itself is asserted. */
 let lastBody: null | URLSearchParams = null
 
-function respondWithToken(token: string, refresh: string) {
+function respondWithToken(token: string, refresh: string, id: null | string = null) {
   return http.post(TOKEN_URL, async ({ request }) => {
     lastBody = new URLSearchParams(await request.text())
 
-    return HttpResponse.json({ access_token: token, expires_in: 7200, refresh_token: refresh })
+    return HttpResponse.json({
+      access_token: token,
+      expires_in: 7200,
+      refresh_token: refresh,
+      ...(id === null ? {} : { id_token: id }),
+    })
   })
 }
 
@@ -59,8 +64,12 @@ describe('authorizeUrl', () => {
     expect(url.searchParams.get('redirect_uri')).toBe(REDIRECT_URI)
   })
 
-  it('asks for read-only access only', () => {
-    expect(url.searchParams.get('scope')).toBe('read_api')
+  it('asks for read-only data access and the reader identity, and nothing else', () => {
+    // Asserted as the exact set rather than as the absence of any particular
+    // scope: "and no other" is a rule that passes for a scope nobody thought to
+    // name. `openid` confers no authority over data — it is what lets the teams
+    // store learn who is calling without being handed a GitLab credential.
+    expect(url.searchParams.get('scope')).toBe('read_api openid')
   })
 
   it('carries the public client id and no secret', () => {
@@ -80,6 +89,7 @@ describe('exchangeCode', () => {
     await expect(gateway.exchangeCode('the-code', 'the-verifier')).resolves.toEqual({
       accessToken: 'access-1',
       expiresInSeconds: 7200,
+      idToken: null,
       refreshToken: 'refresh-1',
     })
   })
@@ -194,6 +204,42 @@ describe('when GitLab answers an error with something other than JSON', () => {
 
     await expect(gateway.exchangeCode('code', 'verifier')).rejects.toMatchObject({
       failure: { kind: 'provider-unavailable' },
+    })
+  })
+})
+
+describe('the identity assertion', () => {
+  it('carries the assertion through when GitLab grants one', async () => {
+    server.use(respondWithToken('access-1', 'refresh-1', 'header.payload.signature'))
+
+    await expect(gateway.exchangeCode('the-code', 'the-verifier')).resolves.toMatchObject({
+      idToken: 'header.payload.signature',
+    })
+  })
+
+  it('is null when GitLab grants none, rather than failing the exchange', async () => {
+    // A refresh token issued before this app asked for `openid` renews without
+    // one. Treating that as a broken response would sign the reader out of a
+    // session that still works for every hour they came to read.
+    server.use(respondWithToken('access-2', 'refresh-2'))
+
+    await expect(gateway.renew('refresh-1')).resolves.toMatchObject({ idToken: null })
+  })
+
+  it('is null when GitLab sends something that is not a string', async () => {
+    server.use(
+      http.post(TOKEN_URL, () =>
+        HttpResponse.json({
+          access_token: 'access-1',
+          expires_in: 7200,
+          id_token: 42,
+          refresh_token: 'refresh-1',
+        }),
+      ),
+    )
+
+    await expect(gateway.exchangeCode('the-code', 'the-verifier')).resolves.toMatchObject({
+      idToken: null,
     })
   })
 })

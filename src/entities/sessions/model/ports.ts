@@ -2,6 +2,14 @@
 export type AuthFailure =
   | { readonly kind: 'denied' }
   | { readonly kind: 'expired-session' }
+  /**
+   * The session works, and carries no identity this app can prove to its own
+   * store. It was granted before the application asked for one, and GitLab
+   * carries the original scopes forward on every renewal — so it never will.
+   * Authorising once more repairs it; signing out would only lose the reader
+   * their place.
+   */
+  | { readonly kind: 'identity-unavailable' }
   | { readonly kind: 'not-configured' }
   | { readonly kind: 'provider-unavailable' }
   | { readonly kind: 'state-mismatch' }
@@ -31,5 +39,13 @@ export interface AuthorizationChallenge {
 export interface Session {
   readonly accessToken: string
   readonly expiresInSeconds: number
+  /**
+   * GitLab's signed assertion of who the reader is, or null when the grant
+   * carries no `openid` scope.
+   *
+   * It has its own lifetime, far shorter than the access token's, and it is not
+   * read from `expiresInSeconds` — see `idTokenExpiryAt`.
+   */
+  readonly idToken: null | string
   readonly refreshToken: string
 }

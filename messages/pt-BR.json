@@ -83,6 +83,7 @@
   "sign_in_failed_state_mismatch": "Não foi possível verificar que esta entrada partiu daqui. Nada foi autenticado.",
   "sign_in_failed_expired": "Esse link de entrada não é mais válido.",
   "sign_in_failed_unavailable": "Não foi possível alcançar o GitLab. Nada foi autenticado.",
+  "sign_in_failed_identity": "Esta entrada não incluiu a permissão de identificação, que as equipes salvas precisam. Entrar de novo concede.",
   "sign_in_retry": "Tentar novamente",
   "not_configured_title": "Esta build não tem uma aplicação do GitLab",
   "not_configured_description": "O painel precisa do Application ID de uma aplicação OAuth na sua própria conta do GitLab. É um valor público: não há segredo a proteger.",

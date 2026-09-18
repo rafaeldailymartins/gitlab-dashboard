@@ -83,6 +83,7 @@
   "sign_in_failed_state_mismatch": "This sign-in could not be verified as one you started. Nothing was signed in.",
   "sign_in_failed_expired": "That sign-in link is no longer valid.",
   "sign_in_failed_unavailable": "GitLab could not be reached. Nothing was signed in.",
+  "sign_in_failed_identity": "This sign-in did not include permission to identify you, which saved teams need. Signing in again grants it.",
   "sign_in_retry": "Try again",
   "not_configured_title": "This build has no GitLab application",
   "not_configured_description": "The dashboard needs the Application ID of an OAuth application in your own GitLab account. It is a public value: there is no secret to protect.",

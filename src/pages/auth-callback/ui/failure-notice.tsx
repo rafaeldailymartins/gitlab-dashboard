@@ -8,6 +8,11 @@ import { buttonVariants } from '@/shared/ui/button'
 const EXPLANATIONS: Record<AuthFailure['kind'], () => string> = {
   denied: m.sign_in_failed_denied,
   'expired-session': m.sign_in_failed_expired,
+  // Not reachable from the callback, where a fresh grant always carries an
+  // identity. It is here because this map is total over the failures, and a
+  // reader who somehow arrived with one deserves the real reason rather than
+  // whichever neighbouring sentence a partial map would have fallen back to.
+  'identity-unavailable': m.sign_in_failed_identity,
   'not-configured': m.not_configured_description,
   'provider-unavailable': m.sign_in_failed_unavailable,
   'state-mismatch': m.sign_in_failed_state_mismatch,
