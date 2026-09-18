@@ -62,6 +62,18 @@ export default defineConfig({
           lines: 100,
           statements: 100,
         },
+        /**
+         * Model code outside a `model/` directory for the same reason: the
+         * report orders the rows it drew and the team editor orders the list
+         * the reader is building, and FSD forbids one slice reaching into the
+         * other. Deterministic row order is a spec requirement, not a nicety.
+         */
+        'src/shared/lib/people.ts': {
+          branches: 100,
+          functions: 100,
+          lines: 100,
+          statements: 100,
+        },
         statements: 90,
       },
     },
@@ -85,6 +97,7 @@ export default defineConfig({
           include: [
             'src/**/model/**/*.test.ts',
             'src/shared/lib/duration.test.ts',
+            'src/shared/lib/people.test.ts',
             'tests/domain/**/*.test.ts',
           ],
           name: 'domain',
@@ -112,7 +125,11 @@ export default defineConfig({
         resolve: { alias },
         test: {
           environment: 'happy-dom',
-          exclude: ['src/**/model/**', 'src/shared/lib/duration.test.ts'],
+          exclude: [
+            'src/**/model/**',
+            'src/shared/lib/duration.test.ts',
+            'src/shared/lib/people.test.ts',
+          ],
           include: ['src/**/*.test.tsx', 'src/**/*.test.ts', 'tests/ui/**/*.test.tsx'],
           /**
            * One environment per worker rather than one per file.

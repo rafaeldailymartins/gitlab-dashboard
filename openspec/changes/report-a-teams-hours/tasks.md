@@ -108,13 +108,21 @@ That is expected and is why the feature files are their own group.
 
 ## 6. Model: the team, and who the provider recognised
 
+This group splits by slice, and the halves cannot land together. 6.3 is about
+`entities/teams` and stands alone. 6.1, 6.2, 6.4 and 6.5 are about the reading
+slice, and every one of them would be an island there until the report's gateway
+and page switch over — `steiger` fails a slice nothing references and `knip`
+fails an export nothing imports, both of which were confirmed by building the
+teams slice and watching them fire. So they move to group 8, beside the boundary
+that consumes them.
+
 - [ ] 6.1 Write and pass the tests for rows being exactly the team's members,
       nobody added and nobody dropped, ordered by a comparison that cannot vary
       by machine; verify `bun run test`
 - [ ] 6.2 Write and pass the tests for reconciling stored members against
       resolved nodes — confirmed, reassigned, unresolved — matched on the
       returned username and never on position; verify `bun run test`
-- [ ] 6.3 Write and pass the tests for the team edits: add, remove, rename, new,
+- [x] 6.3 Write and pass the tests for the team edits: add, remove, rename, new,
       each total and each returning a fresh team, with adding somebody already on
       the team a no-op rather than a duplicate row; verify `bun run test`
 - [ ] 6.4 Write and pass the tests for suggestions: deduped by identifier, bots
@@ -178,11 +186,11 @@ That is expected and is why the feature files are their own group.
 
 ## 9. The teams store in the browser
 
-- [ ] 9.1 Add the teams slice with a lenient decoder that falls back field by
+- [x] 9.1 Add the teams slice with a lenient decoder that falls back field by
       field, paired with the function's strict validator; verify `bun run test`
 - [ ] 9.2 Add a contract test running one table of documents through both halves,
       so the lenient and strict readers cannot drift; verify `bun run test`
-- [ ] 9.3 Add the HTTP adapter with one forced-renewal retry on refusal, mirroring
+- [x] 9.3 Add the HTTP adapter with one forced-renewal retry on refusal, mirroring
       the GraphQL client's single retry; verify `bun run test`
 - [ ] 9.4 Put `meta: { persist: false }` on every teams query, copying the
       pattern the group queries already use. Without it `shouldDehydrateQuery`

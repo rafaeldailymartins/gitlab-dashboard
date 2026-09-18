@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { credentialFrom, isDueForRenewal, millisecondsUntilRenewal } from './credential'
+import {
+  credentialFrom,
+  identityFrom,
+  isDueForRenewal,
+  isIdentityDue,
+  millisecondsUntilRenewal,
+} from './credential'
 
 const NOW = Date.UTC(2026, 7, 21, 12, 0, 0)
 const MINUTE = 60_000
@@ -66,5 +72,54 @@ describe('millisecondsUntilRenewal', () => {
     for (const at of [NOW, NOW + HOUR, NOW + 2 * HOUR - MINUTE, NOW + 3 * HOUR]) {
       expect(millisecondsUntilRenewal(credential, at) === 0).toBe(isDueForRenewal(credential, at))
     }
+  })
+})
+
+/** A token shaped like GitLab's: only its `exp` is ever read. */
+function idToken(expiresAt: number): string {
+  const claims = JSON.stringify({ exp: Math.floor(expiresAt / 1000), sub: '42' })
+  const payload = btoa(claims).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
+
+  return `header.${payload}.signature`
+}
+
+describe('identityFrom', () => {
+  it('dates an assertion from the token rather than from the response', () => {
+    const identity = identityFrom(idToken(NOW + 2 * MINUTE))
+
+    expect(identity?.expiresAt).toBe(NOW + 2 * MINUTE)
+  })
+
+  it('is null when the grant carried no assertion', () => {
+    expect(identityFrom(null)).toBeNull()
+  })
+
+  it('is null for an assertion this cannot date', () => {
+    // One it cannot date is one it would otherwise treat as immortal, and spend
+    // long after the store stopped accepting it.
+    expect(identityFrom('not a token')).toBeNull()
+  })
+})
+
+describe('isIdentityDue', () => {
+  it('is not due while there is more than the margin left', () => {
+    const identity = identityFrom(idToken(NOW + 2 * MINUTE))
+
+    expect(identity && isIdentityDue(identity, NOW)).toBe(false)
+  })
+
+  it('becomes due once the margin is reached', () => {
+    const identity = identityFrom(idToken(NOW + 2 * MINUTE))
+
+    // The margin is twenty seconds — smaller than the access token's minute,
+    // because a minute would throw away half of a two-minute assertion.
+    expect(identity && isIdentityDue(identity, NOW + 2 * MINUTE - 20_000)).toBe(true)
+    expect(identity && isIdentityDue(identity, NOW + 2 * MINUTE - 20_001)).toBe(false)
+  })
+
+  it('is due for one that has already expired', () => {
+    const identity = identityFrom(idToken(NOW - MINUTE))
+
+    expect(identity && isIdentityDue(identity, NOW)).toBe(true)
   })
 })

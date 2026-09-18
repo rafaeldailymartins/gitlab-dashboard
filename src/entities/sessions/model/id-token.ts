@@ -47,8 +47,13 @@ function bytesOf(segment: string): Uint8Array {
   const bytes = new Uint8Array(binary.length)
 
   for (let index = 0; index < binary.length; index += 1) {
-    // Every unit `atob` produced is a byte, so a code point is a code unit here.
-    bytes[index] = binary.codePointAt(index) ?? 0
+    // `charCodeAt`, not `codePointAt`, and the rule is wrong for this one case:
+    // it guards Unicode correctness in *text*, and these are bytes. Every unit
+    // `atob` produced is one, so a code point could never differ from a code
+    // unit here — while `codePointAt` returns `number | undefined` and would add
+    // a fallback branch no input can reach and no test can cover.
+    // eslint-disable-next-line unicorn/prefer-code-point
+    bytes[index] = binary.charCodeAt(index)
   }
 
   return bytes

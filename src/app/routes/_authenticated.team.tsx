@@ -1,8 +1,9 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useMemo } from 'react'
 
-import { apiClient } from '@/app/lib/runtime'
+import { apiClient, sessionManager } from '@/app/lib/runtime'
 import { gitLabGroupTimelogGateway, GroupTimelogGatewayProvider } from '@/entities/group-timelogs'
+import { httpTeamsGateway, TeamsGatewayProvider } from '@/entities/teams'
 import {
   rememberedGroup,
   rememberGroup,
@@ -54,26 +55,31 @@ function TeamRoute() {
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const gateway = useMemo(() => gitLabGroupTimelogGateway(apiClient()), [])
+  // The session is the identity: the teams store asks GitLab who is calling
+  // rather than being handed a credential that reads GitLab.
+  const teams = useMemo(() => httpTeamsGateway(sessionManager()), [])
 
   return (
-    <GroupTimelogGatewayProvider gateway={gateway}>
-      <TeamHoursPage
-        onChange={(next) => {
-          void navigate({
-            search: (current) => {
-              const moved = { ...current, ...next }
+    <TeamsGatewayProvider gateway={teams}>
+      <GroupTimelogGatewayProvider gateway={gateway}>
+        <TeamHoursPage
+          onChange={(next) => {
+            void navigate({
+              search: (current) => {
+                const moved = { ...current, ...next }
 
-              // Remembered from the address rather than from the change, so a
-              // reader who only switched the month still confirms the group, and
-              // one who arrived by somebody else's link adopts it.
-              rememberGroup(persistentStorage(), moved.group)
+                // Remembered from the address rather than from the change, so a
+                // reader who only switched the month still confirms the group, and
+                // one who arrived by somebody else's link adopts it.
+                rememberGroup(persistentStorage(), moved.group)
 
-              return moved
-            },
-          })
-        }}
-        search={search}
-      />
-    </GroupTimelogGatewayProvider>
+                return moved
+              },
+            })
+          }}
+          search={search}
+        />
+      </GroupTimelogGatewayProvider>
+    </TeamsGatewayProvider>
   )
 }
