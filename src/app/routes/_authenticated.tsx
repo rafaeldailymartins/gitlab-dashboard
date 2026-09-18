@@ -74,7 +74,7 @@ function AuthenticatedLayout() {
             <Link
               activeOptions={{ includeSearch: false }}
               className={NAVIGATION_LINK_CLASS}
-              search={{ by: 'days', group: '', month: '' }}
+              search={{ by: 'days', group: '', month: '', team: '' }}
               to="/team"
             >
               {m.nav_team()}

@@ -1,4 +1,6 @@
-import type { GridRow } from '@/entities/group-timelogs'
+import type { GridRow } from '@/entities/team-timelogs'
+
+import { rowName } from './naming'
 
 /** Which column the rows are ordered by, and which way. */
 export interface RowOrder {
@@ -38,7 +40,7 @@ export function ordered(rows: readonly GridRow[], order: RowOrder): readonly Gri
 }
 
 function byName(left: GridRow, right: GridRow): number {
-  return left.person.name.localeCompare(right.person.name)
+  return rowName(left).localeCompare(rowName(right))
 }
 
 function byTotal(left: GridRow, right: GridRow): number {

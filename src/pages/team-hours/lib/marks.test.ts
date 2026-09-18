@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { GridColumn } from '@/entities/group-timelogs'
+import type { GridColumn } from '@/entities/team-timelogs'
 
 import { datesBetween, isoDate, weekdayOf } from '@/shared/lib/date'
 

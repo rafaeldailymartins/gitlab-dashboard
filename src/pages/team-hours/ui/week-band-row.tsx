@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp } from 'lucide-react'
 
-import type { WeekBand } from '@/entities/group-timelogs'
+import type { WeekBand } from '@/entities/team-timelogs'
 
 import { m, useActiveLocale } from '@/shared/i18n'
 import { formatShortDate } from '@/shared/lib/format'

@@ -1,4 +1,4 @@
-import type { PeriodTotal } from '@/entities/group-timelogs'
+import type { PeriodTotal } from '@/entities/team-timelogs'
 
 import { m } from '@/shared/i18n'
 import { HourFigure } from '@/shared/ui/hour-figure'

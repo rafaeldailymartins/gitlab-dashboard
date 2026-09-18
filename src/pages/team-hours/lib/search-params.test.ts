@@ -12,6 +12,7 @@ describe('teamSearchFrom', () => {
       by: 'days',
       group: 'acme/squad',
       month: '2026-05',
+      team: '',
     })
   })
 
@@ -24,6 +25,12 @@ describe('teamSearchFrom', () => {
   it('leaves the group empty rather than inventing one', () => {
     expect(teamSearchFrom({}, TODAY).group).toBe('')
     expect(teamSearchFrom({ group: 42 }, TODAY).group).toBe('')
+  })
+
+  it('reads the team, and leaves it empty rather than inventing one', () => {
+    expect(teamSearchFrom({ team: 'a-team' }, TODAY).team).toBe('a-team')
+    expect(teamSearchFrom({}, TODAY).team).toBe('')
+    expect(teamSearchFrom({ team: 42 }, TODAY).team).toBe('')
   })
 
   it.each(['2026-13', '2026-00', 'not-a-month', '2026', '2026-5', 42, null, undefined])(

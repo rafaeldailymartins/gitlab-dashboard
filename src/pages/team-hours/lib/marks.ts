@@ -1,4 +1,4 @@
-import type { GridColumn } from '@/entities/group-timelogs'
+import type { GridColumn } from '@/entities/team-timelogs'
 
 import { type IsoDate, isoWeekOf } from '@/shared/lib/date'
 

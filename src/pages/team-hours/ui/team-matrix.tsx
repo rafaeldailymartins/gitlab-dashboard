@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 
-import type { Granularity, GridColumn, GroupReport } from '@/entities/group-timelogs'
+import type { Granularity, GridColumn, GroupRef, TeamReport } from '@/entities/team-timelogs'
 import type { IsoDate } from '@/shared/lib/date'
 
 import { m, useActiveLocale } from '@/shared/i18n'
@@ -38,9 +38,11 @@ const TABLE = 'w-max min-w-full table-fixed border-separate border-spacing-0 tex
 
 interface TeamMatrixProps {
   readonly granularity: Granularity
-  readonly groupName: string
   readonly month: IsoDate
-  readonly report: GroupReport
+  readonly report: TeamReport
+  /** The group the figures were narrowed to, or null for the reader's whole reach. */
+  readonly scope: 'unreadable' | GroupRef | null
+  readonly teamName: string
   readonly today: IsoDate
 }
 
@@ -51,13 +53,23 @@ interface TeamMatrixProps {
  * `<section>` is also a `region` landmark, and two of them sharing a name fails
  * axe's `landmark-unique`, which this suite runs.
  */
-export function TeamMatrix({ granularity, groupName, month, report, today }: TeamMatrixProps) {
+export function TeamMatrix({
+  granularity,
+  month,
+  report,
+  scope,
+  teamName,
+  today,
+}: TeamMatrixProps) {
   const { locale } = useActiveLocale()
   const [order, setOrder] = useState<RowOrder>(DEFAULT_ORDER)
   const { columns, columnTotals, grandTotal, rows, weeks } = report.grid
   const visible = useMemo(() => ordered(rows, order), [rows, order])
   const keys = useMemo(() => columns.map((column) => column.key), [columns])
   const marks = useMemo(() => marksOf(columns, today), [columns, today])
+  // A group that resolved is the only narrowing there is: no filter and a
+  // filter this reader cannot open both leave the figures at their whole reach.
+  const scoped = scope !== null && scope !== 'unreadable'
 
   return (
     // A scrollable region with no focusable content has to be focusable itself,
@@ -72,8 +84,14 @@ export function TeamMatrix({ granularity, groupName, month, report, today }: Tea
     // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region must be focusable (WCAG 2.1.1); axe's scrollable-region-focusable fails without it.
     <div aria-label={m.team_title()} className={SCROLL} role="region" tabIndex={0}>
       <table className={TABLE}>
+        {/* The caption carries the scope, so it is announced where the figures
+            are: a reader who reaches this table by landmark never passes the
+            sentence under the heading. Two captions rather than one with a
+            blank in it — an unnarrowed report makes a stronger claim than a
+            narrowed one, and the two must not be phrased as though they were
+            the same claim with a word missing. */}
         <caption className="sr-only">
-          {m.team_table_caption({ group: groupName, month: formatMonth(month, locale) })}
+          {captionOf(scope, teamName, formatMonth(month, locale))}
         </caption>
         <ColumnWidths columns={columns} granularity={granularity} />
         <thead>
@@ -89,7 +107,13 @@ export function TeamMatrix({ granularity, groupName, month, report, today }: Tea
         </thead>
         <tbody>
           {visible.map((row) => (
-            <MatrixRow complete={report.complete} key={row.person.id} marks={marks} row={row} />
+            <MatrixRow
+              complete={report.complete}
+              key={row.member.id}
+              marks={marks}
+              row={row}
+              scoped={scoped}
+            />
           ))}
         </tbody>
         <MatrixFoot
@@ -102,6 +126,15 @@ export function TeamMatrix({ granularity, groupName, month, report, today }: Tea
       </table>
     </div>
   )
+}
+
+/** What the table is about, and how far the figures in it reach. */
+function captionOf(scope: 'unreadable' | GroupRef | null, team: string, month: string): string {
+  if (scope === null || scope === 'unreadable') {
+    return m.team_table_caption_everywhere({ month, team })
+  }
+
+  return m.team_table_caption_group({ group: scope.name, month, team })
 }
 
 /**

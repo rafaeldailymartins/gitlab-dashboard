@@ -1,8 +1,8 @@
 import { memo } from 'react'
 
-import type { GridRow, Shortfall } from '@/entities/group-timelogs'
+import type { GridRow, Shortfall } from '@/entities/team-timelogs'
 
-import { unplacedOf } from '@/entities/group-timelogs'
+import { unplacedOf } from '@/entities/team-timelogs'
 import { m, useActiveLocale } from '@/shared/i18n'
 import { formatHours } from '@/shared/lib/format'
 import { HourFigure } from '@/shared/ui/hour-figure'
@@ -23,6 +23,8 @@ interface MatrixRowProps {
   readonly complete: boolean
   readonly marks: ColumnMarks
   readonly row: GridRow
+  /** True when the figures are narrowed to a group. See `DayCell`. */
+  readonly scoped: boolean
 }
 
 /**
@@ -40,7 +42,7 @@ interface MatrixRowProps {
  * row, where an off-screen row collapsing to nothing takes the column widths and
  * the scroll height with it.
  */
-export const MatrixRow = memo(function MatrixRow({ complete, marks, row }: MatrixRowProps) {
+export const MatrixRow = memo(function MatrixRow({ complete, marks, row, scoped }: MatrixRowProps) {
   const { locale } = useActiveLocale()
   // What is left of the shortfall after the cells took their share of it. On a
   // row whose hours were all placed this is nothing, and the note disappears —
@@ -67,6 +69,7 @@ export const MatrixRow = memo(function MatrixRow({ complete, marks, row }: Matri
           key={cell.key}
           last={index === row.cells.length - 1}
           marks={marks}
+          scoped={scoped}
           unreadable={withheld}
         />
       ))}

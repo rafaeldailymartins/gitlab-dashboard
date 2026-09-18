@@ -1,86 +1,102 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { ANA, BRUNO, entry, member } from '~tests/support/gitlab-group-timelogs'
-import { fakeGroupGateway, renderReport, SQUAD } from '~tests/support/report'
+import { ANA, BRUNO, CAMILA, entry, member } from '~tests/support/gitlab-team-timelogs'
+import { fakeTeamGateway, fakeTeamsGateway, renderRoutedReport, SQUAD } from '~tests/support/report'
 
-import type { GroupHoursPage } from '@/entities/group-timelogs'
+import type { TeamHoursPage as PageType } from '@/entities/team-timelogs'
+import type { Team } from '@/entities/teams'
 
 import type { TeamSearch } from '../lib/search-params'
 
 import { TeamHoursPage } from './team-hours-page'
 
-const MAY: TeamSearch = { by: 'days', group: SQUAD.fullPath, month: '2026-05' }
+const FISCAL: Team = {
+  id: '018f3b2c-7a41-7c9e-9f2d-5b1a4e6c8d70',
+  members: [member(ANA), member(BRUNO)],
+  name: 'Squad Fiscal',
+  updatedAt: '2026-05-01T00:00:00.000Z',
+}
+
+const MAY: TeamSearch = { by: 'days', group: '', month: '2026-05', team: FISCAL.id }
 const HOUR = 3600
 
+/** Ana logged six hours; Bruno logged nothing and the provider resolved both. */
 function loggedGateway() {
-  return fakeGroupGateway({
+  return fakeTeamGateway({
     pages: [
       {
-        entries: [entry(ANA, '2026-05-04T09:00:00Z', 6 * HOUR)],
-        group: SQUAD,
-        nextCursor: null,
+        members: [
+          {
+            declared: { entryCount: 1, seconds: 6 * HOUR },
+            entries: [entry('2026-05-04T09:00:00Z', 6 * HOUR)],
+            nextCursor: null,
+            person: ANA,
+          },
+          {
+            declared: { entryCount: 0, seconds: 0 },
+            entries: [],
+            nextCursor: null,
+            person: BRUNO,
+          },
+        ],
       },
     ],
-    probe: {
-      access: null,
-      declared: { entryCount: 1, seconds: 6 * HOUR },
-      group: SQUAD,
-      perPerson: new Map(),
-    },
-    roster: { access: null, group: SQUAD, members: [member(ANA), member(BRUNO)] },
   })
 }
 
-function page(overrides: Partial<TeamSearch> = {}, gateway = fakeGroupGateway()) {
+function page(
+  overrides: Partial<TeamSearch> = {},
+  timelogs = loggedGateway(),
+  teams = fakeTeamsGateway([FISCAL]),
+) {
   const onChange = vi.fn()
-  const view = renderReport(
+  // Routed, because the screen links to the teams screen — and a link is what
+  // this app's answer to "you have no teams yet" is made of.
+  const view = renderRoutedReport(
     <TeamHoursPage onChange={onChange} search={{ ...MAY, ...overrides }} />,
-    {
-      groups: gateway,
-    },
+    { teams, timelogs },
   )
 
   return { ...view, onChange }
 }
 
 /**
- * One page that arrives and a second that never does.
+ * One round that arrives and a second that never does.
  *
- * A fake that answered the second page with the first would page forever,
- * because the cursor would never run out — and what this describes is the
- * state before the last page lands, not a provider that misbehaves.
+ * A fake that answered the second round with the first would read forever,
+ * because the cursor would never run out — and what this describes is the state
+ * before the last round lands, not a provider that misbehaves.
  */
-function pagingGateway() {
-  const gateway = fakeGroupGateway({
-    roster: { access: null, group: SQUAD, members: [member(ANA), member(BRUNO)] },
-  })
-  const parked: ((page: GroupHoursPage) => void)[] = []
-  let call = 0
+function readingGateway() {
+  const gateway = fakeTeamGateway()
+  const parked: ((page: PageType) => void)[] = []
 
-  gateway.timelogs = vi.fn(() => {
-    call += 1
-
-    if (call > 1) {
-      // The page that has not arrived. Its resolver is parked so a test can
-      // deliver it and watch the figures settle.
-      return new Promise<GroupHoursPage>((resolve) => {
+  gateway.timelogs = vi.fn(() =>
+    Promise.resolve({
+      members: [
+        {
+          declared: { entryCount: 2, seconds: 6 * HOUR },
+          entries: [entry('2026-05-04T09:00:00Z', 6 * HOUR)],
+          nextCursor: 'MQ',
+          person: ANA,
+        },
+        { declared: { entryCount: 0, seconds: 0 }, entries: [], nextCursor: null, person: BRUNO },
+      ],
+    }),
+  )
+  gateway.following = vi.fn(
+    () =>
+      new Promise<PageType>((resolve) => {
         parked.push(resolve)
-      })
-    }
-
-    return Promise.resolve({
-      entries: [entry(ANA, '2026-05-04T09:00:00Z', 6 * HOUR)],
-      group: SQUAD,
-      nextCursor: 'MQ',
-    })
-  })
+      }),
+  )
 
   return {
-    /** Delivers the last page, ending the window. */
+    /** Delivers the continuation, ending the window. */
     finish: () => {
       for (const resolve of parked) {
-        resolve({ entries: [], group: SQUAD, nextCursor: null })
+        resolve({ members: [{ declared: null, entries: [], nextCursor: null, person: ANA }] })
       }
     },
     gateway,
@@ -97,118 +113,147 @@ function totalCellOf(name: string): HTMLElement | undefined {
 }
 
 describe('choosing what to look at', () => {
-  it('asks for a group before reporting on one', () => {
-    page({ group: '' })
+  it('asks the reader to build a team before reporting on one', async () => {
+    page({ team: '' }, loggedGateway(), fakeTeamsGateway([]))
 
-    expect(screen.getByText(/choose a group/i)).toBeInTheDocument()
+    expect(await screen.findByText(/no teams yet/i)).toBeInTheDocument()
   })
 
-  it('says what the figures cover, beside them', async () => {
-    page({}, loggedGateway())
+  it('tells a reader following a link that the team is gone, rather than showing their own', async () => {
+    // An address that names a team always wins, exactly as the group address
+    // used to: a link somebody sent outranks a convenient fallback.
+    page({ team: FISCAL.id }, loggedGateway(), fakeTeamsGateway([]))
 
-    expect(await screen.findByText(/subgroups/i)).toBeInTheDocument()
+    expect(await screen.findByText(/not one of yours/i)).toBeInTheDocument()
+  })
+
+  it('says so when the address names a team this reader does not have', async () => {
+    page({ team: '018f3b2c-7a41-7c9e-9f2d-000000000000' })
+
+    expect(await screen.findByText(/not one of yours/i)).toBeInTheDocument()
+  })
+
+  it('says there is nobody to report on when the team is empty', async () => {
+    const empty = fakeTeamsGateway([{ ...FISCAL, members: [] }])
+
+    page({}, loggedGateway(), empty)
+
+    expect(await screen.findByText(/nobody is on this team/i)).toBeInTheDocument()
+  })
+
+  it('puts the chosen team in the address', async () => {
+    const second: Team = { ...FISCAL, id: '018f3b2c-7a41-7c9e-9f2d-5b1a4e6c8d71', name: 'Platform' }
+    const { onChange } = page({}, loggedGateway(), fakeTeamsGateway([FISCAL, second]))
+
+    await userEvent.selectOptions(
+      await screen.findByRole('combobox', { name: /^team$/i }),
+      second.id,
+    )
+
+    expect(onChange).toHaveBeenCalledWith({ team: second.id })
   })
 
   it('moves the month through the address rather than through its own state', async () => {
-    const { onChange } = page({}, loggedGateway())
+    const { onChange } = page()
 
-    await userEvent.click(screen.getByRole('button', { name: /previous month/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /previous month/i }))
 
     expect(onChange).toHaveBeenCalledWith({ month: '2026-04' })
   })
 
   it('moves the column axis through the address too', async () => {
-    const { onChange } = page({}, loggedGateway())
+    const { onChange } = page()
 
-    await userEvent.click(screen.getByRole('button', { name: /^weeks$/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /^weeks$/i }))
 
     expect(onChange).toHaveBeenCalledWith({ by: 'weeks' })
   })
 })
 
-describe('the group picker', () => {
-  const OTHER = { fullPath: 'invent-software/devkit', name: 'DevKit' }
+describe('what the figures cover', () => {
+  it('claims every hour GitLab will show, when nothing narrows the report', async () => {
+    page()
 
-  function pickerGateway() {
-    return fakeGroupGateway({ groups: [SQUAD, OTHER] })
-  }
-
-  it('opens its list when the field is clicked, rather than standing open', async () => {
-    page({ group: '' }, pickerGateway())
-
-    const field = await screen.findByRole('combobox', { name: /group/i })
-
-    // Asserted after the field has arrived, or it would hold for a picker that
-    // had not rendered at all.
-    expect(screen.queryByRole('option')).not.toBeInTheDocument()
-
-    await userEvent.click(field)
-
-    expect(await screen.findByRole('option', { name: new RegExp(OTHER.name) })).toBeInTheDocument()
+    expect(await screen.findByText(/wherever they logged it/i)).toBeInTheDocument()
   })
 
-  it('asks the provider to search, rather than filtering the page it has', async () => {
-    const gateway = pickerGateway()
+  it('claims only the group and its subgroups once one is chosen', async () => {
+    page({ group: SQUAD.fullPath })
 
-    page({ group: '' }, gateway)
+    expect(await screen.findByText(/narrowed to/i)).toBeInTheDocument()
+  })
 
-    const field = await screen.findByRole('combobox', { name: /group/i })
+  it('reads the hours under the same narrowing it states', async () => {
+    const timelogs = loggedGateway()
 
-    await userEvent.click(field)
-    await userEvent.type(field, 'dev')
+    page({ group: SQUAD.fullPath }, timelogs)
 
-    // The search reaches groups whose own name holds none of what was typed —
-    // a squad found through its parent's path — so the filtering has to be the
-    // provider's rather than this list's.
     await waitFor(() => {
-      expect(gateway.groups).toHaveBeenCalledWith('dev', expect.anything())
+      expect(timelogs.timelogs).toHaveBeenCalledWith(
+        expect.objectContaining({ groupId: SQUAD.id }),
+        expect.anything(),
+      )
     })
   })
 
-  it('puts the chosen group in the address', async () => {
-    const { onChange } = page({ group: '' }, pickerGateway())
+  it('asks the whole reach when nothing narrows it', async () => {
+    const timelogs = loggedGateway()
 
-    await userEvent.click(await screen.findByRole('combobox', { name: /group/i }))
-    await userEvent.click(await screen.findByRole('option', { name: new RegExp(OTHER.name) }))
+    page({}, timelogs)
 
-    expect(onChange).toHaveBeenCalledWith({ group: OTHER.fullPath })
+    await waitFor(() => {
+      expect(timelogs.timelogs).toHaveBeenCalledWith(
+        expect.objectContaining({ groupId: null }),
+        expect.anything(),
+      )
+    })
   })
 
-  it('shows the chosen group by name once one is chosen', async () => {
-    page({}, loggedGateway())
+  it('puts the chosen filter in the address', async () => {
+    const { onChange } = page()
 
-    // The address carries a path, and the name only arrives with the report —
-    // so the field opens on the path and settles on the name.
-    await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: /group/i })).toHaveValue(SQUAD.name)
-    })
+    await userEvent.click(await screen.findByRole('combobox', { name: /narrow to a group/i }))
+    await userEvent.click(await screen.findByRole('option', { name: new RegExp(SQUAD.name) }))
+
+    expect(onChange).toHaveBeenCalledWith({ group: SQUAD.fullPath })
+  })
+
+  it('offers a way back to the whole reach', async () => {
+    const { onChange } = page({ group: SQUAD.fullPath })
+
+    await userEvent.click(await screen.findByRole('combobox', { name: /narrow to a group/i }))
+    await userEvent.click(await screen.findByRole('option', { name: /everywhere/i }))
+
+    expect(onChange).toHaveBeenCalledWith({ group: '' })
+  })
+
+  it('says so rather than reporting everything when the group cannot be read', async () => {
+    page({ group: 'acme/secret' }, fakeTeamGateway({ group: null }))
+
+    expect(await screen.findByText(/could not be read/i)).toBeInTheDocument()
   })
 })
 
 describe('the matrix', () => {
-  it('gives a row to whoever has something to show', async () => {
-    page({}, loggedGateway())
+  it('gives a row to everybody the team names', async () => {
+    page()
 
-    expect(await screen.findByRole('rowheader', { name: ANA.name })).toBeInTheDocument()
+    expect(await screen.findByRole('rowheader', { name: new RegExp(ANA.name) })).toBeInTheDocument()
+    expect(screen.getByRole('rowheader', { name: new RegExp(BRUNO.name) })).toBeInTheDocument()
   })
 
-  it('leaves a member with nothing to show out of the table', async () => {
-    page({}, loggedGateway())
+  it('keeps a row for somebody who logged nothing, because the reader chose them', async () => {
+    page()
 
-    // Bruno is on the roster and logged nothing. He arrives with the roster,
-    // which is a second answer, so waiting for the group total is what makes
-    // this assert that he was left out rather than that he had not arrived.
     await screen.findByText(/measured against/i)
 
-    expect(
-      screen.queryByRole('rowheader', { name: new RegExp(BRUNO.name) }),
-    ).not.toBeInTheDocument()
+    expect(totalCellOf(new RegExp(BRUNO.name).source)).toBeDefined()
   })
 
   it('gives one heading per day of the month', async () => {
-    page({}, loggedGateway())
+    page()
 
-    await screen.findByRole('rowheader', { name: ANA.name })
+    await screen.findByRole('rowheader', { name: new RegExp(ANA.name) })
 
     const days = screen.getAllByRole('row')[1]
 
@@ -216,15 +261,15 @@ describe('the matrix', () => {
   })
 
   it('states the reference the bars are measured against', async () => {
-    page({}, loggedGateway())
+    page()
 
     expect(await screen.findByText(/measured against/i)).toBeInTheDocument()
   })
 
   it('makes no cell a place the keyboard stops', async () => {
-    page({}, loggedGateway())
+    page()
 
-    await screen.findByRole('rowheader', { name: ANA.name })
+    await screen.findByRole('rowheader', { name: new RegExp(ANA.name) })
 
     // The only two the table has are the orderable headings. A month of cells
     // that each took focus would put the rest of the screen out of reach.
@@ -232,111 +277,95 @@ describe('the matrix', () => {
   })
 })
 
+describe('somebody the provider would not resolve', () => {
+  it('keeps their row under the name the reader stored', async () => {
+    const stranger = fakeTeamsGateway([{ ...FISCAL, members: [member(CAMILA)] }])
+
+    page({}, fakeTeamGateway({ pages: [{ members: [] }] }), stranger)
+
+    expect(
+      await screen.findByRole('rowheader', { name: new RegExp(CAMILA.name) }),
+    ).toBeInTheDocument()
+  })
+
+  it('says GitLab did not recognise them, rather than drawing a month of zeros', async () => {
+    const stranger = fakeTeamsGateway([{ ...FISCAL, members: [member(CAMILA)] }])
+
+    page({}, fakeTeamGateway({ pages: [{ members: [] }] }), stranger)
+
+    expect(await screen.findByText(/did not recognise/i)).toBeInTheDocument()
+  })
+})
+
 describe('while the month is still being read', () => {
   it('reserves space for a person’s total rather than showing a figure that will change', async () => {
-    page({}, pagingGateway().gateway)
+    page({}, readingGateway().gateway)
 
-    await screen.findByRole('rowheader', { name: ANA.name })
+    await screen.findByRole('rowheader', { name: new RegExp(ANA.name) })
 
-    // The total is the figure a reader acts on and the one this is about: until
-    // the month has been read it holds reserved space, not a number that will
-    // change. Cells earlier than the read frontier are settled and may hold one.
     await waitFor(() => {
-      expect(totalCellOf(ANA.name)).toHaveTextContent('')
+      expect(totalCellOf(new RegExp(ANA.name).source)).toHaveTextContent('')
     })
   })
 
-  it('leaves nobody out before the month has been read', async () => {
-    page({}, pagingGateway().gateway)
-
-    await screen.findByRole('rowheader', { name: ANA.name })
-
-    // Until the last page lands, "logged nothing" is only "not read yet".
-    // Dropping a row on it would take a colleague off the screen and put them
-    // back a second later.
-    expect(screen.getByRole('rowheader', { name: new RegExp(BRUNO.name) })).toBeInTheDocument()
-  })
-
   it('says only that it is fetching, and nothing about the figures', async () => {
-    page({}, pagingGateway().gateway)
+    page({}, readingGateway().gateway)
 
-    await screen.findByRole('rowheader', { name: ANA.name })
+    await screen.findByRole('rowheader', { name: new RegExp(ANA.name) })
 
     // This region is the sync state and nothing else: when the hours arrived,
     // whether they are arriving now, whether asking failed. A caveat about a
     // person's hours belongs on that person's row, beside the figure.
     expect(screen.getByRole('status')).toHaveTextContent(/updating/i)
-    expect(screen.getByRole('status')).not.toHaveTextContent(/did not show|guest/i)
+    expect(screen.getByRole('status')).not.toHaveTextContent(/did not show|hidden/i)
   })
 
-  it('shows the totals once the last page lands', async () => {
-    const { finish, gateway } = pagingGateway()
+  it('shows the totals once the last round lands', async () => {
+    const { finish, gateway } = readingGateway()
 
     page({}, gateway)
-    await screen.findByRole('rowheader', { name: ANA.name })
+    await screen.findByRole('rowheader', { name: new RegExp(ANA.name) })
     finish()
 
-    // Six hours arrived on the first page; the reserved space becomes the
-    // figure only now, when there is no longer a page that could change it.
+    // Six hours arrived on the first round; the reserved space becomes the
+    // figure only now, when there is no longer a round that could change it.
     expect(await screen.findByText('6')).toBeInTheDocument()
   })
 })
 
 describe('what the provider would not show', () => {
-  it('states the shortfall once the month has been read', async () => {
+  it('states the shortfall on the row it belongs to', async () => {
     page(
       {},
-      fakeGroupGateway({
+      fakeTeamGateway({
         pages: [
           {
-            entries: [entry(ANA, '2026-05-04T09:00:00Z', 6 * HOUR)],
-            group: SQUAD,
-            nextCursor: null,
+            members: [
+              {
+                declared: { entryCount: 3, seconds: 10 * HOUR },
+                entries: [entry('2026-05-04T09:00:00Z', 6 * HOUR)],
+                nextCursor: null,
+                person: ANA,
+              },
+            ],
           },
         ],
-        probe: {
-          access: { level: 10, name: 'GUEST' },
-          declared: { entryCount: 3, seconds: 10 * HOUR },
-          group: SQUAD,
-          perPerson: new Map([[ANA.username, { entryCount: 3, seconds: 10 * HOUR }]]),
-        },
-        roster: { access: null, group: SQUAD, members: [member(ANA)] },
       }),
     )
 
-    await screen.findByRole('rowheader', { name: ANA.name })
+    await screen.findByRole('rowheader', { name: new RegExp(ANA.name) })
 
-    // The shortfall needs the probe, which is a third answer and lands last.
-    // It is stated on the row it belongs to, never in the sync region.
     expect(await screen.findByText(/\+4 h hidden/i)).toBeInTheDocument()
-    // Never the access level. A reader does not need their own permissions
-    // explained to them beside a refresh button.
-    expect(screen.getByRole('status')).not.toHaveTextContent(/guest/i)
+    // Never in the sync region: that answers three questions and none of them
+    // is about a figure.
+    expect(screen.getByRole('status')).not.toHaveTextContent(/hidden/i)
   })
 
   it('says nothing about a shortfall when there is none', async () => {
-    page({}, loggedGateway())
+    page()
 
-    await screen.findByRole('rowheader', { name: ANA.name })
+    await screen.findByRole('rowheader', { name: new RegExp(ANA.name) })
 
-    expect(screen.getByRole('status')).not.toHaveTextContent(/did not show/i)
-  })
-
-  it('names a group it could not read', async () => {
-    page(
-      {},
-      fakeGroupGateway({
-        pages: [{ entries: [], group: null, nextCursor: null }],
-        probe: {
-          access: null,
-          declared: { entryCount: 0, seconds: 0 },
-          group: null,
-          perPerson: new Map(),
-        },
-        roster: { access: null, group: null, members: [] },
-      }),
-    )
-
-    expect(await screen.findByText(/could not be read/i)).toBeInTheDocument()
+    expect(screen.getByRole('status')).not.toHaveTextContent(/hidden/i)
   })
 })

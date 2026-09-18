@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-import type { Granularity } from '@/entities/group-timelogs'
+import type { Granularity } from '@/entities/team-timelogs'
 
 import { m, useActiveLocale } from '@/shared/i18n'
 import { formatMonth } from '@/shared/lib/format'

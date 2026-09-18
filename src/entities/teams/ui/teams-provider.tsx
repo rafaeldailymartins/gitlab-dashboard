@@ -1,4 +1,4 @@
-import { createContext, type ReactNode } from 'react'
+import { createContext, type ReactNode, useContext } from 'react'
 
 import type { TeamsGateway } from '../model/ports'
 
@@ -16,11 +16,17 @@ const GatewayContext = createContext<null | TeamsGateway>(null)
  * screen can then be rendered against a fake, and no screen has to know how a
  * gateway is built — which here also means no screen has to know that one
  * exists on a server at all.
- *
- * `useTeamsGateway` arrives with the screen that calls it. Exporting a reader
- * nothing reads with would fail `bun run deadcode`, which is the gate that keeps
- * this slice from growing a surface ahead of its use.
  */
 export function TeamsGatewayProvider({ children, gateway }: TeamsGatewayProviderProps) {
   return <GatewayContext.Provider value={gateway}>{children}</GatewayContext.Provider>
+}
+
+export function useTeamsGateway(): TeamsGateway {
+  const gateway = useContext(GatewayContext)
+
+  if (!gateway) {
+    throw new Error('useTeamsGateway was called outside a TeamsGatewayProvider')
+  }
+
+  return gateway
 }
