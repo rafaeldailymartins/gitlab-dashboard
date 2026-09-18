@@ -23,6 +23,10 @@ export default defineConfig({
         'src/shared/ui/label.tsx',
       ],
       include: [
+        // The function is authored here and carries logic, so it is measured.
+        // It is not `model/`, so it is held to the global floor rather than the
+        // hundred-percent one: its handler is I/O wiring.
+        'netlify/**/*.mts',
         'src/entities/**/*.{ts,tsx}',
         'src/features/**/*.{ts,tsx}',
         'src/widgets/**/*.{ts,tsx}',
@@ -84,6 +88,22 @@ export default defineConfig({
             'tests/domain/**/*.test.ts',
           ],
           name: 'domain',
+        },
+      },
+      {
+        /**
+         * The serverless function: Node, no DOM, no React — and no Netlify.
+         *
+         * The blob store and the identity verifier are ports, so these tests
+         * inject an in-memory store and a locally minted key pair rather than
+         * reaching for `getStore`, which throws outside a Netlify environment.
+         * That is also what makes the credential rules testable at all: the
+         * acceptance suite serves a static build and has no function in it.
+         */
+        test: {
+          environment: 'node',
+          include: ['netlify/**/*.test.mts'],
+          name: 'functions',
         },
       },
       {

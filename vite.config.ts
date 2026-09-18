@@ -5,6 +5,8 @@ import react from '@vitejs/plugin-react'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 
+import { teamsDevEndpoint } from './config/vite/teams-dev'
+
 export default defineConfig({
   build: {
     sourcemap: true,
@@ -32,6 +34,10 @@ export default defineConfig({
       project: './project.inlang',
       strategy: ['localStorage', 'preferredLanguage', 'baseLocale'],
     }),
+    // Serves the teams function during `bun run dev`. The production one is
+    // Netlify's; this is the same handler behind a middleware, so neither the
+    // Netlify CLI nor its Vite plugin is a dependency of this repository.
+    teamsDevEndpoint(),
   ],
   resolve: {
     alias: {
