@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse, type JsonBodyType } from 'msw'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -32,7 +32,7 @@ function identified() {
   return { caller, identityToken, refresh }
 }
 
-function respond(status: number, body: unknown, etag?: string) {
+function respond(status: number, body: JsonBodyType, etag?: string) {
   return http.all(ENDPOINT, ({ request }) => {
     lastRequest = request.clone()
 
@@ -44,7 +44,7 @@ function respond(status: number, body: unknown, etag?: string) {
 }
 
 /** One refusal, then whatever the second attempt should meet. */
-function respondOnceThen(status: number, body: unknown) {
+function respondOnceThen(status: number, body: JsonBodyType) {
   let first = true
 
   return http.all(ENDPOINT, ({ request }) => {
