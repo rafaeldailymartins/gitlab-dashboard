@@ -113,8 +113,6 @@
   "team_cell_unlogged": "No hours in this group.",
   "team_cell_unlogged_unreadable": "Nothing in this group that you can read.",
   "team_cell_pending": "Not read yet.",
-  "team_people_count": "{count} people",
-  "team_loading_floor": "at least",
   "team_row_hidden": "+{hours} h hidden",
   "team_row_all_hidden": "Hours you cannot read",
   "team_reference_legend": "Bars measured against {hours} h a day",

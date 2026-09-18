@@ -113,8 +113,6 @@
   "team_cell_unlogged": "Nenhuma hora neste grupo.",
   "team_cell_unlogged_unreadable": "Nada neste grupo que você possa ler.",
   "team_cell_pending": "Ainda não lido.",
-  "team_people_count": "{count} pessoas",
-  "team_loading_floor": "pelo menos",
   "team_row_hidden": "+{hours} h ocultas",
   "team_row_all_hidden": "Horas que você não pode ler",
   "team_reference_legend": "Barras medidas contra {hours} h por dia",
