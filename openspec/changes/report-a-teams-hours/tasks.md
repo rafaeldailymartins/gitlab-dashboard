@@ -293,6 +293,15 @@ That is expected and is why the feature files are their own group.
 
 ## 14. Every gate
 
+- [ ] 14.0 Pin down an intermittent test failure seen twice, both times with
+      `bun run test` sharing a shell with other gates and never in a dedicated
+      run: one test of 1245, reported as an unhandled rejection
+      (`Promise unknown:1:11`) rather than a failed assertion, with the suite's
+      `setup` time varying between 7 s and 49 s across runs. The `ui` project sets
+      `isolate: false`, which `vitest.config.ts` records as a deliberate trade and
+      which is where a rejection in one file can surface in another. Not yet
+      attributed to this change or to what was there before; verify by running
+      the suite under load until it reproduces
 - [ ] 14.1 `bun run verify && bun run test`
 - [ ] 14.2 `bun run test:coverage` and `bun run test:mutation`
 - [ ] 14.3 `bun run test:e2e`
