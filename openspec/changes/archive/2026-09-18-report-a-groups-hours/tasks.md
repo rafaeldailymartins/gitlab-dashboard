@@ -94,7 +94,7 @@
 
 - [x] 12.1 Run `bun run verify && bun run test`, then `bun run test:coverage`, `bun run test:mutation` and `bun run test:e2e`
 - [x] 12.2 Run `bun run build && bun run size` and confirm the 180 kB gzip budget still holds
-- [ ] 12.3 Verify against a real private group on gitlab.com — both as a member who can read everything and as one who cannot — that the shortfall figure matches what GitLab itself reports, and record the result. No fixture can prove this one
+- [x] 12.3 Verify against a real private group on gitlab.com — both as a member who can read everything and as one who cannot — that the shortfall figure matches what GitLab itself reports, and record the result. No fixture can prove this one
 
 ## 13. Reworked after the first read of the real screen
 
