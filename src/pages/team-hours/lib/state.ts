@@ -16,13 +16,13 @@ export type ScreenState =
   | { readonly kind: 'loading' }
   /** The reader keeps no teams yet. */
   | { readonly kind: 'no-teams' }
+  /** The session predates the identity scope, so the store cannot answer yet. */
+  | { readonly kind: 'reconnect' }
   | { readonly kind: 'report' }
   /** The store would not say what teams this reader has. */
   | { readonly kind: 'teams-unavailable' }
   /** The address names a team this reader does not have. */
   | { readonly kind: 'unknown-team' }
-  /** The address names a group this reader cannot open. */
-  | { readonly kind: 'unreadable-group' }
 
 interface ScreenStateInput {
   readonly choice: TeamChoice
@@ -37,9 +37,13 @@ interface ScreenStateInput {
  * is asked about first because every other state presumes it answered; a
  * failure to reach it is not "you have no teams", which would invite somebody
  * to build one they already have. A team with nobody on it is distinguished
- * from a team whose people logged nothing, and a group nobody can open is
- * distinguished from a report with nothing in it, because those are different
- * things to tell a reader.
+ * from a team whose people logged nothing, because those are different things
+ * to tell a reader.
+ *
+ * A group the reader cannot open is **not** one of these states. It drops the
+ * narrowing rather than the report: an unreadable scope and an empty scoped
+ * report are different facts, and the reader came for the figures. The screen
+ * says the scope was dropped, above figures that are real.
  */
 export function screenStateOf({ choice, report, saved }: ScreenStateInput): ScreenState {
   if (saved.loading) {
@@ -47,15 +51,17 @@ export function screenStateOf({ choice, report, saved }: ScreenStateInput): Scre
   }
 
   if (saved.failure) {
-    return { kind: 'teams-unavailable' }
+    // A session granted before this app asked for an identity is not a broken
+    // one: everything else it authorises still works, and authorising once more
+    // repairs it. Saying "unavailable" would send the reader looking for an
+    // outage, and signing them out would lose their place for no gain.
+    return {
+      kind: saved.failure.kind === 'identity-unavailable' ? 'reconnect' : 'teams-unavailable',
+    }
   }
 
   if (choice.kind !== 'chosen') {
     return { kind: choice.kind === 'none' ? 'no-teams' : 'unknown-team' }
-  }
-
-  if (report.scope === 'unreadable') {
-    return { kind: 'unreadable-group' }
   }
 
   if (choice.team.members.length === 0) {

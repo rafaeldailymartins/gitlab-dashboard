@@ -8,6 +8,11 @@ import type { Team } from './team'
  * FSD forbids and which it has no need to do.
  */
 export interface Identified {
+  /**
+   * @throws unknown when there is no assertion to be had. The reason is the
+   *   session's own and means nothing here, so every rejection is read as
+   *   `identity-unavailable` — see `api/teams-gateway.ts`.
+   */
   identityToken(): Promise<string>
   /** Discards the held credential and returns a fresh one. */
   refresh(): Promise<string>

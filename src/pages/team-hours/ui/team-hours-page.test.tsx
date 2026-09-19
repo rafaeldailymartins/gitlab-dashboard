@@ -103,6 +103,24 @@ function readingGateway() {
   }
 }
 
+/** Ana's month, four hours of which the provider counted and would not show. */
+function shortGateway() {
+  return fakeTeamGateway({
+    pages: [
+      {
+        members: [
+          {
+            declared: { entryCount: 3, seconds: 10 * HOUR },
+            entries: [entry('2026-05-04T09:00:00Z', 6 * HOUR)],
+            nextCursor: null,
+            person: ANA,
+          },
+        ],
+      },
+    ],
+  })
+}
+
 /** The last cell of somebody’s row, which is where their total goes. */
 function totalCellOf(name: string): HTMLElement | undefined {
   const row = screen
@@ -359,6 +377,38 @@ describe('what the provider would not show', () => {
     // Never in the sync region: that answers three questions and none of them
     // is about a figure.
     expect(screen.getByRole('status')).not.toHaveTextContent(/hidden/i)
+  })
+
+  it('does not ask which day the missing hours fell on when nothing narrows the report', async () => {
+    // The column probe costs one request per short row against the provider's
+    // database. Unnarrowed, a reader sees every colleague's working life through
+    // their own permissions, so almost every row is short — and marking six of
+    // them while the rest keep the note is a difference on screen that
+    // corresponds to nothing about the data.
+    const timelogs = shortGateway()
+
+    page({}, timelogs)
+
+    await screen.findByText(/\+4 h hidden/i)
+
+    expect(timelogs.columns).not.toHaveBeenCalled()
+  })
+
+  it('asks which day they fell on once the report is narrowed to a group', async () => {
+    // Narrowed, being short means something again: the reader chose a group
+    // they can mostly open, so a row short in it is worth locating.
+    const timelogs = shortGateway()
+
+    page({ group: SQUAD.fullPath }, timelogs)
+
+    await screen.findByText(/\+4 h hidden/i)
+
+    await waitFor(() => {
+      expect(timelogs.columns).toHaveBeenCalledWith(
+        expect.objectContaining({ groupId: SQUAD.id, memberId: ANA.id }),
+        expect.anything(),
+      )
+    })
   })
 
   it('says nothing about a shortfall when there is none', async () => {

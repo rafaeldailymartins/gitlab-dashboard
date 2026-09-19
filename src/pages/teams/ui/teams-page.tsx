@@ -8,11 +8,21 @@ import { m } from '@/shared/i18n'
 import { Skeleton } from '@/shared/ui/skeleton'
 
 import { teamActions } from '../lib/team-actions'
+import { useSavedFailure } from '../lib/use-saved-failure'
 import { useSuggestions } from '../lib/use-suggestions'
-import { useTeamEdits } from '../lib/use-team-edits'
+import { type TeamEdits, useTeamEdits } from '../lib/use-team-edits'
 import { SaveNotice } from './save-notice'
 import { TeamEditor } from './team-editor'
 import { TeamList } from './team-list'
+
+/** What the screen has to show below its notices. */
+type Showing = 'editor' | 'loading' | 'none' | 'unreachable'
+
+interface ShowingInput {
+  readonly edits: TeamEdits
+  readonly team: null | Team
+  readonly unreachable: null | string
+}
 
 /**
  * The teams a reader keeps, and everything they can do to one.
@@ -35,8 +45,13 @@ export function TeamsPage() {
   const [chosenId, setChosenId] = useState<null | string>(null)
   const [seedGroup, setSeedGroup] = useState('')
   const team = chosenOf(edits.teams, chosenId)
+  const unreachable = useSavedFailure(edits)
   const suggestions = useSuggestions(seedGroup, preferences.timeZone)
   const already = useMemo(() => new Set((team?.members ?? []).map((one) => one.id)), [team])
+  // One question asked once: the store is still answering, it refused, it
+  // answered with nothing, or there is a team to edit. Asked four times inline
+  // it is four chances for two of them to disagree.
+  const showing = showingOf({ edits, team, unreachable })
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8">
@@ -47,9 +62,15 @@ export function TeamsPage() {
 
       <SaveNotice state={edits.state} />
 
-      {edits.loading ? <Skeleton className="h-64 w-full" /> : null}
+      {unreachable === null ? null : (
+        <p className="rounded-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
+          {unreachable}
+        </p>
+      )}
 
-      {edits.loading ? null : (
+      {showing === 'loading' ? <Skeleton className="h-64 w-full" /> : null}
+
+      {showing === 'loading' ? null : (
         <TeamList
           chosen={team}
           onChoose={setChosenId}
@@ -61,7 +82,7 @@ export function TeamsPage() {
         />
       )}
 
-      {edits.loading || team === null ? null : (
+      {showing === 'editor' && team !== null ? (
         <TeamEditor
           {...teamActions(edits, team, setChosenId)}
           already={already}
@@ -71,11 +92,11 @@ export function TeamsPage() {
           suggestions={suggestions}
           team={team}
         />
-      )}
+      ) : null}
 
-      {edits.loading || edits.teams.length > 0 ? null : (
+      {showing === 'none' ? (
         <p className="text-sm text-muted-foreground">{m.teams_none_yet()}</p>
-      )}
+      ) : null}
     </main>
   )
 }
@@ -93,4 +114,22 @@ function chosenOf(teams: readonly Team[], chosenId: null | string): null | Team 
   }
 
   return teams.find((team) => team.id === chosenId) ?? teams[0] ?? null
+}
+
+/**
+ * Which of them it is, in the order the answers arrive.
+ *
+ * A store that refused is not a reader with no teams: inviting somebody to build
+ * one they may already have is the worst of the four things this screen can say.
+ */
+function showingOf({ edits, team, unreachable }: ShowingInput): Showing {
+  if (edits.loading) {
+    return 'loading'
+  }
+
+  if (unreachable !== null) {
+    return 'unreachable'
+  }
+
+  return edits.teams.length > 0 && team !== null ? 'editor' : 'none'
 }

@@ -117,6 +117,21 @@ describe('read', () => {
     expect(refresh).toHaveBeenCalledTimes(1)
   })
 
+  it('reports a session that cannot prove who the reader is, not a store that is down', async () => {
+    // What a grant made before this application asked for an identity does: it
+    // renews happily and still has no assertion to hand over, for good. Escaping
+    // as the session's own error, it was read as an unreachable store — and that
+    // reader was told to wait for an outage that will never end.
+    const caller: Identified = {
+      identityToken: () => Promise.reject(new Error('no identity in this grant')),
+      refresh: () => Promise.resolve('access-1'),
+    }
+
+    await expect(httpTeamsGateway(caller).read()).rejects.toMatchObject({
+      failure: { kind: 'identity-unavailable' },
+    })
+  })
+
   it('reports a store that will not answer as worth retrying', async () => {
     server.use(respond(503, { error: 'store-unavailable' }))
 

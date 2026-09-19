@@ -17,6 +17,8 @@ export type SaveState =
 export interface TeamEdits {
   /** Applies a change and saves it. Every edit is a save; there is no draft. */
   readonly apply: (change: TeamsChange) => void
+  /** Why the store would not say what teams this reader has, or null. */
+  readonly failure: null | TeamsFailure
   readonly loading: boolean
   readonly state: SaveState
   readonly teams: readonly Team[]
@@ -47,7 +49,7 @@ const NOTHING: TeamsDocument = { etag: null, teams: [] }
 export function useTeamEdits(): TeamEdits {
   const gateway = useTeamsGateway()
   const client = useQueryClient()
-  const { data, isPending } = useQuery(teamsQuery(gateway))
+  const { data, error, isPending } = useQuery(teamsQuery(gateway))
   const save = useMutation({
     mutationFn: async (teams: readonly Team[]) =>
       gateway.write({ etag: data?.etag ?? null, teams }),
@@ -67,6 +69,7 @@ export function useTeamEdits(): TeamEdits {
     apply: (change) => {
       save.mutate(change(data?.teams ?? NOTHING.teams))
     },
+    failure: error === null ? null : failureOf(error),
     loading: isPending,
     state: stateOf(save.error, save.isPending, save.isSuccess),
     teams: data?.teams ?? NOTHING.teams,

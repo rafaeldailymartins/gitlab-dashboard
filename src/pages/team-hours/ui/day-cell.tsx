@@ -55,8 +55,8 @@ interface DayCellProps {
   readonly unreadable: boolean
 }
 
-/** The kinds the model reports, plus the two this file resolves itself. */
-type DrawnKind = 'unlogged-anywhere' | 'unreadable' | CellKind
+/** The kinds the model reports, plus the three this file resolves itself. */
+type DrawnKind = 'unlogged-anywhere' | 'unreadable' | 'unreadable-anywhere' | CellKind
 
 /**
  * One person on one column.
@@ -86,11 +86,12 @@ export function DayCell({ cell, last, marks, scoped, unreadable }: DayCellProps)
 /**
  * Which of the cases the cell is drawn as.
  *
- * Two of them are not kinds the model knows about, and both are about what an
- * empty working day may be said to mean. A row whose entries were not all handed
- * over cannot claim anything about an empty day at all. An unnarrowed report can
- * claim the most this screen has ever claimed. Only the interface holds the
- * facts both depend on.
+ * Three of them are not kinds the model knows about, and all three are about
+ * what an empty working day may be said to mean. The reach decides how strong
+ * the claim may be; whether the row was shown everything the provider counted
+ * decides whether it may be made at all. Both facts are the interface's, and
+ * they compose — which is why there are four sentences rather than two, and why
+ * getting it wrong in one corner was possible.
  *
  * Withheld hours are not a case here. They are added into the figure by
  * `model/withheld.ts`, so a cell that holds them is simply a cell that holds
@@ -102,7 +103,7 @@ function drawn(cell: GridCell, scoped: boolean, unreadable: boolean): DrawnKind 
   }
 
   if (unreadable) {
-    return 'unreadable'
+    return scoped ? 'unreadable' : 'unreadable-anywhere'
   }
 
   return scoped ? 'unlogged' : 'unlogged-anywhere'
@@ -111,9 +112,9 @@ function drawn(cell: GridCell, scoped: boolean, unreadable: boolean): DrawnKind 
 /**
  * What each kind of cell draws, as a lookup rather than a chain of conditions.
  *
- * Eight cases is far more than a readable ternary chain, and `sonarjs` forbids
- * nesting them; a `switch` over eight would sit on the complexity ceiling. A
- * table stays flat and takes a ninth without touching any of the eight.
+ * Nine cases is far more than a readable ternary chain, and `sonarjs` forbids
+ * nesting them; a `switch` over nine would sit on the complexity ceiling. A
+ * table stays flat and takes a tenth without touching any of the nine.
  */
 const BODY: Record<DrawnKind, (cell: GridCell) => ReactNode> = {
   future: () => null,
@@ -131,7 +132,8 @@ const BODY: Record<DrawnKind, (cell: GridCell) => ReactNode> = {
   unknown: () => <Unknown />,
   unlogged: () => <Unlogged spoken={m.team_cell_unlogged_in_group()} />,
   'unlogged-anywhere': () => <Unlogged spoken={m.team_cell_unlogged_anywhere()} />,
-  unreadable: () => <Unlogged spoken={m.team_cell_unlogged_unreadable()} />,
+  unreadable: () => <Unlogged spoken={m.team_cell_unreadable_in_group()} />,
+  'unreadable-anywhere': () => <Unlogged spoken={m.team_cell_unreadable_anywhere()} />,
 }
 
 /**

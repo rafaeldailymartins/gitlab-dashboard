@@ -6,29 +6,46 @@ context: |
   and SHALL/MUST keywords in English.
 
   Product: a dashboard of hours logged in GitLab issues and merge requests. Its
-  first audience is one person reading their own; it also reports a GitLab
-  group’s hours per person and per day, for somebody who leads that group.
+  first audience is one person reading their own; it also reports a team — a
+  list of people the reader keeps — as a person × day month, for somebody who
+  leads them. Every person chosen keeps a row, one who logged nothing included:
+  the reader picked them. Unnarrowed, the report carries every hour GitLab will
+  show this reader for those people, personal projects included; a GitLab group
+  is an optional filter, empty by default, and what an empty cell may claim
+  follows it.
 
-  Architecture: a static browser-only SPA. There is no backend and no database.
-  The browser authenticates with GitLab through OAuth 2.0 Authorization Code +
-  PKCE (public client, scope read_api) and calls gitlab.com/api/graphql
-  directly; GitLab allows both cross-origin. Deployed to Netlify as static
-  files.
+  Architecture: a browser SPA plus one serverless function. The browser
+  authenticates with GitLab through OAuth 2.0 Authorization Code + PKCE (public
+  client, scope `read_api openid`) and calls gitlab.com/api/graphql directly;
+  GitLab allows both cross-origin, and every hour on screen is read that way.
+  `netlify/functions/teams.mts` keeps the teams a reader defines, in Netlify
+  Blobs, on this origin — so the bundle's `connect-src 'self'` already reaches
+  it and there is no CORS preflight. It authenticates from an `openid` id_token
+  verified offline against JWKS and from nothing else, and derives its storage
+  key `v1/${sub}` from the verified subject rather than from anything the
+  request carried. Deployed to Netlify: static files plus that function. Tick
+  `openid` on the GitLab OAuth application before deploying a bundle that asks
+  for it, or every sign-in fails with `invalid_scope`.
 
   Stack: React 19, TypeScript, Vite, TanStack Router (SPA, file-based),
   TanStack Query and TanStack Table, zod at every provider boundary, date-fns
   on a UTC-pinned TZDate, Tailwind CSS v4, shadcn/ui on Base UI, Paraglide JS
-  for en/pt-BR, Bun as package manager and runtime.
+  for en/pt-BR, jose and @netlify/blobs in the function, Bun as package manager
+  and runtime.
 
   Folder structure: Feature-Sliced Design with a Clean Architecture core.
   Layers: shared, entities, features, widgets, pages, app. Inside a slice,
   `model/` holds pure business rules and ports, `api/` holds adapters, `ui/`
-  holds components, and `index.ts` is the only public API. Architecture and
-  conventions: see AGENTS.md at the repository root.
+  holds components, and `index.ts` is the only public API. `netlify/` sits
+  outside FSD, because it is not browser code. Architecture and conventions:
+  see AGENTS.md at the repository root.
 
   Quality: every gate in docs/qa/quality-metrics.md is blocking. Notably
   100% coverage and at least 85% mutation score on `model/`, zero dependency
   vulnerabilities at any severity, and complexity ceilings enforced by ESLint.
+  The acceptance suite serves a static `dist/`, which runs no function, so the
+  endpoint's credential rules are proved by the `functions` Vitest project and
+  nowhere else.
 
 rules:
   specs:

@@ -45,6 +45,34 @@ export function httpTeamsGateway(identified: Identified): TeamsGateway {
 }
 
 /**
+ * A live identity assertion, or the one reason there can fail to be one.
+ *
+ * Whatever rejected in there, the answer out here is the same: nothing can prove
+ * who this reader is, so the store cannot be asked. The session is not this
+ * slice's to inspect — `Identified` is two methods precisely so it does not have
+ * to be — so the rejection is translated at the boundary rather than escaping as
+ * another slice's error class, which every caller then has to recognise or
+ * misread.
+ *
+ * Which one it escapes as is the whole point. A grant made before this
+ * application asked for an identity fails here every time and always will, since
+ * renewing carries the original scopes forward. Escaping untranslated, it was
+ * read as an unreachable store — and that reader was told to wait for an outage
+ * that does not exist, when one more authorization is all it takes.
+ */
+async function assertion({ identified }: Attempt, renewFirst = false): Promise<string> {
+  try {
+    if (renewFirst) {
+      await identified.refresh()
+    }
+
+    return await identified.identityToken()
+  } catch {
+    throw new TeamsError({ kind: 'identity-unavailable' })
+  }
+}
+
+/**
  * What the store answered, or why it did not.
  *
  * A conflict carries the current document, so the caller can resolve rather
@@ -105,15 +133,13 @@ async function parse(response: Response): Promise<TeamsDocument> {
  * exceptional. Two refusals in a row is a real one.
  */
 async function send(attempt: Attempt): Promise<Response> {
-  const first = await submit(attempt, await attempt.identified.identityToken())
+  const first = await submit(attempt, await assertion(attempt))
 
   if (first.status !== UNAUTHENTICATED) {
     return first
   }
 
-  await attempt.identified.refresh()
-
-  return submit(attempt, await attempt.identified.identityToken())
+  return submit(attempt, await assertion(attempt, true))
 }
 
 async function submit(attempt: Attempt, token: string): Promise<Response> {

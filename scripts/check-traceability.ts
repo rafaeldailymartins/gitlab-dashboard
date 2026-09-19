@@ -31,6 +31,10 @@ const SCENARIO_LINE = /^Scenario( Outline)?:/u
  */
 const UNCITED_BY_DESIGN = new Map([
   [
+    'AUTH-10',
+    'The claim is about how many exchanges the provider is asked for, which no screen shows: a burst of callers must cost one token call and consume one rotating credential. `src/entities/sessions/api/session-manager.test.ts` proves it by counting them.',
+  ],
+  [
     // This entry used to claim a lint rule that does not exist. Half of the
     // requirement is now a real gate; the other half is a review matter, and
     // saying so is better than crediting a check nobody wrote.
@@ -45,6 +49,10 @@ const UNCITED_BY_DESIGN = new Map([
   [
     'REPORT-1',
     'The gateway test proves the query names currentUser with no group or project, which is where the scoping lives.',
+  ],
+  [
+    'TEAM-3',
+    "A browser cannot forge a credential or address another reader's key, so no scenario can observe the rule that makes naming somebody else’s teams unexpressible rather than merely refused. `netlify/lib/handle-teams.test.mts` and `netlify/lib/identity.test.mts` prove it against the real handler in the `functions` Vitest project — which is also why the acceptance suite route-stubs the endpoint rather than running it: a stub cannot prove a rule it is itself implementing.",
   ],
 ])
 

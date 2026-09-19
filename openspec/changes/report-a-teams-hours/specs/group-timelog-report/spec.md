@@ -316,6 +316,18 @@ an instant nor leave a gap between them. Asking SHALL be conditional on the row
 already being known to be short by entry count, so a report in which nothing was
 withheld costs nothing to produce.
 
+Asking SHALL also be conditional on the report being narrowed to a group. At the
+reader's whole reach almost every row is short — they are looking at colleagues'
+working lives through their own permissions — so a shortfall there is the ordinary
+condition rather than a finding. Marking a handful of rows while the rest keep the
+note would put a difference on the screen that corresponds to nothing about the
+data, and the handful is chosen by an identifier the reader never sees. The cost
+is the provider's database, one request per row, on every report. Narrowed, the
+reader has chosen a group they can mostly open, and a row short in it is worth
+locating. Unnarrowed the row SHALL still say that hours are missing without saying
+where — which is what it already says when a placement is refused, so the screen
+gains no state the reader has to learn.
+
 A placement SHALL be refused unless the columns account for the period exactly,
 no column declares fewer entries than the reader was shown in it, and the period
 declares at least what the row draws. A refused placement SHALL cost only its
@@ -559,34 +571,31 @@ anyway.
 A person on a team SHALL be drawn from what the reader last saw of them, so a
 stored roster is never a blank screen.
 
-A member SHALL be matched to the provider's answer by the stored user identifier,
-never by the username alone. A username can be given up and taken by somebody
-else, and a row matched on one alone would put a stranger's hours beside a
-colleague's name.
+A member SHALL be **asked about** by the stored user identifier, never by the
+username. A username can be given up and taken by somebody else, and a roster
+addressed by one could come to point at a stranger with nothing on screen to say
+so. Asking by the identifier does not detect that case — it makes it
+unexpressible, which is the stronger guarantee and the one this requires: the
+provider resolves the node for the identifier it was given, or it resolves
+nothing.
 
-Where a stored username resolves to a different account than the one stored, the
-row SHALL draw no figures and SHALL say what happened. Where the provider will
-not resolve a stored member at all — the account is gone, or is beyond this
-reader — the row SHALL say so. Neither SHALL be read as a person who logged
-nothing, and neither SHALL contribute a figure to any total: an absent answer is
-not an answer of zero.
+Where the provider will not resolve a stored member — the account is gone, or is
+beyond this reader — the row SHALL say so, under the name the reader last saw.
+It SHALL NOT be read as a person who logged nothing, and SHALL NOT contribute a
+figure to any total: an absent answer is not an answer of zero, and every cell of
+such a row SHALL say that nothing is known rather than that nothing was logged.
 
 Where the provider resolves the stored identifier to a different username, the
-stored copy SHALL be updated to what the provider now says, silently. A rename is
-the reader's colleague changing their handle, not an error.
+row SHALL show what the provider now says. A rename is the reader's colleague
+changing their handle, not an error, and nothing SHALL be said about it.
 
 #### Scenario: A member the provider will not resolve
 
 - **WHEN** the provider resolves nobody for a person on the team
-- **THEN** their row says their hours could not be read, not that they logged
-  nothing
-- **AND** no total counts a figure for them
-
-#### Scenario: A username that now belongs to somebody else
-
-- **WHEN** a stored member's username resolves to a different account
-- **THEN** their row draws no figures and says the username now belongs to
-  another account
+- **THEN** their row is drawn under the name the reader last saw, and says the
+  provider did not recognise them
+- **AND** every cell of that row says nothing is known, not that nothing was
+  logged
 - **AND** no total counts a figure for them
 
 #### Scenario: A member who changed their username
@@ -594,3 +603,4 @@ the reader's colleague changing their handle, not an error.
 - **WHEN** the provider resolves a stored member's identifier to a different
   username
 - **THEN** the row shows the new username, and draws their hours as usual
+- **AND** nothing on the screen remarks on the change

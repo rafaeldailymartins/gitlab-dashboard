@@ -7,6 +7,15 @@ import type { LegendShows } from '../lib/legend'
 
 interface MatrixLegendProps {
   readonly reference: number
+  /**
+   * True when the figures are narrowed to a group.
+   *
+   * The key explains the same mark under both reaches and may not make the same
+   * claim about it. The cells were split in two for this reason; the legend is
+   * the one place on the screen that still said the unqualified thing, and a key
+   * is read as the authority on what a mark means.
+   */
+  readonly scoped: boolean
   readonly shows: LegendShows
 }
 
@@ -20,7 +29,7 @@ interface MatrixLegendProps {
  * Only the marks this report actually uses are listed. A key for something that
  * is nowhere in the table sends the reader looking for it. The reference is always listed: it explains every figure there is.
  */
-export function MatrixLegend({ reference, shows }: MatrixLegendProps) {
+export function MatrixLegend({ reference, scoped, shows }: MatrixLegendProps) {
   const { locale } = useActiveLocale()
 
   return (
@@ -51,7 +60,7 @@ export function MatrixLegend({ reference, shows }: MatrixLegendProps) {
             aria-hidden
             className="inline-block h-2 w-3 border-b border-dashed border-chart-target opacity-60"
           />
-          {m.team_legend_unlogged()}
+          {scoped ? m.team_legend_unlogged_in_group() : m.team_legend_unlogged_anywhere()}
         </Item>
       ) : null}
       {shows.nonWorking ? (

@@ -12,9 +12,9 @@ Paraglide.
 
 | Command                           | What it does                                                                                                                |
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `bun run dev`                     | Dev server on http://localhost:3000                                                                                         |
+| `bun run dev`                     | Dev server on http://localhost:3000, with the teams endpoint served by `config/vite/teams-dev.ts`                           |
 | `bun run verify`                  | Every fast gate: format, lint, ARIA, contrast, translations, types, architecture, dead code, type coverage, vulnerabilities |
-| `bun run test`                    | Unit, component and Gherkin domain tests (`domain` + `ui` Vitest projects)                                                  |
+| `bun run test`                    | Unit, component, Gherkin domain and serverless-function tests (`domain` + `functions` + `ui` Vitest projects)               |
 | `bun run test:coverage`           | Same, with coverage thresholds enforced                                                                                     |
 | `bun run test:e2e`                | Builds, serves `dist/`, runs Playwright over `features/acceptance/*.feature` — chromium locally, three engines in CI        |
 | `bun run test:mutation`           | Stryker mutation testing on the model layer                                                                                 |
@@ -68,14 +68,21 @@ src/
     dashboard/    the KPI row, the week strip, the day feed and their derivations
     day-detail/   one day, addressable
     insights/     the month heatmap, the project split, the top-items table
-    settings/     the preference fields
-    team-hours/   a group’s month as a person × day matrix, its controls and
-                  its notices
+    settings/     the preference fields, and the card that reaches /teams
+    team-hours/   a team’s month as a person × day matrix, its controls, its
+                  group filter and its notices
+    teams/        the /teams screen: the team list, the editor, the person
+                  search and the suggestions. Not a fifth navigation link —
+                  “Equipes” beside “Equipe” at 375 px is worse than one more
+                  click, so it is reached from the report and from a settings
+                  card
     login/, auth-callback/, not-configured/
   widgets/      composed blocks with more than one consumer
     hours-report/ the query, the report and the status notice — used by the
                   dashboard and by the day screen
-  features/     single user interactions (theme/)
+  features/     single user interactions (theme/, group-picker/ — the picker has
+                two consumers, the report and the team editor, which is what
+                steiger’s insignificant-slice rule wants)
   entities/     domain slices (plural names, kept consistent by steiger)
     timelogs/
       model/    PURE business rules and ports. No React, no I/O, no strings.
@@ -86,11 +93,21 @@ src/
     viewers/      who is signed in, on its own query so a screen that wants a
                   name does not load a season of hours to get one
     preferences/  daily target, time zone, theme choice
-    group-timelogs/ one group’s month: the widened window, the roster union, the
-                  grid, the shortfall measured against GitLab’s own totals, and
-                  the column probe that puts a withheld hour on its own day
+    team-timelogs/ one team’s month, read through a `User` parent: the widened
+                  window, the grid, the shortfall measured against GitLab’s own
+                  totals, the column probe that puts a withheld hour on its own
+                  day, and the suggestions a team is seeded from
+    teams/        the lists of people the reader keeps — the document, its
+                  gateway to the endpoint below, and the edits in progress
   shared/       ui (shadcn plus ours), api (the GraphQL client, the query client
                 and the cache persister), lib, i18n, config
+netlify/        the teams endpoint: `functions/teams.mts` is the wiring, and
+                `lib/` holds everything worth testing — the handler and its
+                credential rules, the identity verifier, the blob store and the
+                in-memory one the tests and `bun run dev` use
+config/         eslint/ (the layer, purity and limit rules) and
+                vite/teams-dev.ts, which serves that same handler under
+                `bun run dev` in thirty lines rather than a platform emulator
 scripts/        build and gate tooling: the CSP writer, the traceability check,
                 the contrast measurement, the translation-parity check, and the
                 message compiler, which every `pre*` script calls and which
@@ -104,21 +121,21 @@ adapter. Both linters recognise them, which custom names like `domain/` and
 
 ### Rules that are enforced, not suggested
 
-| Rule                                                                                                                                | Enforced by                                           |
-| ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| A layer imports only from layers below it                                                                                           | `boundaries/dependencies` (`config/eslint/layers.js`) |
-| Slice public API, no cross-slice imports, no layer skipping                                                                         | `steiger` (`bun run arch:layers`)                     |
-| No import cycles, no orphan modules, no devDependency in `src/`                                                                     | `dependency-cruiser` (`bun run arch:graph`)           |
-| `model/` stays pure: no React, no `@tanstack/*`, no `api/`, no i18n, no `fetch`/`window`/`localStorage`                             | `DOMAIN_PURITY_RULES` (`config/eslint/layers.js`)     |
-| Shipped code never imports `node:*`                                                                                                 | `BROWSER_ONLY_RULES`                                  |
-| Cyclomatic complexity ≤ 8, cognitive complexity ≤ 10, ≤ 40 lines per function (60 for components), ≤ 200 lines per file, ≤ 3 params | `config/eslint/limits.js`                             |
-| No unused export, file or dependency                                                                                                | `knip` (`bun run deadcode`)                           |
-| ARIA attributes are supported by the role they sit on                                                                               | `biome` (`bun run lint:a11y`)                         |
-| Every colour pair stays above its contrast floor, in both schemes                                                                   | `scripts/check-contrast.ts` (`bun run a11y:contrast`) |
-| Every message exists in every language                                                                                              | `scripts/check-messages.ts` (`bun run i18n:check`)    |
-| ≥ 99% of expressions carry a real type                                                                                              | `type-coverage`                                       |
-| Zero dependency vulnerabilities, at any severity                                                                                    | `bun audit`                                           |
-| Named exports only                                                                                                                  | `no-restricted-exports`                               |
+| Rule                                                                                                                                | Enforced by                                                  |
+| ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| A layer imports only from layers below it                                                                                           | `boundaries/dependencies` (`config/eslint/layers.js`)        |
+| Slice public API, no cross-slice imports, no layer skipping                                                                         | `steiger` (`bun run arch:layers`)                            |
+| No import cycles, no orphan modules, no devDependency in `src/` or `netlify/`                                                       | `dependency-cruiser` (`bun run arch:graph`, over both trees) |
+| `model/` stays pure: no React, no `@tanstack/*`, no `api/`, no i18n, no `fetch`/`window`/`localStorage`                             | `DOMAIN_PURITY_RULES` (`config/eslint/layers.js`)            |
+| Shipped code never imports `node:*`                                                                                                 | `BROWSER_ONLY_RULES`                                         |
+| Cyclomatic complexity ≤ 8, cognitive complexity ≤ 10, ≤ 40 lines per function (60 for components), ≤ 200 lines per file, ≤ 3 params | `config/eslint/limits.js`                                    |
+| No unused export, file or dependency                                                                                                | `knip` (`bun run deadcode`)                                  |
+| ARIA attributes are supported by the role they sit on                                                                               | `biome` (`bun run lint:a11y`)                                |
+| Every colour pair stays above its contrast floor, in both schemes                                                                   | `scripts/check-contrast.ts` (`bun run a11y:contrast`)        |
+| Every message exists in every language                                                                                              | `scripts/check-messages.ts` (`bun run i18n:check`)           |
+| ≥ 99% of expressions carry a real type                                                                                              | `type-coverage`                                              |
+| Zero dependency vulnerabilities, at any severity                                                                                    | `bun audit`                                                  |
+| Named exports only                                                                                                                  | `no-restricted-exports`                                      |
 
 When a gate fails, fix the cause. Raising a ceiling or adding an ignore entry
 requires a comment saying why, in the config, next to the change.
@@ -182,7 +199,7 @@ one without reading the reason will reintroduce a bug that is already fixed.
 - **A section's heading id comes from `useId`.** A hardcoded id works only while
   the section renders once, and `aria-labelledby` breaks silently when it does
   not. Biome's `useUniqueElementIds` enforces this.
-- **The group report asks for a period; the personal one still does not.** They
+- **The team report asks for a period; the personal one still does not.** They
   read the provider differently on purpose. `startDate`/`endDate` are truncated
   to UTC calendar days — that is `TimelogResolver#parse_datetime_args` calling
   `beginning_of_day` — but `startTime`/`endTime`, when both are given, are passed
@@ -190,22 +207,70 @@ one without reading the reason will reintroduce a bug that is already fixed.
   whole UTC day wider at each end and cut locally by `entriesWithin`: rounding
   can only move a start earlier and an end later, so the answer stays a superset
   of the reader's month under every reading of the range, and the same cached
-  answer stays right if the reader changes time zone. Never send `startTime`
+  answer stays right if the reader changes time zone. One day of slack is always
+  enough, because no IANA offset exceeds fourteen hours. Never send `startTime`
   with `endDate` — `validate_args!` permits that pair and it silently truncates
-  one end only.
-- **A group figure is checked against GitLab's own count, not against nothing.**
+  one end only. The connection this hangs from moved from a group to each
+  person; `model/window.ts` did not change with it, because the widening is
+  about how the provider reads a range and not about whose hours are inside it.
+- **A team figure is checked against GitLab's own count, not against nothing.**
   `TimelogConnection.count` and `totalSpentTime` are computed in SQL over the
   whole unpaginated relation, _before_ `remove_unauthorized` deletes the entries
   the reader may not read from the node array — silently, with no null and no
   error. The difference between the two is the only instrument that can see that
-  removal at all, and `timelogs(username:)` makes it per person, which is what
-  lets a row say it is short rather than the footer say the group is. The
+  removal at all, and a `User`-parented connection makes it per person, which is
+  what lets a row say it is short rather than the footer say the team is. The
   difference is reported **signed**: a withheld correction makes the figures too
   high, and clamping at zero would turn that into "nothing is missing".
+  `username:` is gone from both documents: the connection under `users(ids:)` is
+  already one person's, which also removes the one place a period aggregate and
+  a column aggregate could have disagreed about who they were about.
+  This paragraph used to end by ruling the widening out, and it was wrong. The
+  argument was that `count` on a user-parented connection is computed before
+  redaction and would publish the volume of work in namespaces the reader cannot
+  open (gitlab-org/gitlab#425747), so widening the scope would cost the screen
+  its instrument and leave every total collected rather than checked. It is the
+  other way round: the figure that survives redaction is the only thing a total
+  can be checked against, and on this screen it is deliberately also the answer —
+  a reader who chose these people asked how many hours they logged, and an hour
+  they cannot itemise is still an hour they are owed a number for. The
+  instrument did not survive the widening by luck; it is what the widening runs
+  on. It also got stronger in the move: the group shape asked the aggregates in
+  a second document (`GroupMonthProbe`), so the count and the nodes it judged
+  were read at two instants, while `TEAM_HOURS_PAGE` asks both on the same field
+  of the same request, where the aggregate and the nodes are one relation under
+  one range and cannot disagree at all.
+- **The group filter goes through all three documents and all three query keys,
+  or through none of them.** `TEAM_HOURS_PAGE`, `teamHoursFollowing` and
+  `teamColumnProbe` each take `$group: GroupID`, and `queries.ts` puts `groupId`
+  in every key beside the month and the roster. Leaving it out of one of them is
+  the worst bug this screen can have, because nothing on it would look wrong: an
+  instrument measuring a wider set than the figures reports hours withheld that
+  were merely filtered out, an instrument measuring a narrower set reports none
+  when some are, and both numbers are plausible. Leaving it out of a key is the
+  same failure through the cache — the reader narrows the scope and is shown the
+  previous answer. There is no partial state to get right here; there is one
+  argument threaded to the end or nothing.
+- **One request carries the whole team, aggregates included.** GraphQL
+  complexity counts fields in the document, not rows in the answer, so
+  `users(ids:)` with one `timelogs` field under it costs the same whatever the
+  roster's length: measured, 26 points of the 250-point budget for one person
+  and 29 for sixteen. The group shape needed `1 + ceil(E/100) + ceil(P/32) + <=6`
+  requests and was dominated by a serial page walk that every row waited on.
+  Two things follow. `users.pageInfo.hasNextPage` is read only to refuse — the
+  page size is the batch's own length, so a true there means the provider capped
+  the team, and a report that quietly omitted a colleague is worse than one that
+  fails. And continuing is a separate document: a node's cursor cannot travel
+  back through `users(...)`, because each connection under a node has its own
+  cursor space and the parent field has no argument reaching into it. That one
+  is bounded by complexity rather than by taste — one alias scores 17, sixteen
+  score 227, twenty-four score 339 and are refused — so the batch is sixteen.
+  Seventeen fits at 241 and leaves nine points, which is not enough to absorb a
+  field somebody adds later.
 - **The grid is handed the whole window and cuts the month itself.** It needs two
   answers out of one set of entries, and they are not over the same span. The
-  cells, the roster union and every total on screen are the reader's month. The
-  per-person shortfall is not: it is measured against what the provider declared,
+  cells and every total on screen are the reader's month. The per-person
+  shortfall is not: it is measured against what the provider declared,
   and the provider declared over the window it was asked about, which is the month
   widened by a day at each end. Cutting before the grid — which is what it used to
   do — compared a declaration over the window against hours drawn for the month,
@@ -223,11 +288,17 @@ one without reading the reason will reintroduce a bug that is already fixed.
   permanent `person: null` branch through the whole model that no real answer
   could produce.
 - **A cell past the read frontier is `pending`, and that beats `logged`.** Pages
-  arrive oldest first, so until a column has been read to its end more entries
-  may still land in it. Showing what has arrived so far would put a figure that
-  is about to change next to somebody's name — and for the twenty seconds a
-  large group takes to page, "logged nothing" beside a real colleague is the
-  worst thing this screen could say.
+  arrive oldest first, so until a day has been read past, more entries may still
+  land in it. Showing what has arrived so far would put a figure that is about
+  to change next to somebody's name, and "logged nothing" beside a real
+  colleague is the worst thing this screen could say.
+  The frontier is **per person**, not per report: each row is its own
+  connection, so a month that fitted one round is final while somebody else is
+  still being read, and `frontierOf` in `model/report.ts` is computed from that
+  person's own newest entry. `TeamReport.complete` is the only thing that waits
+  on everybody, because it is the one figure that is about the whole team.
+  The frontier is the day _before_ the newest entry read, since the next round
+  can still carry more of that same day.
 - **Bars on the team screen measure against a stated constant, not the reader's
   own target.** Eight hours Monday to Friday, named in the legend. Using the
   reader's `dailyTarget` would draw a part-time teammate's every day as visibly
@@ -236,15 +307,34 @@ one without reading the reason will reintroduce a bug that is already fixed.
   dashed rule rather than changing colour: `charts.css` records that brass
   against brick collapses under deutan, which is exactly the pair a colour-coded
   version would have used.
-- **A row is for figures; whoever has none is named under the table.** The
-  roster union still puts everybody in the report — that is what tells "logged
-  nothing" apart from "not in this group", and every total is computed before
-  anything is dropped. What the screen leaves out is the row: thirty-one dashes
-  between two lines of figures cost a reader scanning across more than they
-  tell them. Two rows survive having no figures anyway. A person whose hours the
-  provider counted and would not show keeps theirs, because the row is what says
-  which days the shortfall belongs to. And nobody is dropped until the month has
-  been read in full, since until then "logged nothing" is only "not read yet".
+- **Every person on the team keeps a row, including one who logged nothing.**
+  This is the reverse of what the group report did, and the reason reversed with
+  it. There, the rows came from a roster union — group membership plus whoever
+  logged — so a row with thirty-one dashes was usually somebody the provider
+  had put in the answer and the reader had never asked about, and dropping it
+  cost a reader scanning across nothing they wanted. Here the reader typed the
+  roster. An empty row is not clutter that arrived with the answer, it is the
+  answer: they picked that person, and "nothing this month" is a fact about
+  somebody they are watching, which is the whole reason they added them. Dropping
+  it would also make the team and the table disagree about who is on it — the one
+  thing a reader can check this screen against without leaving it. `teamGrid`
+  maps `request.members` straight to rows and drops nobody; there is no union
+  left to compute, because the provider is asked about these people and no
+  others.
+- **A team is seeded from whoever logged time in a group, not from its
+  membership.** Membership is an access-control list, and it answers a different
+  question. Measured on one real squad: it offered seventeen names, eleven of
+  which had no hours at all, while eight people had logged in the window and two
+  of those were not members. So the suggestions come from a trailing 90 days of
+  timelogs, the window is stated on screen, and the list says when it may be
+  incomplete rather than presenting a truncated read as the whole answer.
+  Candidates are deduplicated by the provider's identifier, never by username,
+  for the reason a roster is stored that way: a username is released on a rename
+  and the same person under two of them would be offered twice. Bots are dropped
+  — nobody manages a bot's timesheet. Accounts that are no longer active are
+  **kept**, which looks like the same clutter and is its opposite: somebody who
+  logged time in the window did the work and has since been blocked or left, and
+  their hours are still in the month the reader is reading.
 - **A weekend column is drawn from `share`, not from the cell's kind.** A cell is
   only `non-working` once its column has been read and nobody logged in it, so a
   weekend still loading — or one later this month — would lose its tint and its
@@ -253,37 +343,63 @@ one without reading the reason will reintroduce a bug that is already fixed.
   is drawn from. The widths live in a `<colgroup>`: a fixed table takes its
   widths from the first row, and the first row here is the week bands, whose
   cells span several columns and say nothing about any one of them.
-- **The chosen group is remembered, and the address still wins.** `lib/remembered.ts`
-  keeps the path — never a figure, which `persist: false` forbids — so a return
-  visit does not begin by picking your own team out of a list. An address that
-  names a group is never overridden, because a link somebody sent outranks this
-  reader's habit; one that names none is completed by **redirecting** rather than
-  by filling the screen in behind it, so what you are looking at stays what you
-  can send somebody else.
-  (A second control, naming a wider group to read and a narrower one to draw, was
-  built and reverted. It answered a real question — a squad member logging in a
-  sibling squad — but two group pickers on one screen is a price the answer did
-  not justify. The group filter is the group filter.)
+- **The chosen team is remembered; the group filter deliberately is not.**
+  `lib/remembered.ts` keeps the team's identifier — never a name, never a
+  colleague, never a figure, all of which `persist: false` forbids — so a return
+  visit does not begin by picking your own team out of a list. An opaque
+  identifier this app minted names nobody. A team has no safe default, so
+  remembering it saves a choice the reader has to make anyway.
+  The filter is the opposite case, and that is why it is treated the opposite
+  way. Its default is the widest and most honest state — every hour GitLab will
+  show this reader for those people — and remembering a narrowing would make
+  every later visit show less than the scope sentence prepares the reader for,
+  silently, in the one direction that understates a colleague's month.
+  An address that names a team is never overridden, because a link somebody sent
+  outranks this reader's habit; one that names none is completed by
+  **redirecting** rather than by filling the screen in behind it, so what you are
+  looking at stays what you can send somebody else.
+  (Two group pickers on one screen was built and reverted once — a wider group to
+  read and a narrower one to draw — and that reversal is the argument _for_ the
+  pair that shipped, not against it. Those two asked overlapping questions in the
+  same vocabulary, and each one's right value depended on the other's, so neither
+  had a default. These two do not overlap: one names **people**, the other names
+  **how much of their work counts**, and exactly one of them has a correct
+  default — "all of it", which the screen says out loud. That is the property the
+  reverted pair lacked.)
+- **The filter travels in the address as a path, and a group the reader cannot
+  open drops the narrowing rather than the report.** A path because an address is
+  meant to be read and sent, and `full/path/to/group` says what it means where
+  `gid://gitlab/Group/1234` does not; it is resolved once to the `GroupID` the
+  provider's own argument takes, so the identifier never reaches a link. Nothing
+  in `teamSearchFrom` throws — an address may have been typed or sent by somebody
+  else, so a month that is not a month becomes the month containing today rather
+  than a blank screen with a stack trace behind it. And when the named group
+  cannot be opened, the figures are shown unscoped with a notice saying the scope
+  was dropped. It is not one of the states in `lib/state.ts` for that reason: an
+  unreadable scope and an empty scoped report are different facts, and the reader
+  came for the hours.
 - **The key lists only the marks the table uses.** A legend entry for something
   that is nowhere on screen sends the reader hunting for it, and finding nothing
   is indistinguishable from having missed it. Read off the grid in
   `pages/team-hours/lib/legend.ts`. The reference bar is always listed: it
   explains every figure there is.
-- **No sentence on the team screen says somebody logged nothing.** Every figure
-  there comes from `group(fullPath:) { timelogs }`, which GitLab scopes to that
-  group and its descendants through `Timelog.in_group` — so an hour logged on an
-  issue in another group is not missing from the answer, it was never asked for.
-  The cells used to read "No time logged", which is a claim about a person made
-  from a measurement of a group, and a reader who reaches the table by landmark
-  never passes the subtitle that qualified it. Every one of those strings now
-  names the group, and the table caption carries the scope so it is announced
-  where the figures are. Widening the scope is possible — `user(username:) {
-timelogs }` is the same resolver with a User parent, and it is the only door,
-  since the root `Query.timelogs` refuses any username but your own — but it
-  would cost the screen its instrument: `count`/`totalSpentTime` on a
-  user-parented connection is computed before redaction and would publish the
-  volume of work in namespaces the reader cannot open (gitlab-org/gitlab#425747).
-  Without it, every total on the screen would be collected rather than checked.
+- **What an empty cell may claim follows the filter, and there are two strings
+  for it.** Unnarrowed, the cell says "No hours logged anywhere." — the strongest
+  claim this screen has ever made, and it is now sayable: `users(ids:)` with a
+  `User`-parented `timelogs` reaches every hour GitLab will show this reader for
+  that person, personal projects included, so nothing was left unasked. Narrowed
+  to a group, it says "No hours in this group." — the original prohibition,
+  verbatim, for the original reason: a group's connection is scoped by
+  `Timelog.in_group` to that group and its descendants, so an hour logged on an
+  issue elsewhere is not missing from the answer, it was never asked for. The
+  cells used to read "No time logged" in both cases, which is a claim about a
+  person made from a measurement of a group, and a reader who reaches the table
+  by landmark never passes the subtitle that qualified it.
+  Two keys — `team_cell_unlogged_anywhere` and `team_cell_unlogged_in_group` —
+  not one with the group as a parameter: unnarrowed there is no group to
+  substitute, and an empty parameter renders a sentence with a hole in it. The
+  table caption carries the scope either way, so it is announced where the
+  figures are rather than in a subtitle above them.
 - **The sync control carries no caveats.** It answers three questions — when the
   hours arrived, whether they are arriving now, whether asking failed — and owns
   the screen's one status region. Sentences about what a figure could not include
@@ -309,12 +425,14 @@ timelogs }` is the same resolver with a User parent, and it is the only door,
   filter and _before_ that removal, so the same instrument that says "3 h are
   missing from this month" says "3 h are missing from the 11th" when asked over
   one day. Asking is conditional on `shortfall.entryCount !== 0`, which the
-  per-person probe already answers for free, so a group with nothing withheld
-  costs no extra request at all. One request per short row, capped at six.
+  first round already answered for free — it carries a `count` beside the nodes,
+  so a row whose count matches what arrived proves with no second request that
+  nothing was removed from it. A team where the reader can open everything costs
+  no extra request at all. One request per short row, capped at six.
   A whole grid is not askable: each alias costs 7 of GitLab’s 250-point
-  complexity budget, so 31 columns plus the period check is 224 and fits, while
-  31 x 40 scores over eight thousand and is refused before it reaches the
-  database.
+  complexity budget, so a month of columns plus the period check scores 229 and
+  fits, while forty columns score 292 and are refused. A team's grid is columns
+  times people and is refused long before it reaches a database.
 - **A placement is checked before it is drawn, and refusing costs only the
   marks.** `model/withheld.ts` requires the columns to account for the period
   exactly, no column to declare fewer entries than were shown in it, and the
@@ -333,11 +451,60 @@ timelogs }` is the same resolver with a User parent, and it is the only door,
   day whatever the zone did. The span ends one **microsecond** before the next
   begins: GitLab compares `spent_at >= ?` and `<= ?`, so spans sharing an
   instant count an entry twice and spans a millisecond apart lose one a day.
-- **The team report is never written to the device.** Its queries carry
-  `meta: { persist: false }` and `__root.tsx` reads that rather than a key it has
-  to recognise. The reader's own hours are persisted because that is what paints
-  a return visit before any request; a group's belong to other people, and a
-  shared machine must not keep them.
+- **The team report is never written to the device, and neither is the team.**
+  Every query in the slice carries `meta: { persist: false }` — from
+  `NOT_PERSISTED` in `api/query-shape.ts`, one constant rather than a copy per
+  file, because it is a rule and a second copy is a second place to forget it —
+  and `__root.tsx` reads that rather than a key it has to recognise. The reader's
+  own hours are persisted because that is what paints a return visit before any
+  request. These belong to other people, and a shared machine must not keep them.
+  That covers the roster as much as the figures: a team is a list of colleagues'
+  names, and writing one to IndexedDB is the same leak by a quieter route. The
+  one thing kept across visits is the chosen team's identifier, which this app
+  minted and which names nobody.
+- **There is a backend now, and it is one function on this origin.**
+  `netlify/functions/teams.mts` over Netlify Blobs. Same origin is the whole
+  reason the store is Netlify's rather than a database elsewhere: the app's
+  `connect-src 'self'` already reaches it, so there is no CSP change, no CORS
+  preflight and no allow-list to keep right. It authenticates from the
+  `Authorization` header and from nothing else — no cookie, no session, no
+  `Origin` check — and emits no CORS headers at all, which is what makes it
+  CSRF-exempt rather than CSRF-lucky: a cross-site form cannot set that header,
+  and a cross-site `fetch` that does triggers a preflight this will not answer.
+  Adding a cookie credential or a permissive CORS header would quietly undo that.
+  Identity is a GitLab OIDC `id_token`, verified offline against JWKS with
+  `jose`: `RS256` named rather than inferred, because letting the token choose
+  the algorithm is how algorithm confusion gets in; discovery refused unless the
+  key endpoint is on the provider's own origin; and `maxTokenAge` bounding replay
+  independently of whatever `exp` claims. The token is minted on demand through
+  the same single renewal a burst of requests already shares, and never written
+  to storage. The only thing that leaves the verifier is a subject — the `openid`
+  scope also puts `email` and `groups_direct` in that token, and the `Identity`
+  return type is what keeps them from reaching anything else.
+- **The storage key is derived from the verified subject, so IDOR is not
+  expressible.** `v1/${sub}`, where `sub` comes from the signature and from
+  nothing the request carried — no path parameter, no body field, no header. The
+  difference from checking an id against the caller is that there is no check to
+  forget: naming another reader's teams is not a request this endpoint can
+  refuse, because it is not a request it can represent. A write carries the
+  version it was made against (`If-Match`, or `If-None-Match: *` for a first
+  write) and one with neither is refused **428** rather than accepted, because a
+  `PUT` with no precondition is a client that never read, and the silent clobber
+  is the failure mode a last-write-wins store has. `TeamStore` is a port for the
+  same reason: those rules are the part worth testing, and the acceptance suite
+  serves a static `dist/` with `vite preview`, which runs no function — so the
+  `functions` Vitest project is the only place they are proved.
+- **The OAuth scope is `read_api openid`, and the deployment order is
+  load-bearing.** Tick `openid` on the GitLab OAuth application **before**
+  deploying the bundle that asks for it; the other order fails every sign-in with
+  `invalid_scope`, for everyone, including readers who never open the team
+  screen. `openid` confers no authority over data — it is what lets the endpoint
+  above learn who is calling without this app vouching for the claim itself. A
+  session granted before the scope changed keeps working and is not signed out:
+  it authorises everything else it always did, so the reader sees an inline
+  reconnect notice on the teams surface only, and authorising once more repairs
+  it. Signing them out would lose their place for no gain, and saying
+  "unavailable" would send them looking for an outage.
 - **Two linters.** ESLint carries the type-aware, React and testing-library
   rules; Biome carries the ARIA rules and the unique-id rule. Replacing ESLint
   with Biome was measured twice and rejected — `docs/qa/quality-metrics.md` has
@@ -384,6 +551,12 @@ timelogs }` is the same resolver with a User parent, and it is the only door,
   `playwright-bdd` with step definitions in `tests/e2e/steps/`, including
   `axe-core` accessibility assertions.
 - `src/**/*.test.ts(x)` — unit and component tests, co-located.
+- `netlify/**/*.test.mts` — the teams endpoint's rules, in the `functions`
+  project: node, no DOM, and no Netlify. The blob store and the identity verifier
+  are ports, so these inject an in-memory store and a locally minted key pair
+  rather than reaching for `getStore`, which throws outside a Netlify
+  environment. The acceptance suite serves a static `dist/` with no function
+  behind it, so this is the only place the credential rules are proved.
 - Every `Scenario` carries a `# Spec: <capability> / <requirement>` comment
   linking it back to the OpenSpec requirement it covers, and `bun run arch:trace`
   fails if one is missing or if a requirement has no scenario. A requirement no

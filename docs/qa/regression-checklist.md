@@ -15,9 +15,14 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
       This is the first screen a new reader sees, so it is where the theme is
       applied before first paint for the first time.
 - [ ] "Continue with GitLab" reaches GitLab's own authorization page.
+- [ ] The scopes on that page include the OpenID one as well as `read_api`. An
+      application without `openid` ticked refuses every sign-in outright with
+      `invalid_scope`, so this fails here rather than on the teams screen.
 - [ ] Granting access returns to the dashboard with hours on it.
-- [ ] `localStorage` holds `gitlab.refreshToken` and nothing that looks like an
-      access token. Check it: `Application → Local Storage`.
+- [ ] `localStorage` holds `gitlab.refreshToken` and nothing else that looks like
+      a credential: neither the access token nor the `id_token` the teams
+      endpoint takes reaches storage — both are closure variables that die with
+      the tab. Check it: `Application → Local Storage`.
 - [ ] `sessionStorage` and `localStorage` hold no `gitlab.pendingAuthorization`
       once the callback has finished — it is consumed, so a replayed callback
       cannot work.
@@ -83,35 +88,124 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
 - [ ] Set the scheme to "Follow my system", then change the system setting. The
       app follows without a reload.
 
+## Teams
+
+- [ ] `/teams` is not in the navigation and should not be: the header still
+      carries four links. It is reached from "Manage teams" on the report and
+      from the teams card on `/settings`, and both land on the same screen.
+- [ ] Press "New team". A team appears already chosen, and the notice under the
+      heading reads "Saved." before you have typed anything: every edit here is a
+      save, and there is no draft to lose.
+- [ ] Rename it. The save happens when the field is left or Enter is pressed —
+      watch the network: one `PUT` for the rename, not one per letter.
+- [ ] Empty the name. The field says a name is needed, nothing is sent, and what
+      you typed stays in the field.
+- [ ] Choose a group under "Group to suggest from". The names offered are whoever
+      logged time there since the date the list states — ninety days back — and
+      not the group's membership: somebody with access who logged nothing in that
+      window is absent, and somebody who logged without being a member is there.
+- [ ] Somebody who has since left is still offered, marked "no longer active".
+      They logged the time, so a month that holds it is about them.
+- [ ] On a group with more entries than one read covers, the list says so rather
+      than presenting itself as the whole answer.
+- [ ] Add two or three of them. Each add saves on its own, and whoever is added
+      stops being offered.
+- [ ] Add somebody who has logged nothing anywhere — a new joiner — through "Add
+      anybody by name". The suggestions cannot reach them and the search can.
+- [ ] Watch one of those saves in the network panel: a `PUT` to
+      `/.netlify/functions/teams` carrying an `Authorization: Bearer` header, no
+      cookie, and no identifier anywhere in the address. The answer says
+      `cache-control: no-store`.
+- [ ] Turn the network off and remove somebody. The notice says the change could
+      not be saved and the person is **still on the list**: the screen shows what
+      the store holds, never what you typed. Turn it back on, remove them again,
+      reload — that one stuck.
+- [ ] Open `/teams` on a second device, signed in as the same reader. The same
+      teams are there. Add somebody there; then, without reloading the first
+      device, remove somebody on it. The first says the teams were changed
+      somewhere else, the list in front of you becomes the second device's
+      version, and your change was not saved. Make it again and it lands.
+- [ ] Delete a team. It goes, the editor falls back to whatever is left rather
+      than to an empty form, and a reload confirms it.
+- [ ] Sign in as a different GitLab account in another private window. It has its
+      own teams and never yours: the storage key is derived from the identity
+      GitLab signed, not from anything the request carried.
+- [ ] A session granted before this release carries no identity, and renewing
+      carries the old scopes forward, so this one is done on the production URL:
+      sign in there before promoting, and do not sign out afterwards. `/team`
+      says, in place of the report, that permission to identify you is missing
+      and that signing in again grants it; `/teams` says the same above an empty
+      list. The dashboard, `/insights` and a day screen are untouched, and
+      nothing has signed you out. Sign in again: both screens work.
+
 ## The team report
 
-- [ ] Open `/team` with no group. It asks you to choose one rather than failing.
-- [ ] Choose a group from the picker. The field opens a list on click, filters
-      as you type, and shows the chosen group's name once the popup closes.
-- [ ] Rows appear for everybody who logged something. Anybody on the membership
-      who logged nothing is named in one line under the table instead, and
-      anybody whose hours GitLab withheld keeps their row.
-- [ ] On a group where GitLab holds hours back, the cells carry a bracketed
-      `(+n)` on the days it counted them, and the row note disappears once every
-      withheld entry has a day. Confirm the row total did **not** change.
-- [ ] On a group where nothing is withheld, watch the network: no
-      `GroupColumnProbe` request is made at all.
-- [ ] While the month is still reading, no per-person figure is shown: the cells
-      and the totals hold reserved space. Confirm no name is ever beside a zero
-      that later changes.
-- [ ] Scroll the matrix sideways. The person column and the total column stay
-      put; the two header rows stay put when it scrolls down.
+- [ ] Open `/team` in a fresh tab with nothing after it. It opens on the team you
+      looked at last and the address gains `team=`; the filter is empty, and the
+      line under the heading says the figures cover every hour GitLab will show
+      you for these people, wherever they logged it.
+- [ ] Switch team in the picker — a plain select, not a search field. The figures
+      change, the address follows, and a reload keeps that team.
+- [ ] Rows are the team, exactly. Count them against the members list on
+      `/teams`: everybody you put on it has a row, including somebody who logged
+      nothing, and no line under the table names anybody.
+- [ ] Watch the first round in the network panel: one `TeamHoursPage` request
+      carries the whole team, however many people are on it. Somebody whose month
+      does not fit one page is continued by `TeamHoursFollowing`.
+- [ ] While a large month is still reading, rows that have been read show their
+      figures while the rest still pulse — each person is read to their own
+      frontier. The row totals, the column totals and the corner stay reserved
+      until everybody has been read.
+- [ ] With no filter, hours logged outside any group you share are in the
+      figures: pick somebody who logs time in a personal project and check their
+      row against GitLab's own report for that person.
+- [ ] Read an empty working day with a screen reader, or in the accessibility
+      inspector. Unnarrowed it says no hours were logged anywhere; with a group
+      in the filter it says no hours in that group, and never more than that.
+- [ ] Narrow to a group. The line under the heading and the table's caption both
+      name it, the address gains `group=<path>`, and the figures shrink to that
+      group and its subgroups.
+- [ ] With a group chosen, compare the request payloads: `TeamHoursPage`,
+      `TeamHoursFollowing` and `TeamColumnProbe` all carry the same group. An
+      instrument measuring a wider set than the figures makes every shortfall on
+      the screen nonsense, and both numbers look reasonable while it does.
+- [ ] Open `/team` bare again. The team is remembered; the filter is not, and the
+      scope line is back to covering everywhere.
+- [ ] Open `/team?group=<a group you cannot open>`. The figures are there,
+      unnarrowed, and a line above the table says the narrowing was dropped. The
+      filter still shows the path your link asked for rather than resetting
+      itself.
+- [ ] On a team some of whose hours GitLab holds back from you, a row's total
+      carries "+n h hidden" once the month has been read. Wait for the placement:
+      the cells for the days the provider counted them grow to include them, the
+      note goes when nothing is left over, and the row, the column and the corner
+      still add up.
+- [ ] Somebody the provider counted hours for and showed none of keeps their row,
+      with "Hours you cannot read" under their name.
+- [ ] On a team where nothing is withheld, no `TeamColumnProbe` request is made
+      at all. Where more than six rows are short, no more than six are made: the
+      rest keep the note, and their cells stay at what arrived.
+- [ ] Scroll the matrix sideways: the person column and the total column stay
+      put. Scroll it down: the two header rows and the totals row stay put.
 - [ ] Switch to Weeks and back. The address changes both times, and reloading it
       shows the same axis.
 - [ ] Order by Total, twice. The ordering reverses, and the heading says which.
 - [ ] Move a month back and forward. The address follows, and the figures change.
-- [ ] Open `/team?group=<a group you cannot read>`. It says so, and shows no
-      figures.
-- [ ] Open `/team?month=1999-99`. It recovers to a real month.
-- [ ] With a group where GitLab holds hours back, the status region says how many
-      and the affected row says how much.
-- [ ] Sign out and back in. No group figures are restored from the device before
-      GitLab has answered.
+- [ ] Change the time zone in `/settings` and come back. A teammate's entry
+      logged late in the evening sits in the day it was logged in the new zone,
+      and every total still equals the cells it is over.
+- [ ] Open `/team?month=1999-99`. It recovers to a real month. Open
+      `/team?team=<an identifier you do not have>`: it says that team is not one
+      of yours rather than quietly showing your first one.
+- [ ] Make a team with nobody on it and open the report on it. It says so, and
+      asks GitLab nothing — no `TeamHoursPage` request is made.
+- [ ] The key lists only the marks the table uses, plus the reference bar, which
+      says the bars are measured against 8 h a day.
+- [ ] Of all of that, the device keeps one thing: `localStorage` holds
+      `team-report-team`, an opaque identifier this app minted, and no name, no
+      colleague and no figure. IndexedDB holds no team and no roster.
+- [ ] Sign out and back in. No roster and no figure is painted from the device
+      before the teams store and GitLab have answered.
 
 ## Deep links
 
@@ -119,7 +213,13 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
 - [ ] Open `/days/2000-01-01`. It says nothing was logged rather than failing.
 - [ ] Open `/insights` directly, signed out. Sign in, and the app lands on
       `/insights` rather than on the dashboard.
-- [ ] Open `/team?group=…&month=…&by=weeks` directly. It loads that exact view.
+- [ ] Open `/team?team=…&month=…&by=weeks` directly. It loads that exact view,
+      whichever team you looked at last.
+- [ ] Add `&group=…` to the same address. It loads narrowed; drop the parameter
+      again and the same month loads unnarrowed.
+- [ ] Open `/teams` directly. It loads, and nothing you do there puts anything
+      in the address: these are your own teams, and there is nothing to send
+      anybody.
 - [ ] Hard-refresh any deep link. The Netlify SPA fallback serves it.
 
 ## The phone

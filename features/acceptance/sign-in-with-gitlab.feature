@@ -50,7 +50,7 @@ Feature: Signing in with GitLab
     Given GitLab will authorise this application
     When I open the dashboard
     And I continue with GitLab
-    Then GitLab was asked for the read_api scope and no other
+    Then GitLab is asked to read and to identify, and for nothing else
 
   # Spec: gitlab-authentication / AUTH-3
   Scenario: The access credential is never written to the device

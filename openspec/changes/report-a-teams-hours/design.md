@@ -234,6 +234,55 @@ _Alternative rejected:_ storing and asking by username, with the identifier kept
 to detect drift. It works, and it makes every row's correctness depend on a check
 somebody could later simplify away.
 
+### Withheld hours are placed only on a narrowed report
+
+The column probe asks the same aggregate one day at a time, and it is the only
+instrument that can say which day a withheld hour belonged to — the entry itself
+is spliced out of the answer with no id and no `spentAt`. It costs one request
+per short row, capped at six, because a month of column aliases is 7 points of
+the 250-point complexity budget each and a whole grid is refused before it
+reaches a database.
+
+That cap was chosen when this screen read one group. A short row there was
+unusual — a Guest, mostly — and six requests located an anomaly.
+
+Reading a team's whole reach inverts the economics. A reader now sees every
+colleague's working life through their own permissions, so almost every row is
+short, and usually by a lot. Six rows of twenty getting day-level marks while the
+rest keep the note is a difference on screen that corresponds to nothing about
+the data: which six is decided by an identifier the reader never sees. Raising
+the cap does not fix it — the cost is the provider's database, one request per
+row, on every report, to locate something that is the ordinary condition rather
+than a surprise.
+
+So the placement runs only when the report is narrowed to a group. There the
+shortfall means something again: the reader chose a group they can mostly open,
+and a row short _in it_ is worth locating. Unnarrowed, the row still says hours
+are missing and does not say where — which is exactly what it already says when
+a placement fails its checks, so the screen grows no new state and the reader
+learns no new vocabulary.
+
+### What a figure means is the model's; what may be said about it is the screen's
+
+The two-state claim — "no hours logged anywhere" against "no hours in this
+group" — is resolved in `pages/team-hours/ui/day-cell.tsx`, not in
+`entities/team-timelogs/model/`, and that placement was a decision rather than
+convenience.
+
+The model measures. Under either reach a working day nobody logged in is the
+same kind of cell: `unlogged`. What changes is not the measurement but the
+strength of the sentence the measurement will support, and that is a fact about
+what the reader was told the figures cover — the caption, the scope line, the
+key — rather than about the entries. Handing the grid a `scoped` flag would make
+the model hold a fact it never uses in any arithmetic, and would put the one
+decision on this screen that is purely about language in the one layer that is
+forbidden to know any.
+
+The consequence is that the claim is tested where it is made: the cell
+component, the page, and two acceptance scenarios per reach — one of which keeps
+the original prohibition verbatim, because the original reason for it still holds
+whenever a group is named.
+
 ### Completeness is per person, and the read frontier disappears
 
 Each person's month is a connection of its own, read `SPENT_AT_ASC`, so the

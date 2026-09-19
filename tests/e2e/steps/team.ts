@@ -1,237 +1,305 @@
-import { expect } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 import { createBdd } from 'playwright-bdd'
 
-import { ANA, BRUNO, HIDDEN_HOURS, stubGroupHours } from '../support/gitlab-groups'
+import {
+  ANA,
+  DIEGO,
+  HIDDEN_HOURS,
+  operationOf,
+  stubTeamHours,
+  stubUnreadableGroup,
+  userNode,
+} from '../support/gitlab-teams'
+import { FISCAL_TEAM, stubTeamsStore } from '../support/teams-api'
 
 const { Given, Then, When } = createBdd()
 
-const DAYS_IN_MAY = 31
+/**
+ * The provider's one endpoint, again.
+ *
+ * Declared here rather than imported because a step that holds an answer back
+ * or refuses a probe is registering its own route over the fixture's, which is
+ * how this suite layers stubs: the later registration sees the request first and
+ * hands back what it does not recognise.
+ */
+const GRAPHQL = '**/api/graphql'
 
-Given('the group {string} has hours logged in it', async ({ page }, _group: string) => {
-  await stubGroupHours(page)
+const SECONDS_PER_HOUR = 3600
+
+/**
+ * The filter's first option, in either language.
+ *
+ * Anchored, because this is the entry whose whole name is the word: a loose
+ * pattern would also match the group entries, whose accessible name is their
+ * name and their path, and the way back would be clicked by matching something
+ * that is not it.
+ */
+const EVERYWHERE = /^(everywhere|em todo lugar)$/iu
+
+/** The combobox that narrows the figures, in either language. */
+const FILTER = /narrow to a group|restringir a um grupo/iu
+
+/** The native select that names the team, in either language. */
+const TEAM_PICKER = /^team$|^equipe$/iu
+
+/**
+ * The answer a scenario is holding, and the way to let it go.
+ *
+ * Per page rather than per file: Playwright runs the scenarios of one feature in
+ * the same worker, and a module-level promise would make one scenario's held
+ * answer another scenario's deadlock.
+ */
+const holding = new WeakMap<Page, () => void>()
+
+/**
+ * The report's address, as a link somebody would send.
+ *
+ * The team travels as the identifier the stubbed store holds, read from the
+ * fixture rather than repeated: a literal that drifted from the store would
+ * fail as a team this reader does not have, which looks nothing like the wrong
+ * address it would be.
+ */
+function addressOf(month: string, group: string): string {
+  const search = new URLSearchParams({ by: 'days', month, team: FISCAL_TEAM.id })
+
+  if (group !== '') {
+    search.set('group', group)
+  }
+
+  return `/team?${search.toString()}`
+}
+
+async function openReport(page: Page, month: string, group: string): Promise<void> {
+  await page.goto(addressOf(month, group))
+  await expect(page.getByRole('main')).toBeVisible()
+  // The matrix arrives after the store names the team and the first round of
+  // entries lands. Waiting for a row is what makes the assertions that follow
+  // mean what they say rather than pass against a screen still being built.
+  await expect(page.getByRole('rowheader', { name: ANA.name })).toBeVisible()
+}
+
+/** A person as the teams store keeps them: an identifier, and what to call them. */
+function storedMember(person: { name: string; username: string }) {
+  return { id: userNode(person).id, name: person.name, username: person.username }
+}
+
+Given("GitLab is holding some of my team's hours back", async ({ page }) => {
+  await stubTeamHours(page, { hidden: HIDDEN_HOURS * SECONDS_PER_HOUR })
 })
 
-Given('I am a Guest in that group, and GitLab is holding hours back', async ({ page }) => {
-  await stubGroupHours(page, {
-    access: { integerValue: 10, stringValue: 'GUEST' },
-    hidden: HIDDEN_HOURS * 3600,
+/**
+ * A probe that resolves nobody, which the placement refuses.
+ *
+ * `model/withheld.ts` requires the period to declare at least what the row
+ * already draws, and an unresolved person declares nothing at all — so the
+ * marks are refused and the row goes on saying hours are missing without saying
+ * where. That is the only state in which the caveat is on screen at all, and so
+ * the only one in which it can be looked for in the wrong place.
+ */
+/** Every column probe this page has sent, counted from the moment it is armed. */
+const probes = new WeakMap<Page, { count: number }>()
+
+/**
+ * Watches for the request that asks which day a withheld hour fell on.
+ *
+ * Registered as its own route so the count is of requests SENT rather than of
+ * marks drawn. A placement can also be refused after the asking — by the checks
+ * in `model/withheld.ts` — and the two leave the screen looking the same, so an
+ * assertion made from the screen could not tell "never asked" from "asked and
+ * refused". Only this can.
+ */
+Given('GitLab is watching for a column probe', async ({ page }) => {
+  probes.set(page, { count: 0 })
+  await page.route(GRAPHQL, async (route) => {
+    if (operationOf(route) === 'TeamColumnProbe') {
+      const tally = probes.get(page) ?? { count: 0 }
+
+      tally.count += 1
+      probes.set(page, tally)
+    }
+
+    await route.fallback()
   })
 })
 
+Given('GitLab will not say which day it held them back from', async ({ page }) => {
+  await page.route(GRAPHQL, async (route) => {
+    if (operationOf(route) !== 'TeamColumnProbe') {
+      await route.fallback()
+
+      return
+    }
+
+    await route.fulfill({ json: { data: { user: null } } })
+  })
+})
+
+/**
+ * The hours, held until a step lets them go.
+ *
+ * Only the round that carries the entries waits. The teams store still answers,
+ * so the screen knows whose report this is while it has no figure to draw for
+ * any of them — which is the state this exists to put a reader in.
+ */
+Given('GitLab will not answer for my team until I let it', async ({ page }) => {
+  const answered = new Promise<void>((resolve) => {
+    holding.set(page, resolve)
+  })
+
+  await page.route(GRAPHQL, async (route) => {
+    if (operationOf(route) === 'TeamHoursPage') {
+      await answered
+    }
+
+    await route.fallback()
+  })
+})
+
+Given('the group my link narrows to is one I cannot open', async ({ page }) => {
+  await stubUnreadableGroup(page)
+})
+
+/**
+ * A team naming somebody the provider's answer leaves out.
+ *
+ * Diego logged time in the group and is not among the people the hours document
+ * resolves, so storing him is exactly the case the report has to draw from what
+ * the reader last saw: an account gone, blocked, or beyond this reader are
+ * indistinguishable from here and all mean the same thing on screen.
+ */
+Given('my team names somebody GitLab will not resolve', async ({ page }) => {
+  await stubTeamsStore(page, {
+    teams: [{ ...FISCAL_TEAM, members: [...FISCAL_TEAM.members, storedMember(DIEGO)] }],
+  })
+})
+
+/**
+ * The group's contributors change under a team that was seeded from them.
+ *
+ * Registered over the fixture rather than beside it, which is how this suite
+ * layers a stub: the later route sees the request first. From here the group
+ * holds none of their entries — so the suggestions no longer offer them — and
+ * the hours document resolves them with an empty month. Resolved, deliberately:
+ * a person the provider will not name is GROUP-21's row and says nothing is
+ * known, where this one is a colleague the reader chose whose figure is a real
+ * zero. If the team followed the group, the row would be gone instead.
+ *
+ * Diego is the only person a scenario can do this to, because he is the only
+ * suggestion who is not already on the reader's team and so the only one a team
+ * can be seeded with. Named in the step all the same — a feature that said "the
+ * person I seeded" would read as though the fixture could do this to anybody —
+ * and checked here, so a scenario naming somebody else fails loudly instead of
+ * silently stubbing nothing.
+ */
+When('{string} stops logging time in that group', async ({ page }, name: string) => {
+  expect(name, 'Only Diego can stop logging in this fixture').toBe(DIEGO.name)
+  await stubTeamHours(page, { stopped: DIEGO })
+})
+
+When('I open the report for my team in {string}', async ({ page }, month: string) => {
+  await openReport(page, month, '')
+})
+
 When(
-  'I open the team report for {string} in {string}',
-  async ({ page }, group: string, month: string) => {
-    await page.goto(`/team?group=${encodeURIComponent(group)}&month=${month}&by=days`)
-    await expect(page.getByRole('main')).toBeVisible()
-    // The matrix arrives after the roster and the first page of entries; waiting
-    // for a row is what makes the assertions that follow mean what they say.
-    await expect(page.getByRole('rowheader', { name: ANA.name })).toBeVisible()
+  'I open the report for my team in {string}, narrowed to {string}',
+  async ({ page }, month: string, group: string) => {
+    await openReport(page, month, group)
   },
 )
 
-When('I open the team report with no group named', async ({ page }) => {
+When(
+  'I open the report for my team in {string}, before GitLab answers',
+  async ({ page }, month: string) => {
+    await page.goto(addressOf(month, ''))
+    await expect(page.getByRole('main')).toBeVisible()
+  },
+)
+
+When('I open the report with no team named', async ({ page }) => {
   await page.goto('/team')
   await expect(page.getByRole('main')).toBeVisible()
 })
 
-When('I open the group picker', async ({ page }) => {
-  await page.getByRole('combobox', { name: /group|grupo/iu }).click()
+When('GitLab answers', ({ page }) => {
+  const answer = holding.get(page)
+
+  expect(answer, 'Nothing is being held back for this page').toBeDefined()
+  answer?.()
+})
+
+When('I open the group filter', async ({ page }) => {
+  await page.getByRole('combobox', { name: FILTER }).click()
+  await expect(page.getByRole('listbox')).toBeVisible()
+})
+
+When('I choose {string} from the filter', async ({ page }, group: string) => {
+  await page
+    .getByRole('listbox')
+    .getByRole('option', { name: new RegExp(group, 'iu') })
+    .click()
+  // The choice travels through the address and every figure below is read under
+  // it, so anything asserted before the address moves is asserted against the
+  // report the reader was already looking at.
+  await expect(page).toHaveURL(/group=/u)
+})
+
+/**
+ * The same journey back, which is a different click and not the same one undone.
+ *
+ * The way back is an option like any other — a group whose path is empty, which
+ * is what "no group" is everywhere else in this app — so clearing takes the
+ * route choosing takes. Waiting on the address is the mirror of the step above,
+ * and for the same reason: an address still carrying a group is a screen still
+ * showing the narrowed figures, and a total read there would be the one this
+ * scenario exists to prove it stopped showing.
+ */
+When('I choose the way back to everywhere', async ({ page }) => {
+  await page.getByRole('listbox').getByRole('option', { name: EVERYWHERE }).click()
+  await expect(page).not.toHaveURL(/group=[^&]/u)
 })
 
 When('I switch the columns to weeks', async ({ page }) => {
-  await page.getByRole('button', { name: /weeks|semanas/i }).click()
+  await page.getByRole('button', { name: /weeks|semanas/iu }).click()
 })
 
 When('I order the rows by total', async ({ page }) => {
-  await page.getByRole('button', { name: /^total$/i }).click()
+  await page.getByRole('button', { name: /^total$/iu }).click()
 })
 
 /**
  * Read off the picker, not off the heading. The heading names the screen and
  * stays put; what proves the address was honoured is the control that says which
- * group is being reported.
+ * team is being reported — and it says so by its chosen option's name, because
+ * the value it carries is an identifier that names nobody.
  */
-Then('the group shown is {string}', async ({ page }, name: string) => {
-  await expect(page.getByRole('combobox', { name: /group|grupo/iu })).toHaveValue(name)
+Then('the team shown is {string}', async ({ page }, name: string) => {
+  const picker = page.getByRole('combobox', { name: TEAM_PICKER })
+
+  await expect(picker).toHaveValue(FISCAL_TEAM.id)
+  await expect(picker.locator('option:checked')).toHaveText(name)
 })
 
 Then('the month shown is May 2026', async ({ page }) => {
-  await expect(page.getByText(/may 2026|maio de 2026/i).first()).toBeVisible()
-})
-
-Then('the screen says the figures cover the group and its subgroups', async ({ page }) => {
-  // Twice, deliberately. The subtitle is what a reader looking at the page
-  // sees; the caption is what a reader who jumps straight to the table hears,
-  // and an empty cell is only honest because that caption qualifies it.
-  await expect(page.getByText(/subgroups|subgrupos/iu).first()).toBeVisible()
-  await expect(page.locator('caption')).toContainText(/subgroups|subgrupos/iu)
-})
-
-Then('the table has a row heading for {string}', async ({ page }, name: string) => {
-  await expect(page.getByRole('rowheader', { name })).toBeVisible()
-})
-
-Then('the table has a column heading for every day of the month', async ({ page }) => {
-  // The second header row is the days. The first holds the two corners, which
-  // span both rows, and one band per ISO week — all of which are column headers
-  // too, so counting every `columnheader` on the page would count those as days.
-  const days = page.locator('thead tr').nth(1).getByRole('columnheader')
-
-  await expect(days).toHaveCount(DAYS_IN_MAY)
-})
-
-/**
- * A month of a team is over a thousand cells.
- *
- * Making each one a stop would put everything after the table dozens of presses
- * away, so the reader tabs to the region and reads inside it with the table keys
- * their screen reader already gives them.
- */
-Then('no cell of the table is a keyboard stop', async ({ page }) => {
-  const focusable = page.locator('td [tabindex="0"], td a, td button')
-
-  await expect(focusable).toHaveCount(0)
-})
-
-/**
- * Asserted after the note, never before it.
- *
- * Nobody is dropped until the month has been read, so a check for an absent row
- * that ran while the pages were still arriving would pass on a row that had not
- * rendered yet. The note is drawn from the same completion, which makes it the
- * thing to wait for.
- */
-Then('the table has no row for {string}', async ({ page }, name: string) => {
-  // Waited on first: nobody is dropped until the month has been read, so this
-  // would otherwise pass against a row that had not arrived yet.
-  await expect(page.getByRole('status')).not.toContainText(/still reading|ainda lendo/iu)
-  await expect(page.getByRole('rowheader', { name: new RegExp(name, 'iu') })).toHaveCount(0)
-})
-
-/**
- * The screen sees one group. "Nobody logged anything" is not a claim it can
- * support, so no sentence on it may make one — not in a cell, not under the
- * table, not in the key.
- */
-Then('nothing on the screen says anybody logged nothing', async ({ page }) => {
-  await expect(
-    page.getByText(/logged nothing|logged no (time|hours)|não lançou|sem lançamentos/iu),
-  ).toHaveCount(0)
-})
-
-/**
- * The mark, in the cell, spoken.
- *
- * Read through the sentence rather than the bracketed figure: the brackets are
- * `aria-hidden`, and what a reader who cannot see them gets is the sentence.
- * Asserting the thing everybody receives is the point of running this in a
- * browser at all.
- */
-/**
- * 6.5 h arrived and 2.5 h did not, and the row shows 9 — the provider's own
- * total. Nothing distinguishes the part that cannot be opened: that was tried
- * twice, as a bracketed figure and as a spoken sentence, and taken out both
- * times. The screen shows the truer number and says nothing more.
- */
-Then(
-  'the row for {string} totals {string} hours',
-  async ({ page }, name: string, hours: string) => {
-    const row = page.getByRole('row').filter({ hasText: name })
-
-    // The total is the last cell of the row, pinned to the right edge.
-    await expect(row.locator('td').last()).toContainText(hours)
-  },
-)
-
-/**
- * What an empty cell says, read the way a screen reader receives it.
- *
- * The subtitle that qualifies the scope sits in the page header, and a reader
- * who reaches the grid by landmark or by table navigation never passes it. So
- * the cell has to carry the qualification itself, and this asserts the text
- * rather than the dash beside it.
- */
-Then('an empty working day is spoken as holding no hours in this group', async ({ page }) => {
-  await expect(
-    page.getByText(/no hours in this group|nenhuma hora neste grupo/iu).first(),
-  ).toBeAttached()
-})
-
-Then('no cell claims that anybody logged nothing at all', async ({ page }) => {
-  // The exact sentence this screen used to make, from one group's worth of
-  // evidence, about a whole person's month.
-  await expect(page.getByText(/^no time logged.$|^nenhuma hora lançada.$/iu)).toHaveCount(0)
-})
-
-/**
- * A key for a mark that is nowhere in the table is worse than no key: the
- * reader scans for it and finds nothing. Withheld hours are rare, so a
- * permanent entry for them would mostly be a permanent false lead.
- */
-Then('the legend does not explain a mark the table has none of', async ({ page }) => {
-  // Nobody in this fixture went past the reference, so the key must not offer
-  // to explain what going past it looks like.
-  await expect(page.getByText(/over the reference|acima da referência/iu)).toHaveCount(0)
-})
-
-/**
- * The one region this control owns says when the hours arrived, whether they
- * are arriving now, and whether asking failed. What a figure could not include
- * is said beside that figure, on the row it belongs to.
- */
-Then('the sync control says only when the hours arrived', async ({ page }) => {
-  const status = page.getByRole('status')
-
-  await expect(status).toHaveText(/updated|updating|atualizad/iu)
-  await expect(status).not.toHaveText(/guest|did not show|não mostrou/iu)
-})
-
-Then('the legend states the reference the bars are measured against', async ({ page }) => {
-  await expect(page.getByText(/measured against|medidas contra/i)).toBeVisible()
-})
-
-/**
- * Completed by redirecting, not by filling the screen in behind the address:
- * what a reader is looking at has to be what they can send somebody else.
- */
-Then('the address names {string}', ({ page }, group: string) => {
-  // Read as a parameter rather than matched against the whole URL: a group
-  // path is full of slashes, and escaping it into a pattern is a way to be
-  // wrong about what the test asserts.
-  expect(new URL(page.url()).searchParams.get('group')).toBe(group)
+  await expect(page.getByText(/may 2026|maio de 2026/iu).first()).toBeVisible()
 })
 
 Then('the address says the columns are weeks', async ({ page }) => {
-  await expect(page).toHaveURL(/by=weeks/)
-})
-
-Then('the total heading reports the ordering', async ({ page }) => {
-  const heading = page.getByRole('columnheader', { name: /total/i })
-
-  await expect(heading).toHaveAttribute('aria-sort', /ascending|descending/)
-})
-
-Then('the screen asks me to choose a group', async ({ page }) => {
-  await expect(page.getByText(/choose a group|escolha um grupo/i)).toBeVisible()
-})
-
-Then('the picker offers {string}', async ({ page }, name: string) => {
-  await expect(page.getByRole('option', { name: new RegExp(name, 'iu') })).toBeVisible()
+  await expect(page).toHaveURL(/by=weeks/u)
 })
 
 /**
- * The reader's own hours are kept on the device so a return visit paints at
- * once. A group's belong to other people, and a shared machine must not keep
- * them.
+ * Nothing asked which day, which is the state an unnarrowed report is in.
+ *
+ * At the reader's whole reach almost every row is short, so the probe would run
+ * on every report to locate what is the ordinary condition rather than a
+ * finding — and mark a handful of rows chosen by an identifier nobody sees.
  */
-Then('nothing about the group is written to the device', async ({ page }) => {
-  const stored = await page.evaluate(async () => {
-    const databases = await indexedDB.databases()
-    const names = databases.map((database) => database.name ?? '')
+Then('GitLab is never asked which day they fell on', async ({ page }) => {
+  // The screen's own idle signal, not a timeout: the sync region says it is
+  // fetching while anything is, and the probe is issued from the same settled
+  // report that put the row on screen. Once it stops saying so, every request
+  // this report was going to make has been made.
+  await expect(page.getByRole('status')).not.toContainText(/updating|atualizand/iu)
 
-    return { names, storage: JSON.stringify(localStorage) }
-  })
-
-  expect(stored.storage).not.toContain(BRUNO.name)
-  expect(stored.storage).not.toContain('group-timelogs')
+  expect(probes.get(page)?.count ?? 0).toBe(0)
 })

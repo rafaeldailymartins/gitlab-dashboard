@@ -100,10 +100,10 @@ That is expected and is why the feature files are their own group.
 - [x] 5.3 Add `identityToken()` to the session manager, renewing through the
       existing single flight so a burst costs one exchange and one rotation;
       verify `bun run test`
-- [ ] 5.4 Report a session granted before the scope as its own failure kind, and
+- [x] 5.4 Report a session granted before the scope as its own failure kind, and
       render the reconnect offer on the teams surface only — never a sign-out;
       verify `bun run test` and `bun run typecheck`
-- [ ] 5.5 Widen the acceptance assertion that reads both storages so it covers
+- [x] 5.5 Widen the acceptance assertion that reads both storages so it covers
       the identity assertion as well as the access token; verify `bun run test:e2e`
 
 ## 6. Model: the team, and who the provider recognised
@@ -116,71 +116,85 @@ fails an export nothing imports, both of which were confirmed by building the
 teams slice and watching them fire. So they move to group 8, beside the boundary
 that consumes them.
 
-- [ ] 6.1 Write and pass the tests for rows being exactly the team's members,
+- [x] 6.1 Write and pass the tests for rows being exactly the team's members,
       nobody added and nobody dropped, ordered by a comparison that cannot vary
       by machine; verify `bun run test`
-- [ ] 6.2 Write and pass the tests for reconciling stored members against
+- [x] 6.2 Write and pass the tests for reconciling stored members against
       resolved nodes — confirmed, reassigned, unresolved — matched on the
       returned username and never on position; verify `bun run test`
 - [x] 6.3 Write and pass the tests for the team edits: add, remove, rename, new,
       each total and each returning a fresh team, with adding somebody already on
       the team a no-op rather than a duplicate row; verify `bun run test`
-- [ ] 6.4 Write and pass the tests for suggestions: deduped by identifier, bots
+- [x] 6.4 Write and pass the tests for suggestions: deduped by identifier, bots
       dropped, blocked accounts kept because an inactive account that logged time
       did the work, order stable; verify `bun run test`
-- [ ] 6.5 Delete the roster union and the rule that dropped a row with no
+- [x] 6.5 Delete the roster union and the rule that dropped a row with no
       figures, with their tests; verify `bun run test` and `bun run deadcode`
 
 ## 7. Model: what a figure and a cell may claim
 
-- [ ] 7.1 Write and pass the tests moving completeness and the read frontier onto
+- [x] 7.1 Write and pass the tests moving completeness and the read frontier onto
       the row, with a case on each side of the boundary so the comparison mutants
       die; verify `bun run test`
-- [ ] 7.2 Write and pass the tests for the cell kind that means the provider said
+- [x] 7.2 Write and pass the tests for the cell kind that means the provider said
       nothing and never will, distinct from the one that means more may still
       arrive; verify `bun run test`
-- [ ] 7.3 Write and pass the tests for the two-state claim: unscoped, a declared
+- [x] 7.3 Write and pass the tests for the two-state claim: unscoped, a declared
       count of zero means the person logged nothing; scoped, the same zero claims
       only that the group holds nothing — a case each side, so a mutant dropping
-      the filter from the decision dies; verify `bun run test`
-- [ ] 7.4 Write and pass the tests that a placed difference is not also reported
+      the filter from the decision dies; verify `bun run test`.
+      **Settled at the interface, not in the model**, and `design.md` records why:
+      under either reach a working day nobody logged in is the same measurement
+      and the same `CellKind`. What changes is the strength of the sentence that
+      measurement will support, which is a fact about what the reader was told the
+      figures cover rather than about the entries. So the claim is tested where it
+      is made — the cell component, the page, and an acceptance scenario per reach,
+      one of which keeps the original prohibition verbatim.
+- [x] 7.4 Write and pass the tests that a placed difference is not also reported
       as missing, and that a difference running the other way still is; verify
       `bun run test`
-- [ ] 7.5 Re-parent the placement's three checks without changing one of them,
+- [x] 7.5 Re-parent the placement's three checks without changing one of them,
       and prove the period check still catches an identifier that resolves to
       nobody; verify `bun run test`
-- [ ] 7.6 Decide and implement where the column placement runs, given that an
+- [x] 7.6 Decide and implement where the column placement runs, given that an
       unscoped read makes almost every row short and inverts the economics the
       cap was chosen under; record the decision in `design.md`; verify
-      `bun run test`
-- [ ] 7.7 Confirm the model floors; verify `bun run test:coverage` and
+      `bun run test`.
+      **The placement runs only on a narrowed report.** Marking six rows of twenty
+      while the rest keep the note is a difference on screen that corresponds to
+      nothing about the data — which six is decided by an identifier the reader
+      never sees — and raising the cap spends the provider's database on locating
+      the ordinary condition rather than a surprise. Unnarrowed the row still says
+      hours are missing without saying where, which is what it already says when a
+      placement fails its checks, so the screen grows no new state.
+- [x] 7.7 Confirm the model floors; verify `bun run test:coverage` and
       `bun run test:mutation`
 
 ## 8. The GitLab boundary
 
-- [ ] 8.1 Write the page document, the continuation document, the column probe
+- [x] 8.1 Write the page document, the continuation document, the column probe
       and the person search, each carrying the comment saying why it is shaped
       that way, each taking every value as a variable and never interpolating
       provider data into a document; verify `bun run test`
-- [ ] 8.2 Thread the group filter through all three user documents and all three
+- [x] 8.2 Thread the group filter through all three user documents and all three
       query keys, and write the gateway test that proves they carry the same one
       — an instrument measuring a different set than the figures makes every
       shortfall on the screen nonsense; verify `bun run test`
-- [ ] 8.3 Write the gateway test that a read stops on `hasNextPage` and on
+- [x] 8.3 Write the gateway test that a read stops on `hasNextPage` and on
       nothing else, since a page can carry zero nodes and still have more; verify
       `bun run test`
-- [ ] 8.4 Replace the membership document with one that reads whoever logged time
+- [x] 8.4 Replace the membership document with one that reads whoever logged time
       in a group over the stated window, and delete the roster document, its
       query, its gateway method and the access type with it; verify
       `bun run deadcode` and `bun run test`
-- [ ] 8.5 Assert that every document sends `startTime` and `endTime` and never
+- [x] 8.5 Assert that every document sends `startTime` and `endTime` and never
       `startDate` or `endDate`, and never `startTime` with `endDate`; verify
       `bun run test`
-- [ ] 8.6 Record the fixtures from a real response rather than writing them —
+- [x] 8.6 Record the fixtures from a real response rather than writing them —
       the aggregate's string form, the identifier forms, a nullable node and the
       absence of a node for an unresolved username are things only a real answer
       gets right; verify `bun run test`
-- [ ] 8.7 Rewrite the slice's public API deliberately rather than patching it; a
+- [x] 8.7 Rewrite the slice's public API deliberately rather than patching it; a
       stale export is a dead-code failure, not a type error; verify
       `bun run deadcode`
 
@@ -188,83 +202,83 @@ that consumes them.
 
 - [x] 9.1 Add the teams slice with a lenient decoder that falls back field by
       field, paired with the function's strict validator; verify `bun run test`
-- [ ] 9.2 Add a contract test running one table of documents through both halves,
+- [x] 9.2 Add a contract test running one table of documents through both halves,
       so the lenient and strict readers cannot drift; verify `bun run test`
 - [x] 9.3 Add the HTTP adapter with one forced-renewal retry on refusal, mirroring
       the GraphQL client's single retry; verify `bun run test`
-- [ ] 9.4 Put `meta: { persist: false }` on every teams query, copying the
+- [x] 9.4 Put `meta: { persist: false }` on every teams query, copying the
       pattern the group queries already use. Without it `shouldDehydrateQuery`
       writes colleagues' names into IndexedDB through the cache persister, which
       is the easiest thing in this change to forget and the most consequential;
       verify `bun run test` and `bun run test:e2e`
-- [ ] 9.5 Report a write that did not land as not saved, leave the team as it
+- [x] 9.5 Report a write that did not land as not saved, leave the team as it
       was, and queue nothing for later; verify `bun run test`
 
 ## 10. The two screens
 
-- [ ] 10.1 Add every message key to both catalogues, as two sentences where the
+- [x] 10.1 Add every message key to both catalogues, as two sentences where the
       reach has two states rather than one sentence with a parameter — an empty
       parameter renders a double space and a claim nobody made; verify
       `bun run i18n:check` and the gate from 3.2
-- [ ] 10.2 Move the group picker into its own slice taking its wording as props
+- [x] 10.2 Move the group picker into its own slice taking its wording as props
       and a clearable flag, now that two screens use it; verify
       `bun run arch:layers`, `bun run arch:graph` and `bun run deadcode`
-- [ ] 10.3 Replace the group picker on the report with a team picker on the
+- [x] 10.3 Replace the group picker on the report with a team picker on the
       existing select field, and add the group filter beside it, writing to the
       address and never to storage; verify `bun run build && bun run size`
-- [ ] 10.4 Grow the screen-state resolution to cover having no teams, an unknown
+- [x] 10.4 Grow the screen-state resolution to cover having no teams, an unknown
       team, an empty team and a store that cannot be reached, with its own test
       file; verify `bun run test` and `bun run lint`
-- [ ] 10.5 Make the caption, the reach line, the empty cell and the key read off
+- [x] 10.5 Make the caption, the reach line, the empty cell and the key read off
       the filter; verify `bun run test` and `bun run lint:a11y`
-- [ ] 10.6 Fall back to the unscoped report when the address names a group that
+- [x] 10.6 Fall back to the unscoped report when the address names a group that
       cannot be read, and say that it happened; verify `bun run test:e2e`
-- [ ] 10.7 Build the teams screen — the list, the editor, the member list whose
+- [x] 10.7 Build the teams screen — the list, the editor, the member list whose
       remove button is named for its person rather than twelve buttons called
       "Remove", and the individual search; verify `bun run lint:a11y` and
       `bun run test`
-- [ ] 10.8 Build the suggestion list over the trailing window, capped and deduped,
+- [x] 10.8 Build the suggestion list over the trailing window, capped and deduped,
       stating its window and saying when it may be incomplete, in its own lazy
       chunk; verify `bun run build && bun run size`
-- [ ] 10.9 Wire the mutations, reporting saved, not saved and changed elsewhere in
+- [x] 10.9 Wire the mutations, reporting saved, not saved and changed elsewhere in
       a live region that does not move focus; verify `bun run test`
-- [ ] 10.10 Add the route, the link beside the team picker and the card on the
+- [x] 10.10 Add the route, the link beside the team picker and the card on the
       settings screen — and no fifth navigation link; verify `bun run test:e2e`
 
 ## 11. Traceability
 
-- [ ] 11.1 Rewrite the domain features for the team shape, keeping the window and
+- [x] 11.1 Rewrite the domain features for the team shape, keeping the window and
       placement scenarios verbatim where nothing about them changed; verify
       `bun run test` and `bun run arch:trace`
-- [ ] 11.2 Split the step that asserted nothing on the screen says anybody logged
+- [x] 11.2 Split the step that asserted nothing on the screen says anybody logged
       nothing into two: the scoped state keeps the original expression verbatim,
       because that assertion is what caught the original bug and is still live;
       the unscoped state asserts its opposite; verify `bun run test:e2e`
-- [ ] 11.3 Add the roster feature covering suggestions, identity and the team
+- [x] 11.3 Add the roster feature covering suggestions, identity and the team
       edits; verify `bun run test` and `bun run arch:trace`
-- [ ] 11.4 Add the acceptance feature for keeping a team; verify `bun run test:e2e`
-- [ ] 11.5 Add the teams screen to the screen sweep and the 375 px sweep, and
+- [x] 11.4 Add the acceptance feature for keeping a team; verify `bun run test:e2e`
+- [x] 11.5 Add the teams screen to the screen sweep and the 375 px sweep, and
       leave the navigation outline at four rows; verify `bun run test:e2e`
-- [ ] 11.6 Cite the store's credential requirements from handler tests rather
+- [x] 11.6 Cite the store's credential requirements from handler tests rather
       than the browser, and say so where the citation lives — the acceptance
       suite serves a static build and carries no function; verify
       `bun run arch:trace`
-- [ ] 11.7 Confirm every requirement is cited and add no exemption without a
+- [x] 11.7 Confirm every requirement is cited and add no exemption without a
       written reason beside it; verify `bun run arch:trace`
 
 ## 12. The end-to-end regression
 
-- [ ] 12.1 Assert that a team member who logged nothing keeps a row and that it
+- [x] 12.1 Assert that a team member who logged nothing keeps a row and that it
       says so, and that a row whose month could not be read in full claims less;
       verify `bun run test:e2e`
-- [ ] 12.2 Assert that scoping to a group changes every figure and the caption,
+- [x] 12.2 Assert that scoping to a group changes every figure and the caption,
       that clearing it restores them, that the address carries it, and that a
       fresh visit is unscoped; verify `bun run test:e2e`
-- [ ] 12.3 Assert that a team seeded from a group does not follow it, that a bot
+- [x] 12.3 Assert that a team seeded from a group does not follow it, that a bot
       is not offered and that a blocked contributor is; verify `bun run test:e2e`
-- [ ] 12.4 Assert that no figure and no colleague's name reaches the device, and
+- [x] 12.4 Assert that no figure and no colleague's name reaches the device, and
       that signing out leaves neither; verify `bun run test:e2e`
-- [ ] 12.5 Close the hole in that assertion: it reads `indexedDB.databases()`
+- [x] 12.5 Close the hole in that assertion: it reads `indexedDB.databases()`
       into a `names` binding and then asserts nothing about it, so the persisted
       query cache — the one place a roster could land without touching
       `localStorage` — is collected and dropped. Assert it; verify
@@ -272,14 +286,14 @@ that consumes them.
 
 ## 13. The written record, corrected
 
-- [ ] 13.1 Rewrite `openspec/config.yaml`: it says there is no backend and no
+- [x] 13.1 Rewrite `openspec/config.yaml`: it says there is no backend and no
       database, and describes the product as reporting a group; verify
       `bunx openspec validate report-a-teams-hours --strict`
-- [ ] 13.2 Rewrite `README.md`: the same two claims, plus the data-flow diagram,
+- [x] 13.2 Rewrite `README.md`: the same two claims, plus the data-flow diagram,
       the scope in the setup steps, and a security paragraph saying what the
       endpoint holds, how identity is established, that the token is used and
       discarded, and that the host holds the rosters unencrypted; verify by hand
-- [ ] 13.3 Rewrite the `AGENTS.md` decisions this reverses. "No sentence on the
+- [x] 13.3 Rewrite the `AGENTS.md` decisions this reverses. "No sentence on the
       team screen says somebody logged nothing" becomes **conditional, not
       reversed** — with a filter set the original prohibition returns verbatim
       and for the original reason. Its parenthetical about not widening the scope
@@ -289,36 +303,44 @@ that consumes them.
       the threaded filter, suggestions-are-who-logged, the filter being in the
       address and not remembered, the minted-not-held assertion, and the derived
       storage key; verify by hand
-- [ ] 13.4 Rewrite `docs/qa/regression-checklist.md`'s team section — one line
+- [x] 13.4 Rewrite `docs/qa/regression-checklist.md`'s team section — one line
       describes a presentation reverted by the previous change — and add the
       scoping passes and a teams section; verify by hand
-- [ ] 13.5 Rewrite `docs/qa/accessibility-audit.md` step 14 as two steps, one per
+- [x] 13.5 Rewrite `docs/qa/accessibility-audit.md` step 14 as two steps, one per
       reach state, since the spoken text differs and only a listener can tell;
       extend the withheld step; add the teams-screen steps; verify by hand
-- [ ] 13.6 Update `docs/qa/quality-metrics.md` counts, `test-plan.md` for the new
+- [x] 13.6 Update `docs/qa/quality-metrics.md` counts, `test-plan.md` for the new
       Vitest project, and `release-checklist.md` for the scope ordering
       constraint and the usage notification; verify by hand
 
 ## 14. Every gate
 
-- [ ] 14.0 Pin down an intermittent test failure seen twice, both times with
+- [x] 14.0 Pin down an intermittent test failure seen twice, both times with
       `bun run test` sharing a shell with other gates and never in a dedicated
       run: one test of 1245, reported as an unhandled rejection
       (`Promise unknown:1:11`) rather than a failed assertion, with the suite's
       `setup` time varying between 7 s and 49 s across runs. The `ui` project sets
       `isolate: false`, which `vitest.config.ts` records as a deliberate trade and
-      which is where a rejection in one file can surface in another. Not yet
-      attributed to this change or to what was there before; verify by running
-      the suite under load until it reproduces
-- [ ] 14.1 `bun run verify && bun run test`
-- [ ] 14.2 `bun run test:coverage` and `bun run test:mutation`
-- [ ] 14.3 `bun run test:e2e`
-- [ ] 14.4 `bun run build && bun run size`
-- [ ] 14.5 Against a real account, confirm a row total matches what GitLab reports
+      which is where a rejection in one file can surface in another.
+      **Not reproduced, and not attributed.** Six runs under deliberate load — the
+      suite beside a concurrent `bun run build`, three times, plus three runs
+      sharing the machine with the mutation and acceptance suites — all green.
+      The suite is also no longer the one that failed: 1245 tests then, 1481 now,
+      over substantially rewritten code. Closed as unattributable rather than as
+      fixed, with one change that makes the next occurrence evidence instead of a
+      report: `tests/setup/ui.ts` now records which test file is running and
+      prints the rejection's own stack. It alters no outcome — the listener does
+      not call `preventDefault`, so the run still fails exactly as before — it
+      only replaces `Promise unknown:1:11` with a name and a stack.
+- [x] 14.1 `bun run verify && bun run test`
+- [x] 14.2 `bun run test:coverage` and `bun run test:mutation`
+- [x] 14.3 `bun run test:e2e`
+- [x] 14.4 `bun run build && bun run size`
+- [x] 14.5 Against a real account, confirm a row total matches what GitLab reports
       for that person including a project the reader cannot open and a work item
       with no project, and that scoping to a fully readable group reports no
       shortfall; no fixture can prove this one; verify by hand and record
-- [ ] 14.6 From a second real account, confirm one reader cannot read another's
+- [x] 14.6 From a second real account, confirm one reader cannot read another's
       teams through the deployed function; no fixture can prove this one either;
       verify by hand and record
 

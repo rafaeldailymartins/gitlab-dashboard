@@ -50,7 +50,7 @@ Feature: A team's month as a matrix
       | 2026-05-31 | 2026-05-12 | 2026-05-20 | future      |
       | 2026-05-12 | 2026-06-15 | 2026-05-20 | pending     |
 
-  # Spec: group-timelog-report / GROUP-22
+  # Spec: group-timelog-report / GROUP-21
   Scenario: A stored member the provider does not recognise says nothing about any day
     Given a team of "Ana"
     And GitLab does not recognise "Ana"

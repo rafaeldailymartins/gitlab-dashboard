@@ -3,35 +3,120 @@
 Every metric below has a target, a command that measures it, and a place that
 enforces it. A metric nobody enforces is a wish, not a metric.
 
-The "measured" column records the value at the last update of this document, so
-a drift is visible without running anything.
+The "measured" column records what the command printed, so a drift is visible
+without running anything. Every figure in it was taken between 20:45 and 21:16 on
+**2026-09-18**, on `feat/report-a-teams-hours` — a branch being written while the
+figures were being taken, which is worth saying because two gates are red and
+several counts moved inside that half hour. The rows report what the commands
+printed rather than the state the branch is heading for, and where a figure is
+volatile the sentence beside it says when it was read and which command answers
+it. A sentence reporting an older measurement carries its own date; one with no
+date belongs to this window.
 
 ## Enforced gates
 
-| Metric                             | Target                           | Measured | Command                         | Enforced at              |
-| ---------------------------------- | -------------------------------- | -------- | ------------------------------- | ------------------------ |
-| Formatting                         | no deviation                     | pass     | `bun run format:check`          | pre-commit, `verify`, CI |
-| Lint (type-aware)                  | 0 errors, 0 warnings             | pass     | `bun run lint`                  | pre-commit, `verify`, CI |
-| Lint (ARIA and element ids)        | 0 errors                         | pass     | `bun run lint:a11y`             | `verify`, CI             |
-| TypeScript                         | 0 errors under full strictness   | pass     | `bun run typecheck`             | pre-push, `verify`, CI   |
-| FSD conventions                    | 0 problems                       | pass     | `bun run arch:layers`           | pre-push, `verify`, CI   |
-| Dependency graph (cycles, orphans) | 0 violations                     | pass     | `bun run arch:graph`            | pre-push, `verify`, CI   |
-| Dead code (files, exports, deps)   | 0 findings                       | pass     | `bun run deadcode`              | pre-push, `verify`, CI   |
-| Requirement traceability           | every requirement cited          | 67/67    | `bun run arch:trace`            | `verify`, CI             |
-| Type coverage                      | ≥ 99%                            | 99.87%   | `bun run types:coverage`        | `verify`, CI             |
-| Dependency vulnerabilities         | **0, at any severity**           | 0        | `bun run security:audit`        | pre-push, `verify`, CI   |
-| Test coverage, statements          | ≥ 90%                            | 98.32%   | `bun run test:coverage`         | CI                       |
-| Test coverage, branches            | ≥ 90%                            | 93.78%   | `bun run test:coverage`         | CI                       |
-| Test coverage, `model/`            | **100%**                         | 100%     | `bun run test:coverage`         | CI                       |
-| Mutation score, `model/`           | ≥ 85%                            | 96.25%   | `bun run test:mutation`         | scheduled CI             |
-| Initial bundle                     | ≤ 180 kB gzip                    | 170.5 kB | `bun run build && bun run size` | CI                       |
-| Accessibility (WCAG 2.1 AA)        | 0 axe violations, light and dark | pass     | `bun run test:e2e`              | CI                       |
-| Cumulative layout shift            | < 0.1, cold and warm             | pass     | `bun run test:e2e`              | CI                       |
-| No sideways scrolling at 375 px    | every screen                     | pass     | `bun run test:e2e`              | CI                       |
+| Metric                             | Target                                       | Measured                       | Command                         | Enforced at              |
+| ---------------------------------- | -------------------------------------------- | ------------------------------ | ------------------------------- | ------------------------ |
+| Formatting                         | no deviation                                 | pass                           | `bun run format:check`          | pre-commit, `verify`, CI |
+| Lint (type-aware)                  | 0 errors, 0 warnings                         | **red on this branch**         | `bun run lint`                  | pre-commit, `verify`, CI |
+| Lint (ARIA and element ids)        | 0 errors                                     | pass, 114 files                | `bun run lint:a11y`             | `verify`, CI             |
+| Colour contrast                    | every pair above its floor, in both schemes  | pass, 80 pairs                 | `bun run a11y:contrast`         | `verify`, CI             |
+| TypeScript                         | 0 errors under full strictness               | **red on this branch**         | `bun run typecheck`             | pre-push, `verify`, CI   |
+| FSD conventions                    | 0 problems                                   | pass                           | `bun run arch:layers`           | pre-push, `verify`, CI   |
+| Dependency graph (cycles, orphans) | 0 violations                                 | pass, 227 modules, 747 edges   | `bun run arch:graph`            | pre-push, `verify`, CI   |
+| Dead code (files, exports, deps)   | 0 findings                                   | pass                           | `bun run deadcode`              | pre-push, `verify`, CI   |
+| Translations                       | every key in every language, and none unused | 169 messages, complete in 2    | `bun run i18n:check`            | `verify`, CI             |
+| Requirement traceability           | every requirement cited                      | 76 declared: 70 cited, 6 other | `bun run arch:trace`            | `verify`, CI             |
+| Type coverage                      | ≥ 99%                                        | 99.87% (47 644 of 47 703)      | `bun run types:coverage`        | `verify`, CI             |
+| Dependency vulnerabilities         | **0, at any severity**                       | 0, over 864 packages           | `bun run security:audit`        | pre-push, `verify`, CI   |
+| Test coverage, statements          | ≥ 90%                                        | 97.44%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, branches            | ≥ 90%                                        | 94.52%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, functions           | ≥ 90%                                        | 97.73%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, lines               | ≥ 90%                                        | 97.32%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, `model/`            | **100%**                                     | 100%                           | `bun run test:coverage`         | CI                       |
+| Mutation score, `model/`           | ≥ 85%                                        | 92.99%, 66 of 970 survived     | `bun run test:mutation`         | scheduled CI             |
+| Initial bundle                     | ≤ 180 kB gzip                                | 174.55 kB                      | `bun run build && bun run size` | CI                       |
+| Accessibility (WCAG 2.1 AA)        | 0 axe violations, light and dark             | pass, 16 audits, chromium      | `bun run test:e2e`              | CI                       |
+| Cumulative layout shift            | < 0.1, cold and warm                         | pass, both, chromium           | `bun run test:e2e`              | CI                       |
+| No sideways scrolling at 375 px    | every screen                                 | pass, 7 screens, chromium      | `bun run test:e2e`              | CI                       |
 
-Tests: 1174 unit and component, 387 of them on the pure model layer and its
-Gherkin features, plus acceptance runs across chromium, webkit and a mobile
-viewport.
+The last three rows are read off one local run at 21:00, chromium alone over the
+98 scenarios `bddgen` expanded at that moment; the matrix is CI's job, and that
+same run had four scenarios red — three of them flakes and one of them a real
+claim about the code. Both kinds are in "Known measurement caveats", and neither
+touches the axe, layout-shift or 375-pixel assertions, which all passed.
+
+**The traceability row is two numbers, not one.** `bun run arch:trace` prints
+`76 requirements, 70 cited by scenarios, 6 covered another way`, and the
+difference between those last two is the part worth reading. The six are listed
+in the script's `UNCITED_BY_DESIGN` map with the reason a browser cannot observe
+them, each naming the test that can: `AUTH-10` counts token exchanges, which no
+screen shows, and `TEAM-3` is the rule that a reader cannot address another
+reader's storage key — a browser can neither forge a credential nor reach the
+deployed function, so `netlify/lib/handle-teams.test.mts` and
+`netlify/lib/identity.test.mts` carry it instead. A single "76/76" hides that
+six requirements rest on a map an author can add to. The gate fails in both
+directions, including on an entry naming a requirement that no longer exists, so
+the map cannot quietly outlive what it excuses.
+
+**Two gates are red while this branch is being written, and the rows say so.**
+Neither is worth recording as a number, because the number does not keep: an
+earlier revision of this document, on this same day, recorded seven lint errors,
+and not one of those seven is among the five the command printed at 21:13. What
+is worth recording is where they sit.
+
+`bun run lint` has five. Four are in test files added within the hour — an import
+ordering, a named-import ordering, a `.length > 0` check and a binding nothing
+reads. The fifth is in shipped code and is the only one a reviewer should look at
+twice: `react/jsx-no-leaked-render` on the `scoped` prop at
+`pages/team-hours/ui/team-hours-page.tsx:180`. `eslint.config.js` sets that rule
+to `validStrategies: ['ternary']`, so a bare `&&` is refused wherever it
+appears — including an attribute whose operands are both already booleans, as
+these are.
+
+`bun run typecheck` has one, and it arrived between one reading of this table and
+the next: `netlify/lib/teams-contract.test.mts` imports `./teams-document.mts` by
+its `.mts` extension, which `allowImportingTsExtensions` would have to be on to
+permit. That file is the new contract test described under "Test projects". The
+gate was green at 20:50, before it existed, and red at 21:16 — which is the
+honest reason the header above gives a window rather than a moment.
+
+`verify` fails until both are clean, and the merge request is where that has to
+happen.
+
+## Test projects
+
+`vitest.config.ts` defines three, and `bun run test` runs all of them: 1574 tests
+across 112 files at 21:08 on 2026-09-18. Every count in this section moves with
+every test written, and on this branch that has been several times an hour —
+`bun run test` prints the totals, and the split below is `--project=<name>`
+three times.
+
+| Project     | Environment | What it runs                                                                      | Files | Tests |
+| ----------- | ----------- | --------------------------------------------------------------------------------- | ----: | ----: |
+| `domain`    | node        | `src/**/model/**`, `shared/lib/{duration,people}.ts`, and `tests/domain/` Gherkin |    35 |   730 |
+| `ui`        | happy-dom   | components and hooks against a DOM, with GitLab's API mocked by MSW               |    70 |   742 |
+| `functions` | node        | `netlify/**/*.test.mts` — the teams endpoint, its identity verifier, its document |     7 |   102 |
+
+**`functions` is not a third place to put tests; it is the only place the
+endpoint's rules can be proved.** The acceptance suite serves a static `dist/`
+through `vite preview`, which runs no Netlify function, so it route-stubs
+`/.netlify/functions/teams` — and a stub cannot prove a rule it is itself
+implementing. The blob store and the identity verifier are ports, so this project
+injects an in-memory store and a locally minted key pair instead of reaching for
+a platform: `getStore` outside a Netlify environment throws
+`MissingBlobsEnvironmentError` before it hands back anything to test against.
+
+`teams-contract.test.mts` is the odd file in that project and the reason it
+resolves the `@` alias the other two use: it imports the browser's lenient
+decoder and runs it beside the endpoint's strict validator, which is the only
+place the two halves of one stored shape are held against each other. They sit in
+different layers and different runtimes, so nothing else makes them meet.
+
+Above those, `bddgen` expands `features/acceptance/*.feature` into one Playwright
+spec per scenario, and `bun --bun bddgen && playwright test --list` is what
+counts them. At 21:11 on 2026-09-18 that was 103 locally, which is chromium
+alone; CI runs three engines — chromium, webkit and a Pixel 7 viewport — for 309.
 
 ## Two linters, on purpose
 
@@ -39,12 +124,13 @@ ESLint carries the rules that need type information and the ones that need to
 understand React or the test libraries. Biome carries the ARIA rules and the
 unique-id rule, and nothing else.
 
-Replacing ESLint outright was measured against Biome 2.5.10, twice — the first
-attempt was wrong and is worth recording, because the mistake is easy to repeat.
-Running `biome lint --config-path <elsewhere> src` reports nothing from the
-type-aware rules: the project scanner anchors on the directory holding the
-config, so with the config outside the project it has no project to scan and the
-rules silently find nothing. From the repository root they work.
+Replacing ESLint outright was measured on **2026-08-22** against Biome 2.5.10 —
+still the pinned version — twice, and the first attempt was wrong in a way worth
+recording, because the mistake is easy to repeat. Running
+`biome lint --config-path <elsewhere> src` reports nothing from the type-aware
+rules: the project scanner anchors on the directory holding the config, so with
+the config outside the project it has no project to scan and the rules silently
+find nothing. From the repository root they work.
 
 With that corrected, a file written to contain one instance of each rule this
 project relies on gave: ESLint 8 findings, Biome 4.
@@ -69,9 +155,10 @@ keep `model/` pure (`noRestrictedImports`, `noRestrictedGlobals`,
 
 What has no equivalent at all is the part that has been catching defects:
 
-- **`testing-library/*` — nothing.** Biome has no rule from that plugin. A third
-  of the tests here are component tests, and `no-node-access` is what stopped a
-  test from walking the DOM, which is how the ARIA bug below came to light.
+- **`testing-library/*` — nothing.** Biome has no rule from that plugin, and
+  half the tests here run against a DOM — 742 of 1574. `no-node-access` is what
+  stopped a test from walking the DOM, which is how the ARIA bug below came to
+  light.
 - **`react-hooks/set-state-in-effect` — nothing.** Biome ships four rules from
   `eslint-plugin-react-hooks`; that is not one of them. It caught a real bug in
   the OAuth callback.
@@ -80,19 +167,28 @@ What has no equivalent at all is the part that has been catching defects:
 And `noFloatingPromises` sits in the nursery group, which Biome documents as not
 subject to semantic versioning.
 
-The speed argument, measured: ESLint 33 s cold and **3.9 s warm with `--cache`**;
-Biome 2 s with the project scan, 300 ms without. Cold CI runs are 33 s against
-2 s. Thirty seconds of CI is not worth three rules that have each found a real
-defect in this repository.
+The speed argument, **measured on 2026-08-22 and not since**: ESLint 33 s cold
+and **3.9 s warm with `--cache`**; Biome 2 s with the project scan, 300 ms
+without. Cold CI runs were 33 s against 2 s. Both the source and the suite have
+grown a long way since — a cold `bun run lint` over this branch took 51 s, and
+`bun run lint:a11y` 230 ms over 114 files — so treat the 2026-08-22 pair as the
+shape of the trade rather than as current timings. A timing taken on a machine
+that is doing anything else says more about the machine than about either tool,
+which is why these are not refreshed in place. What has not moved is the shape:
+half a minute of CI against three rules that have each found a real defect in
+this repository.
 
 Biome earns its place for what it alone catches. It found an `aria-label` on a
 generic element in four files — prohibited ARIA, so every screen reader ignored
 it — which `jsx-a11y` and the axe assertions both let through. It also found two
 hardcoded `id` attributes behind `aria-labelledby`, which work only while each
-section renders once. Two of its recommended ARIA rules are off, with the reason
-in `biome.json`: `useSemanticElements` asks for a `<fieldset>` wherever it sees
-`role="group"`, and `noLabelWithoutControl` cannot see through the shadcn `Label`
-wrapper.
+section renders once. Two of its recommended ARIA rules are off:
+`useSemanticElements` asks for a `<fieldset>` wherever it sees `role="group"`,
+and `noLabelWithoutControl` cannot see through the shadcn `Label` wrapper.
+`biome.json` is strict JSON and can carry no comment beside either line, so this
+paragraph is the only place those two reasons are written down — which is the
+one exception to the rule in AGENTS.md that an ignore entry is explained where it
+sits.
 
 ## Complexity ceilings
 
@@ -111,39 +207,69 @@ Enforced per function and per file by `config/eslint/limits.js`.
 
 ## What coverage deliberately does not measure
 
-`vitest.config.ts` scopes coverage to authored logic: `entities`, `features`,
-`widgets`, `pages`, `shared/lib`, `shared/i18n` and the components we author in
-`shared/ui`. Excluded, with reasons:
+`vitest.config.ts` scopes coverage to authored logic by naming what is included:
+`entities`, `features`, `widgets`, `pages`, `shared/lib`, `shared/i18n`, the
+components we author in `shared/ui`, and `netlify/**/*.mts`. Everything else is
+out, and what is left out is left out for a reason:
 
-- `src/app/**` — router and provider wiring, exercised end to end by the
-  Playwright acceptance suite instead.
-- `src/shared/ui/{button,card,input,label}.tsx` — generated by the shadcn CLI.
-  We do not author them, so covering them would measure someone else's code.
-  The list is explicit rather than a directory glob, so a component we write in
-  `shared/ui` is still measured; `select-field.tsx` is.
-- `src/paraglide/**` and `src/app/routeTree.gen.ts` — generated output.
+- `src/shared/ui/{button,card,input,label}.tsx` — the only named exclusion,
+  because these four are generated by the shadcn CLI and covering them would
+  measure someone else's code. The list is explicit rather than a directory glob,
+  so a component we write in `shared/ui` is still measured; `select-field.tsx`
+  is.
+- `src/app/**` — router and provider wiring, left out of the include list and
+  exercised end to end by the Playwright acceptance suite instead.
+- `src/paraglide/**` and `src/app/routeTree.gen.ts` — generated output, likewise
+  out by omission.
+
+**The serverless function is measured too**, at the global floor rather than the
+hundred-percent one — the include list names `netlify/**/*.mts`. The rules that
+hold the feature's security are pure decisions over a request and a document,
+and `handle-teams.mts` sits at 98.27% of statements. What surrounds them is I/O
+wiring, which the floor is the right instrument for: a `model/` threshold there
+would be satisfied by tests that assert a platform behaves the way the mock was
+written to.
+
+Two files in it read 0%, and honestly so:
+
+- `netlify/lib/blob-store.mts` is unreachable by any test that does not bring a
+  platform with it. Calling `getStore` outside a Netlify environment throws
+  `MissingBlobsEnvironmentError` — verified by calling it — so the only test that
+  could execute this file is one that stubs `@netlify/blobs`, which would assert
+  that the stub does what the stub was written to do. It is a port implementation
+  and the port is what the handler is tested against.
+- `netlify/functions/teams.mts` is the wiring that hands that port and the
+  identity verifier to `handleTeams`. It reads the environment and constructs the
+  store; running it in a test means the same stub, and the rules it wires up are
+  tested one module down.
+
+Both are covered by the deploy check in `release-checklist.md` instead, which is
+the only place a real store and a real token exist together.
 
 A line that is hard to cover is a design signal. Moving code out of a covered
 path to make a number go up is not an acceptable fix.
 
 ## Coverage is a floor, not a target
 
-The thresholds are 90% overall and 100% on `model/`. Measured coverage sits near
-100% everywhere, and that gap is worth naming: nothing forced it, and chasing it
-is not free.
+The thresholds are 90% overall and 100% on `model/`. Measured coverage sits at
+97.44% of statements and 94.52% of branches, and that gap is worth naming:
+nothing forced it, and chasing it is not free.
 
-100% on `model/` is right. That layer is pure functions with no I/O, it is where
-a wrong hour figure comes from, and mutation testing on the same files shows the
-tests actually assert rather than merely execute. A hard-to-cover line there is a
-design signal, not an excuse.
+100% on `model/` is right. That layer is pure functions with no I/O, and it is
+where a wrong hour figure comes from. A hard-to-cover line there is a design
+signal, not an excuse. What the floor cannot tell you is whether the tests that
+reach those lines assert anything, which is the whole reason mutation testing
+runs over the same files — `entities/teams/model/team.ts` is at 100% of lines
+and 77.78% of mutants, and the gap is entirely in the guards that decide whether
+a stored team is readable.
 
 Outside `model/`, the last few branches are not chased. A branch is worth a test
 when a reader would notice it being wrong — a period with no target, a day split
 across two pages, a refused credential. A branch is not worth a test when the
 only way to reach it is to defeat the type system, and a test written to reach it
-asserts nothing a reader cares about. Two such tests were written during this
-change and removed again: they asserted that a number was printed, in order to
-reach a `??` fallback that the surrounding arithmetic makes unreachable.
+asserts nothing a reader cares about. Two such tests were written during an
+earlier change and removed again: they asserted that a number was printed, in
+order to reach a `??` fallback that the surrounding arithmetic makes unreachable.
 
 **Coverage measures that a line ran, not that it worked.** The clearest proof of
 that in this repository: four screens gave their hour figures an `aria-label` on
@@ -159,31 +285,133 @@ linter — with coverage as the floor that stops whole paths going unexercised.
 
 ## Known measurement caveats
 
-- **Seven surviving mutants are equivalent mutants, not test gaps.** Every one
-  is a type guard TypeScript requires but that carries no behaviour: narrowing
-  `unknown` before a spread in `parseObject` and `dailyTargetFrom`, and
-  `typeof value === 'number'` before `isValidTargetHours`, whose
-  `Number.isFinite` already rejects non-numbers. Removing them to raise the
-  score would mean weakening the types. Do not "fix" them.
-- **Type coverage ignores three files.** TanStack Router's generator emits
-  internal `as any` casts, so the router value reads as `any` to
-  `type-coverage`. Route typing itself is intact and proven by the compiler:
-  `<Link to="/unknown">` is a type error. Every `Link` in the app is a standing
-  check on that, so the ignore entry cannot hide a regression.
-- **Four `as` assertions remain**, each a smart constructor or a boundary the
-  type system cannot see through: branding a validated `IsoDate`, narrowing a
-  native select's value to the union it was rendered from, and two in test
-  support code. They are why type coverage is 99.83% rather than 100%.
+- **The mutation score is 92.99%, and where it is spent matters more than the
+  number.** 970 mutants over 24 files: 900 killed, 66 survived, 2 timed out, 2
+  with no covering test. Those figures are read off
+  `reports/mutation/report.json`, written at 19:31 on 2026-09-18, rather than
+  from a fresh run — Stryker takes tens of minutes, which is why it is on a
+  schedule and not on the blocking path. The report is only worth reading while
+  nothing it measured has moved under it, so the check before quoting it is
+  `find src -newer reports/mutation/report.json -name "*.ts"`. It has to come
+  back with nothing but `src/paraglide/`, which every gate rewrites; a `model/`
+  file in that list means the score above is about code that no longer exists.
+  Nothing else was in it when these figures were taken. Thirty-four of the 66 are
+  in one file,
+  `entities/teams/model/team.ts` at 77.78% — the decoder that reads a stored team
+  back, and the one part of this feature reading data another version of this app
+  wrote. Its guards are what survive. The `null` check —
+  `typeof source !== 'object' || source === null` — survives having its operator
+  flipped, because a member that is literally `null` is the only input that tells
+  the two apart and no test supplies one; and
+  `!nonEmpty(id) || !nonEmpty(name) || !nonEmpty(username) || !USERNAME.test(username)`
+  survives being regrouped, because the tests reject a malformed member without
+  asserting which clause rejected it. The two mutants with no covering test are
+  both in `entities/teams/model/ports.ts`: nothing constructs a `TeamsError`.
+- **Not every survivor is a gap, and the equivalent ones must not be "fixed".**
+  A narrowing guard TypeScript requires but that carries no behaviour produces a
+  mutant nothing can kill. Both are still in the list and both are still
+  equivalent: `typeof parsed === 'object' && parsed !== null` before the spread
+  in `decodePreferences`, whose own comment records that spreading a non-object
+  yields no key and every field falls back anyway, and the same narrowing written
+  as a rejection in `dailyTargetFrom`. Removing either would mean weakening the
+  types. What is not equivalent is an `||` flipped between distinct rejections,
+  or `index < binary.length` becoming `<=` in `id-token.ts` with nothing
+  noticing. The survivors have not been triaged since the team work landed;
+  `reports/mutation/index.html` lists every one with its location.
+- **Type coverage is 99.87%, and the shortfall is listed by name.**
+  `bun run types:coverage` prints every expression it cannot type — 59 of 47 703
+  at this revision — so read its output rather than a count written down here.
+  Twenty of the 59 are in shipped code, 35 in tests and test support, and four in
+  tooling that ships nothing (`.size-limit.js`, `scripts/`, `config/`). Of the
+  twenty, eight are assertions, and they are the ones worth knowing: branding a
+  validated `IsoDate`, narrowing a native select's value to the union it was
+  rendered from, and six widenings of a value proved only to be an object, so
+  that a field can be read off it or it can be spread — the two team decoders,
+  the OAuth pending-authorization guard, the provider-metadata reader in
+  `netlify/lib/identity.mts` twice, and the conflict body in
+  `netlify/lib/handle-teams.mts`. A further three shipped assertions cost
+  nothing and so never appear in that list at all: `as unknown` at a
+  `JSON.parse` or `response.json()` boundary, in `gitlab-oauth.ts`,
+  `id-token.ts` and `shared/api/graphql.ts`, because `unknown` is a real type.
+  The remaining twelve untyped expressions in shipped code are not assertions but
+  values the compiler reads as `any` from somebody else's types — TanStack
+  Table's sort functions in `top-items-table.tsx`, the router in
+  `auth.callback.tsx`, a caught `error`, and four bindings in the team decoder.
+  An older revision of this document put the shipped assertions at four and
+  printed two different percentages in two places; a count like that rots every
+  time a boundary is added, which is why the instruction here is to run the
+  command.
+- **Type coverage ignores four entries.** TanStack Router's generator emits
+  internal `as any` casts, so `routeTree.gen.ts` and the two modules that hold
+  the router value it types — `src/app/router.tsx` and `src/app/main.tsx` — read
+  as `any`. The fourth is `src/paraglide/**`, which is generated output. Route
+  typing itself is intact and proven by the compiler: `<Link to="/unknown">` is a
+  type error. Every `Link` in the app is a standing check on that, so the ignore
+  entries cannot hide a regression.
 - **Coverage runs on istanbul, not v8.** The v8 provider's range-tree merge
   overflows the stack on a suite this size; istanbul instruments the source
   instead and also reports branch coverage more accurately through JSX.
+- **Mutation testing does not reach `shared/lib/people.ts`.** `stryker.config.json`
+  mutates `src/**/model/**/*.ts` plus `shared/lib/duration.ts`, on the argument
+  that `duration.ts` is model code living in `shared` only because two entity
+  slices need it. `people.ts` is there for exactly that argument — it is named
+  in `vitest.config.ts` beside `duration.ts` and held to the same 100% coverage
+  floor — and it is not in the mutate list. Deterministic row order is a spec
+  requirement, and coverage alone is the weaker of the two instruments we have
+  for it.
+- **The acceptance suite cannot reach the teams endpoint.** It serves a static
+  `dist/` through `vite preview`, and a static server runs no Netlify function,
+  so the suite route-stubs `/.netlify/functions/teams`. Every credential rule the
+  endpoint holds — that the storage key is derived from the verified subject and
+  from nothing the request carried, that nothing touches the store before the
+  token is checked, that a write with no precondition is refused 428 — is proved
+  by the `functions` project alone. The one property no suite here can observe is
+  the deployed one: that a second real reader cannot read the first's teams
+  through the real function. No browser can mint an assertion for somebody else,
+  so it takes two real GitLab accounts against the deployed site. It belongs to
+  `release-checklist.md`, and it is unticked.
+- **One acceptance scenario fails at this revision, and it is a claim about the
+  code rather than about the run.** "Withheld hours are added into the figures
+  rather than left out" expects Ana Carolina's row to total 9 hours for
+  2026-05; the cell reads `6.5h6.5 hours+2.5 h hidden`, which is the screen
+  saying the provider counted 2.5 hours it would not show and declining to say
+  which day they belong to. The arithmetic is right either way — 6.5 and 2.5 are
+  the two halves of the 9 — so what the scenario is holding is that the
+  per-column probe in `model/withheld.ts` places the withheld hour and the row is
+  rebuilt around it, which is the behaviour AGENTS.md § Decisions describes and
+  which this stub does not currently produce. The scenario was added on this
+  branch and has not passed yet; it is not a flake, and it survives being re-run
+  on its own at one worker.
+- **Three more scenarios failed the same run and were flakes.** "Insights shows
+  the month…", "A failure is explained and can be retried" and "Switching
+  language changes the whole screen" all timed out waiting on an element, all
+  three at four workers on a machine that was also building, and all three passed
+  when re-run serially. Locally `retries` is 0, so a flake is a red run rather
+  than a marked one; CI retries once. The lesson is the one already recorded
+  below about worker count — a red local run deserves a serial re-run before it
+  deserves a bug report.
+- **An interrupted Stryker run breaks `bun run lint:a11y` until it is cleaned
+  up.** Stryker copies the whole project into `.stryker-tmp/sandbox-*`, `biome.json`
+  with it, and Biome 2 refuses to start when it discovers a second root
+  configuration anywhere beneath the first — so the ARIA gate exits 1 with
+  "Found a nested root configuration" and audits nothing. `cleanTempDir` removes
+  the sandboxes at the end of a run that finishes; one that is cancelled leaves
+  them, and they are gitignored, so `git status` will not mention them either.
+  `rm -rf .stryker-tmp` is the fix. The 114-file figure in the table above was
+  taken with those leftovers moved aside.
 - **No Lighthouse CI.** `@lhci/cli` carries a high-severity advisory with no
   fixed upstream version, which the zero-vulnerability policy forbids.
   Performance is guarded by the `size-limit` budget and by the layout-shift
-  assertion in the acceptance suite. Paint timing is not asserted: the suite runs
-  against the dev server, where a paint time measures the dev server.
-- **Two tools run on Node, not Bun.** Stryker (its plugin loader cannot resolve
-  plugins under Bun) and the Playwright run. Both are marked in `package.json`.
+  assertion in the acceptance suite. Paint timing is not asserted: a paint time
+  measured against `vite preview` on localhost measures localhost.
+- **Three things run on Node, not Bun.** Stryker, whose plugin loader cannot
+  resolve its own TestRunner plugins under Bun; the Playwright run itself; and
+  the acceptance suite's preview server, which under `bun --bun` dies with
+  `ERR_STREAM_WRITE_AFTER_END` when a browser closes a page mid-response and
+  takes every scenario after that point with it. The first two are marked in
+  `package.json`, the third in `playwright.config.ts`, and all three are listed
+  in AGENTS.md § Runtime. This bullet said "two" until 2026-09-18; the third has
+  been there since 2026-08-31.
 - **CI installs with `--ignore-scripts`.** The `prepare` script installs git
   hooks, which a runner has no use for and which fail outright in the `oven/bun`
   image, since it ships no git. The first pipeline died there.
@@ -199,9 +427,14 @@ linter — with coverage as the floor that stops whole paths going unexercised.
   the e2e job sets a placeholder client id — the OAuth flow is stubbed, and what
   the suite needs is a configured app rather than a real application.
 
-The first green pipeline ran in **6.9 minutes**: verify 87s, test 66s, e2e 273s,
-build 51s. Comfortably inside the 400 compute minutes a month the Free plan
-allows, with mutation testing kept off the blocking path.
+The first green pipeline, **on 2026-08-22**, ran in **6.9 minutes**: verify 87s,
+test 66s, e2e 273s, build 51s. That is a record of one run on that date and has
+not been re-measured — read it as the order of magnitude, not as what the
+pipeline costs today. The suite has grown a long way since: the same paragraph
+once said 153 acceptance scenarios across three engines, where `bddgen` now
+expands more than three hundred. Mutation testing is kept off the blocking path,
+which is what left
+room inside the 400 compute minutes a month the Free plan allows.
 
 - **The acceptance suite runs against the built bundle, not the dev server.**
   It used to share one Vite instance across every browser, which transformed
@@ -209,26 +442,29 @@ allows, with mutation testing kept off the blocking path.
   default worker count put more concurrent page loads on that one server than it
   could serve inside a five-second expectation, and 25 scenarios failed for that
   reason alone, every one of them WebKit. Serving `dist/` costs one build per run
-  and pays for it several times over. Measured on one machine, all three engines:
-  358s against the dev server at two workers, 128s against the build at eight.
-  The ceiling rose rather than vanished — at eight workers the WebKit keyboard
-  walk failed once — so the worker count is Playwright's default locally and two
-  in CI, where the runner has two cores.
-- **A local run is chromium only; the matrix is CI's job.** 153 scenarios in
-  three engines is what a merge deserves, not what a change in front of you
-  deserves. `--project=webkit` when you want it.
-- **The initial-bundle figure was wrong until this revision, and too low.** The
+  and pays for it several times over. **Measured on 2026-08-24**, on one machine
+  and all three engines: 358s against the dev server at two workers, 128s against
+  the build at eight. The ceiling rose rather than vanished — at eight workers the
+  WebKit keyboard walk failed once — so the worker count is Playwright's default
+  locally and two in CI, where the runner has two cores. The ceiling is still
+  there: the local chromium run behind this revision took 2.4 minutes at four
+  workers and lost three scenarios to it.
+- **A local run is chromium only; the matrix is CI's job.** A hundred-odd
+  scenarios in each of three engines is what a merge deserves, not what a change
+  in front of you deserves. `--project=webkit` when you want it.
+- **The initial-bundle figure was wrong until it was rewritten, and too low.** The
   budget globbed `dist/assets/index-*.js` plus the stylesheet — 2 of the 10 files
   `dist/index.html` actually requests. It never saw the eight `modulepreload`
   siblings the bundler emits beside the entry, so when a shared module moved out
   of the entry into one of them the recorded size fell by 27 kB while the real
   initial load did not move. `.size-limit.js` now reads the document and measures
-  everything it references. The true figure was 148.5 kB, not the 114.8 kB this
-  table used to claim and not the 87.6 kB the old glob reported after the palette
-  landed. Moving the signed-in header out of the root layout and into the
-  `_authenticated` layout then took it to 133.2 kB for real: the navigation, the
-  colour-scheme control and their icons are now in a route chunk a signed-out
-  reader never loads.
+  everything it references — 19 files today, 17 of them `modulepreload`. The true
+  figure was 148.5 kB, not the 114.8 kB the table then claimed and not the 87.6 kB
+  the old glob reported after the palette landed. Moving the signed-in header out
+  of the root layout and into the `_authenticated` layout took it to 133.2 kB for
+  real: the navigation, the colour-scheme control and their icons are in a route
+  chunk a signed-out reader never loads. It reads 174.55 kB today, inside the
+  180 kB budget, and the teams screen is what moved it.
 - **The acceptance fixture counts days in the reader's zone, not in UTC.** It used
   to place each entry at midday UTC on a day counted from UTC's today, and the
   whole suite failed every evening after 21:00 in Brazil: UTC had already rolled
@@ -244,25 +480,29 @@ hours` found yesterday's three. Four scenarios, three browsers, twelve failures,
   assertion that has not been run yet.
 - **`i18n:compile` only compiles when the catalogues have changed.** Six scripts
   depend on it through `prelint`, `pretypecheck`, `pretest`, `pretest:coverage`,
-  `pretest:e2e` and `prebuild`, and each one used to rewrite all 184 generated
-  files to produce identical output — which cost 3.5 seconds and, worse, made
-  every gate that reads `src/paraglide/` unsafe to run beside one that writes it.
-  The compile is now guarded by a fingerprint over the catalogues, the project
-  settings, the compiler options and the compiler's version, and it refuses to
-  trust that fingerprint when the output is missing. Output is byte-identical to
-  the command line's across all 184 files — verified by hashing both. Measured
-  back to back on the three gates that carry the hook, steady state: 38s without
-  the guard, 28s with it.
-- **Running the gates in parallel was measured twice and rejected twice.** Before
-  the guard it took 344s against 53s in series, because the gates were racing
-  over generated sources. After the guard removed the race it took 33s against
-  29s — no advantage, because six of the gates build a TypeScript program of
-  their own and contend for the machine. The end-to-end `verify` figure moves
-  more with cache state than with anything either attempt changed, which is the
-  honest reason there is no parallel runner in this repository.
-- **The `pre-push` group is the exception, measured a third time and kept.** Five
-  interleaved runs each, steady state: 43s in series, 22s with the five gates in
-  a parallel group behind one serial `i18n:compile`. What changed is not the
+  `pretest:e2e` and `prebuild`, and each one used to rewrite every generated file
+  to produce identical output — 184 files when the guard landed **on 2026-08-24**,
+  353 under `src/paraglide/` today, which is two per message plus the runtime —
+  which cost 3.5 seconds and, worse, made every gate that reads
+  `src/paraglide/` unsafe to run beside one that writes it. The compile is now
+  guarded by a fingerprint over the catalogues, the project settings, the
+  compiler options and the compiler's version, and it refuses to trust that
+  fingerprint when the output is missing. Output was verified byte-identical to
+  the command line's across all 184 files by hashing both, when the guard landed.
+  Measured back to back on the three gates that carry the hook, steady state on
+  that date: 38s without the guard, 28s with it.
+- **Running the gates in parallel was measured twice and rejected twice, both
+  on 2026-08-24.** Before the guard it took 344s against 53s in series, because
+  the gates were racing over generated sources. After the guard removed the race
+  it took 33s against 29s — no advantage, because six of the gates build a
+  TypeScript program of their own and contend for the machine. The end-to-end
+  `verify` figure moves more with cache state than with anything either attempt
+  changed, which is the honest reason there is no parallel runner in this
+  repository.
+- **The `pre-push` group is the exception, measured a third time on 2026-08-25
+  and kept.** Five interleaved runs each, steady state: 43s in series, 22s with
+  the five gates in a parallel group behind one serial `i18n:compile`. What
+  changed is not the
   conclusion above but the machine it was drawn on — a Windows working copy whose
   gates spend their time waiting on file reads rather than saturating cores, so
   there is idle time for parallelism to recover. The compile stays serial and
@@ -273,17 +513,21 @@ hours` found yesterday's three. Four scenarios, three browsers, twelve failures,
 - **The component project shares one environment per worker (`isolate: false`).**
   Most of what the suite cost was never the assertions: importing the module
   graph and building a DOM 62 times over. Sharing them took `bun run test` from
-  28 seconds to 12 and `test:coverage` from 60 to 39, with the same 742 tests and
-  the same coverage. The three ways state could cross a file boundary were probed
-  rather than assumed — a deliberately leaked spy, a storage key, a switched
-  language and a `globalThis` value, all in a two-file experiment forced into one
-  worker. Spies do not survive a file (Vitest restores them), storage does not
-  (the `afterEach` in `tests/setup/ui.ts` clears it, which is also what stops
-  Paraglide's cached locale from carrying), and module scope does. That last one
-  is survivable structurally rather than by luck: the tested slices hold no
-  mutable module state, and the singletons that would be dangerous live in
-  `src/app/`, which has no tests and which no tested slice may import — the FSD
-  boundary rule forbids importing the top layer. Reverting is one line in
-  `vitest.config.ts`, and the reasoning is written beside it.
+  28 seconds to 12 and `test:coverage` from 60 to 39 — **measured on 2026-08-24**,
+  when the change landed and the component project held 62 files. Not re-measured
+  since, and the comparison cannot be re-run without reverting the line; what can
+  be said is that the project is 70 files today and both commands still finish
+  inside a minute, at 56s and 43s. The three ways
+  state could cross a file boundary were probed rather than assumed — a
+  deliberately leaked spy, a storage key, a switched language and a `globalThis`
+  value, all in a two-file experiment forced into one worker. Spies do not
+  survive a file (Vitest restores them), storage does not (the `afterEach` in
+  `tests/setup/ui.ts` clears it, which is also what stops Paraglide's cached
+  locale from carrying), and module scope does. That last one is survivable
+  structurally rather than by luck: the tested slices hold no mutable module
+  state, and the singletons that would be dangerous live in `src/app/`, which has
+  no tests and which no tested slice may import — the FSD boundary rule forbids
+  importing the top layer. Reverting is one line in `vitest.config.ts`, and the
+  reasoning is written beside it.
 - **`happy-dom`, not jsdom.** It has been the component project's environment
   since the rebuild; a note elsewhere once said otherwise.

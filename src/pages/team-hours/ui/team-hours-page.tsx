@@ -118,6 +118,11 @@ export function TeamHoursPage({ onChange, search }: TeamHoursPageProps) {
         </Link>
       </div>
 
+      {/* Above the body rather than instead of it: the figures below are the
+          reader's whole reach, which is a real report, and the notice says only
+          that the narrowing their link asked for was dropped. */}
+      {report.scope === 'unreadable' ? <Note>{m.team_unreadable_group()}</Note> : null}
+
       {BODY[state.kind]({ report, search, teamName: teamOf(choice)?.name ?? '' })}
     </main>
   )
@@ -127,10 +132,10 @@ const BODY: Record<ScreenState['kind'], (props: BodyProps) => ReactNode> = {
   'empty-team': () => <Note>{m.team_empty_team()}</Note>,
   loading: () => <Skeleton className="h-96 w-full" />,
   'no-teams': () => <Note>{m.team_none_yet()}</Note>,
+  reconnect: () => <Note>{m.team_reconnect()}</Note>,
   report: (props) => <Report {...props} />,
   'teams-unavailable': () => <Note>{m.team_store_unavailable()}</Note>,
   'unknown-team': () => <Note>{m.team_unknown_team()}</Note>,
-  'unreadable-group': () => <Note>{m.team_unreadable_group()}</Note>,
 }
 
 /**
@@ -146,6 +151,20 @@ function filterRef(scope: TeamHoursReport['scope'], fullPath: string): GroupRef 
   }
 
   return scope === 'unreadable' || scope === null ? { fullPath, id: '', name: fullPath } : scope
+}
+
+/**
+ * What the figures cover, in two states rather than one with a blank in it.
+ *
+ * Unnarrowed, every hour the provider will show this reader is in the answer,
+ * personal projects included — the strongest claim this screen has ever made.
+ * Narrowed, it covers one group and its descendants and nothing else. Two
+ * sentences rather than one with a parameter, because an empty parameter renders
+ * as a sentence with a hole in it.
+ */
+/** A group that resolved is the only narrowing there is. */
+function narrowed(scope: TeamHoursReport['scope']): boolean {
+  return scope !== null && scope !== 'unreadable'
 }
 
 function Note({ children }: { readonly children: ReactNode }) {
@@ -170,20 +189,11 @@ function Report({ report, search, teamName }: BodyProps) {
         teamName={teamName}
         today={report.today}
       />
-      <MatrixLegend reference={REFERENCE_DAY} shows={shows} />
+      <MatrixLegend reference={REFERENCE_DAY} scoped={narrowed(report.scope)} shows={shows} />
     </>
   )
 }
 
-/**
- * What the figures cover, in two states rather than one with a blank in it.
- *
- * Unnarrowed, every hour the provider will show this reader is in the answer,
- * personal projects included — the strongest claim this screen has ever made.
- * Narrowed, it covers one group and its descendants and nothing else. Two
- * sentences rather than one with a parameter, because an empty parameter renders
- * as a sentence with a hole in it.
- */
 function scopeSentence(scope: TeamHoursReport['scope']): string {
   if (scope === null || scope === 'unreadable') {
     return m.team_scope_everywhere()
