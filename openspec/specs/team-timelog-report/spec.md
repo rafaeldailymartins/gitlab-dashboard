@@ -1,4 +1,29 @@
-## MODIFIED Requirements
+# team-timelog-report Specification
+
+## Purpose
+
+Reading the hours logged by a team the reader keeps — a list of people they
+chose, rather than a namespace somebody else administers — over one calendar
+month, arranged per person and per day in the reader's own time zone. The rows
+are that list exactly, so a row with nothing in it is the answer the reader came
+for rather than an oversight to be tidied away.
+
+How far the figures reach is theirs to narrow. Left alone they cover everywhere
+the provider counts, personal projects included, which is what lets a cell say
+that somebody logged nothing at all; narrowed to a group they cover that group
+and its descendants, and the strongest thing a cell may then say is that the
+group holds no hours for that day. The screen states which of the two it is,
+where the figures are read.
+
+Every figure carries how much of the truth the provider was willing to show the
+reader, because a number beside a colleague's name is one somebody makes a
+decision about. Entries the reader may not read are removed without an error and
+without a gap, and still counted, so the difference between what was counted and
+what arrived is the only instrument there is for saying that a month is short —
+and, where the provider will answer one column at a time, which day it is short
+on.
+
+## Requirements
 
 ### Requirement: GROUP-1 — The report covers a team the reader defined, and says how far its figures reach
 
@@ -16,6 +41,13 @@ nothing else. The screen SHALL name the group where the figures are read,
 because a scoped figure and an unscoped one are drawn identically and differ only
 in what they mean.
 
+A group the provider will not resolve for the reader SHALL cost the report its
+scope and not its figures: the figures SHALL fall back to the team's whole reach,
+and the screen SHALL say that the scope was dropped. The answer this replaces was
+a refusal with nothing on screen, which drew an unreadable scope exactly as it
+would have drawn a readable group holding no hours — and those are different
+facts, only one of which is about anybody's month.
+
 In either state a figure MAY include hours logged on work this account cannot
 open, counted from what the provider declares about the person rather than read
 from any entry. The screen SHALL say so. The reach is no longer narrower than
@@ -32,6 +64,14 @@ presented as a team with no hours and never as an empty roster.
 - **THEN** the screen says so
 - **AND** no hours, no people and no totals are shown
 
+#### Scenario: A group the reader may not read
+
+- **WHEN** a reader opens a report scoped to a group the provider will not
+  resolve for them
+- **THEN** the figures are shown at the team's whole reach instead, and the
+  screen says the scope was dropped
+- **AND** the report is not refused, and no row is drawn as a month nobody worked
+
 #### Scenario: The reach is stated, with no group chosen
 
 - **WHEN** a report is shown for a team and no group is chosen
@@ -43,6 +83,39 @@ presented as a team with no hours and never as an empty roster.
 - **WHEN** a report is shown for a team scoped to a group
 - **THEN** the screen names that group where the figures are read
 - **AND** states that the figures cover that group and its subgroups only
+
+### Requirement: GROUP-2 — A month is a month in the reader's time zone
+
+The period SHALL be one calendar month bounded by the configured time zone, and
+every entry SHALL be placed on the calendar day it falls on in that zone.
+
+The provider filters by an instant range whose interpretation this app does not
+control. The range asked for SHALL therefore be a superset of the reader's month
+under every interpretation the provider could apply — exact instants, or a range
+widened to whole calendar days in any offset — and the month SHALL then be cut
+from the answer locally, in the reader's zone. A period asked of the provider and
+trusted verbatim would disagree with the days on screen by the hours logged on
+the boundary days.
+
+#### Scenario: An entry near the start of the month
+
+- **WHEN** an entry is logged at an instant that falls on the first day of the
+  month in the configured time zone but on the last day of the previous month in
+  UTC
+- **THEN** it appears in the first day's column
+
+#### Scenario: An entry just outside the month
+
+- **WHEN** an entry is logged at an instant that falls on the last day of the
+  previous month in the configured time zone
+- **THEN** it appears nowhere in the report, in no cell and in no total
+
+#### Scenario: Changing the time zone regroups the report
+
+- **WHEN** the configured time zone changes to one whose offset moves an entry to
+  another calendar day
+- **THEN** that entry appears in the other day's column, without asking the
+  provider again
 
 ### Requirement: GROUP-3 — Rows are the team, exactly
 
@@ -77,11 +150,86 @@ is rendered on.
 - **WHEN** no entry has arrived yet for a person on the team
 - **AND** their month has not been read in full
 - **THEN** their row's cells are reserved space rather than figures
+- **AND** nothing on the screen says they logged nothing
+
+#### Scenario: A member whose hours were all withheld
+
+- **WHEN** the provider counted hours for a person and handed none of them over
+- **THEN** they have a row, which says the hours could not be read
+- **AND** the row is not drawn as a month they did not work
 
 #### Scenario: Somebody who is not on the team
 
 - **WHEN** a person logged time on the same work and is not on the team
 - **THEN** they have no row, and no total counts their hours
+
+#### Scenario: A bot the reader put on the team
+
+- **WHEN** the reader has put a bot on the team by name
+- **THEN** it has a row like anybody else
+- **AND** it is still left out of the suggestions, which nobody manages a
+  timesheet for
+
+### Requirement: GROUP-21 — A stored member the provider no longer recognises
+
+A person on a team SHALL be drawn from what the reader last saw of them, so a
+stored roster is never a blank screen.
+
+A member SHALL be **asked about** by the stored user identifier, never by the
+username. A username can be given up and taken by somebody else, and a roster
+addressed by one could come to point at a stranger with nothing on screen to say
+so. Asking by the identifier does not detect that case — it makes it
+unexpressible, which is the stronger guarantee and the one this requires: the
+provider resolves the node for the identifier it was given, or it resolves
+nothing.
+
+Where the provider will not resolve a stored member — the account is gone, or is
+beyond this reader — the row SHALL say so, under the name the reader last saw.
+It SHALL NOT be read as a person who logged nothing, and SHALL NOT contribute a
+figure to any total: an absent answer is not an answer of zero, and every cell of
+such a row SHALL say that nothing is known rather than that nothing was logged.
+
+Where the provider resolves the stored identifier to a different username, the
+row SHALL show what the provider now says. A rename is the reader's colleague
+changing their handle, not an error, and nothing SHALL be said about it.
+
+#### Scenario: A member the provider will not resolve
+
+- **WHEN** the provider resolves nobody for a person on the team
+- **THEN** their row is drawn under the name the reader last saw, and says the
+  provider did not recognise them
+- **AND** every cell of that row says nothing is known, not that nothing was
+  logged
+- **AND** no total counts a figure for them
+
+#### Scenario: A member who changed their username
+
+- **WHEN** the provider resolves a stored member's identifier to a different
+  username
+- **THEN** the row shows the new username, and draws their hours as usual
+- **AND** nothing on the screen remarks on the change
+
+### Requirement: GROUP-4 — A cell is one person on one calendar day
+
+A cell SHALL hold the time that one person logged on one calendar day, summed in
+seconds from every entry that falls there and converted to hours once.
+
+A correcting entry SHALL be honoured rather than discarded: the provider records
+a correction as a negative duration, and a day that holds an entry and its
+correction is a day with entries and a total of nothing — which is not the same
+fact as a day with no entries.
+
+#### Scenario: Two entries on the same day
+
+- **WHEN** a person logs time twice on the same calendar day
+- **THEN** the cell for that person and that day shows the sum of both
+
+#### Scenario: A day whose entries cancel out
+
+- **WHEN** a person logs time and then logs a correction of the same size on the
+  same calendar day
+- **THEN** the cell shows no hours and is still counted as a day with entries,
+  distinct from a day with none
 
 ### Requirement: GROUP-5 — A cell says which kind of nothing it is
 
@@ -160,6 +308,21 @@ chosen.
 
 - **WHEN** a day in the reported month is later than today
 - **THEN** the cell is not marked as a day the person failed to log
+
+### Requirement: GROUP-6 — Every total agrees with the cells it is made of
+
+A row total, a column total and the grand total SHALL each be accumulated in
+seconds from the entries themselves and converted to hours once, never summed
+from figures already rounded for display.
+
+The grand total SHALL equal the sum of the row totals and the sum of the column
+totals, exactly.
+
+#### Scenario: The three ways of adding up agree
+
+- **WHEN** the grand total is compared with the sum of the row totals and with
+  the sum of the column totals, in seconds
+- **THEN** all three are equal
 
 ### Requirement: GROUP-7 — A figure beside a person's name is never a floor presented as an answer
 
@@ -358,6 +521,58 @@ not the whole shortfall.
 - **WHEN** every row was shown as many entries as the provider counted
 - **THEN** no column is asked about, and no extra request is made
 
+### Requirement: GROUP-10 — A caveat is said beside the figure it is about
+
+What a figure could not include SHALL be said on the row or in the cell it
+qualifies, and SHALL NOT be said in the control that reports when the hours
+arrived. That control owns the screen's one status region and answers three
+questions — when the hours came, whether they are coming now, whether asking
+failed. A sentence about somebody's month appended to it is read as part of the
+sync state, is announced on every refresh, and is nowhere near the number it is
+about.
+
+The report SHALL NOT explain the reader's own level of access to them. It is not
+something the screen measured, it is the same on every visit, and it is not what
+somebody opened a month of hours to find out.
+
+#### Scenario: Hours are missing from a person's month
+
+- **WHEN** the provider counted hours for a person that it did not hand over
+- **THEN** the shortfall is stated on that person's row
+- **AND** the sync control says only when the hours arrived
+
+### Requirement: GROUP-11 — Hours are measured against a reference the screen states
+
+A cell's hours SHALL be presented against a reference schedule, and the screen
+SHALL state what that reference is. The app has no knowledge of any person's
+working arrangement, so an unstated reference would make the report assert
+something about a colleague's contract that it cannot know.
+
+The comparison SHALL be carried by the length of a mark against a visible
+reference point, and SHALL NOT depend on hue. Hours above the reference SHALL be
+distinguishable from hours that exactly meet it.
+
+#### Scenario: The reference is stated
+
+- **WHEN** a report is shown
+- **THEN** the screen states the reference the marks are measured against
+
+The key SHALL list only the marks the table in front of the reader actually
+uses. A key for something that is nowhere on screen sends them looking for it,
+and finding nothing is indistinguishable from having missed it. The reference
+itself is always listed, because it explains every figure there is.
+
+#### Scenario: A day above the reference
+
+- **WHEN** a person logs more hours on a day than the reference expects
+- **THEN** the mark for that day is distinguishable from a day that exactly meets
+  the reference, without relying on colour
+
+#### Scenario: A report that uses none of a mark
+
+- **WHEN** no cell in the table carries a given mark
+- **THEN** the key does not explain it
+
 ### Requirement: GROUP-20 — The team is remembered between visits
 
 The team the reader chose SHALL be remembered, so that opening the report again
@@ -397,6 +612,41 @@ understates a colleague's month.
 - **WHEN** the reader scopes a report to a group
 - **AND** later opens the report with no group in the address
 - **THEN** the report is unscoped
+
+### Requirement: GROUP-12 — The columns are days or whole weeks, at the reader's choice
+
+The reader SHALL be able to switch the column axis between the days of the month
+and its ISO weeks, and the choice SHALL travel in the report's address.
+
+A week column SHALL show the hours logged in that week and how many of the week's
+expected days were logged, so the weekly reading does not hide a week's worth of
+hours logged on a single day.
+
+#### Scenario: Switching to weeks
+
+- **WHEN** the reader switches the columns to weeks
+- **THEN** each column is one ISO week of the month and shows that week's hours
+  and how many of its expected days were logged
+
+#### Scenario: The choice is in the address
+
+- **WHEN** the reader switches the columns and reloads the address they are on
+- **THEN** the same column axis is shown
+
+### Requirement: GROUP-13 — Days are grouped into ISO weeks
+
+Day columns SHALL be grouped into bands, one per ISO week, each labelled with its
+week number and the days of the month it spans.
+
+A band SHALL be labelled with the ISO week-numbering year rather than the
+calendar year, because the first days of January can belong to the last week of
+the previous year.
+
+#### Scenario: A month that starts mid-week
+
+- **WHEN** the first day of the reported month is not a Monday
+- **THEN** the first band spans only the days of that week that fall in the month
+- **AND** it is labelled with the ISO week those days belong to
 
 ### Requirement: GROUP-14 — The report is addressable
 
@@ -535,6 +785,44 @@ rather than presenting a partial list as a census.
 - **WHEN** a person stops logging time in the group a team was seeded from
 - **THEN** they are still on the team, and still have a row
 
+### Requirement: GROUP-16 — Rows can be ordered by person or by hours
+
+The reader SHALL be able to order rows by person and by total hours, and the
+current ordering SHALL be reported to assistive technology.
+
+Ordering SHALL be available on those two columns only. A sortable heading is a
+place the keyboard stops, and a month of sortable day columns would put the
+report's own contents dozens of stops away.
+
+#### Scenario: Ordering by hours
+
+- **WHEN** the reader orders the rows by total hours
+- **THEN** the rows are ordered by their totals and the heading reports the
+  ordering
+
+### Requirement: GROUP-17 — Every cell is reachable and understandable through its headings
+
+The report SHALL be built as a table whose cells are associated with a heading
+naming the person and a heading naming the day, so assistive technology announces
+both when moving between cells without the cell repeating either of them.
+
+No data cell SHALL be a keyboard stop. A month of cells for a whole team is
+hundreds of cells, and making each one a stop would put the rest of the screen out
+of practical reach.
+
+#### Scenario: Reading a cell with assistive technology
+
+- **WHEN** assistive technology moves across a row of the report
+- **THEN** each cell is announced with the day it belongs to and the hours it
+  holds, without repeating the person's name
+
+#### Scenario: Moving through the screen by keyboard
+
+- **WHEN** the reader moves through the screen using only the keyboard
+- **THEN** the controls, the region holding the table, the orderable headings and
+  each person's name are reachable
+- **AND** no individual cell is a stop
+
 ### Requirement: GROUP-18 — Another person's hours are not left on the device, and their names are not left anywhere careless
 
 The report SHALL NOT be written to the device's storage. The hours it holds
@@ -563,44 +851,3 @@ anyway.
 
 - **WHEN** a reader signs out
 - **THEN** no team, no roster and no figure is left on the device
-
-## ADDED Requirements
-
-### Requirement: GROUP-21 — A stored member the provider no longer recognises
-
-A person on a team SHALL be drawn from what the reader last saw of them, so a
-stored roster is never a blank screen.
-
-A member SHALL be **asked about** by the stored user identifier, never by the
-username. A username can be given up and taken by somebody else, and a roster
-addressed by one could come to point at a stranger with nothing on screen to say
-so. Asking by the identifier does not detect that case — it makes it
-unexpressible, which is the stronger guarantee and the one this requires: the
-provider resolves the node for the identifier it was given, or it resolves
-nothing.
-
-Where the provider will not resolve a stored member — the account is gone, or is
-beyond this reader — the row SHALL say so, under the name the reader last saw.
-It SHALL NOT be read as a person who logged nothing, and SHALL NOT contribute a
-figure to any total: an absent answer is not an answer of zero, and every cell of
-such a row SHALL say that nothing is known rather than that nothing was logged.
-
-Where the provider resolves the stored identifier to a different username, the
-row SHALL show what the provider now says. A rename is the reader's colleague
-changing their handle, not an error, and nothing SHALL be said about it.
-
-#### Scenario: A member the provider will not resolve
-
-- **WHEN** the provider resolves nobody for a person on the team
-- **THEN** their row is drawn under the name the reader last saw, and says the
-  provider did not recognise them
-- **AND** every cell of that row says nothing is known, not that nothing was
-  logged
-- **AND** no total counts a figure for them
-
-#### Scenario: A member who changed their username
-
-- **WHEN** the provider resolves a stored member's identifier to a different
-  username
-- **THEN** the row shows the new username, and draws their hours as usual
-- **AND** nothing on the screen remarks on the change

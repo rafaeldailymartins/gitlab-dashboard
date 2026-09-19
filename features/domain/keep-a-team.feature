@@ -100,14 +100,14 @@ Feature: A team as a list the reader keeps
     When the teams are read back
     Then the team lists "Ana"
 
-  # Spec: group-timelog-report / GROUP-21
+  # Spec: team-timelog-report / GROUP-21
   Scenario: A member the provider resolved under another handle is still that member
     Given a team named "Squad Fiscal"
     And the reader adds "Ana"
     When the provider resolves "Ana" under the handle they changed to
     Then "Ana" is confirmed, under the handle the provider now gives
 
-  # Spec: group-timelog-report / GROUP-21
+  # Spec: team-timelog-report / GROUP-21
   Scenario: Members are matched by identifier, so a shorter answer misplaces nobody
     Given a team named "Squad Fiscal"
     And the reader adds "Ana"
@@ -116,26 +116,26 @@ Feature: A team as a list the reader keeps
     Then "Ana" is unresolved
     And "Bruno" is confirmed
 
-  # Spec: group-timelog-report / GROUP-15
+  # Spec: team-timelog-report / GROUP-15
   Scenario: Somebody who logged under two handles is offered once
     Given the people who logged time in the group are "Ana"
     And "Ana" logged there again under the handle they changed to
     Then one person is offered
     And the suggestions offer "Ana"
 
-  # Spec: group-timelog-report / GROUP-15
+  # Spec: team-timelog-report / GROUP-15
   Scenario: A bot that logged time is not offered
     Given the people who logged time in the group are "Ana"
     And a bot logged time there too
     Then the suggestions offer "Ana"
 
-  # Spec: group-timelog-report / GROUP-15
+  # Spec: team-timelog-report / GROUP-15
   Scenario: Somebody whose account is no longer active is offered all the same
     Given the people who logged time in the group are "Ana"
     And "Diego" logged there before their account stopped being active
     Then the suggestions offer "Ana and Diego"
 
-  # Spec: group-timelog-report / GROUP-15
+  # Spec: team-timelog-report / GROUP-15
   Scenario: The suggestions are offered in one order, whatever the reader's locale
     Given the people who logged time in the group are "Camila, Ana and Bruno"
     Then the suggestions offer "Ana, Bruno and Camila"

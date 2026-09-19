@@ -324,9 +324,20 @@ and one more request in a flow whose whole job is to get out of the way.
 
 ### The identity assertion is minted, not held
 
-GitLab's `id_token` lives 120 seconds (`Settings.oidc_provider['openid_id_token_expire_in_seconds'] = 120`,
-alterable only by an instance administrator), while the access token lives two
+GitLab's `id_token` lives **120 seconds**, while the access token lives two
 hours. So it cannot be obtained at sign-in and kept.
+
+Measured, not assumed. An assertion issued by gitlab.com on 2026-09-19 carried
+`iat 1789778847` and `exp 1789778967` — 120 seconds exactly, matching
+`Settings.oidc_provider['openid_id_token_expire_in_seconds']`, which only an
+instance administrator can alter. That is what justifies `MAX_AGE_SECONDS = 150`
+in `netlify/lib/identity.mts`: the lifetime plus the thirty seconds of clock
+tolerance the verifier already allows, and no more.
+
+The same token settled the claim underneath this one. Its `auth_time` was **289
+seconds before its `iat`**, so it was minted on a refresh grant rather than at
+sign-in — which until then was read out of doorkeeper's source rather than
+observed.
 
 It does not have to be. `doorkeeper-openid_connect@1.9.0` — the version GitLab's
 `Gemfile.lock` pins — merges an `id_token` into every token response whose token
@@ -387,8 +398,14 @@ because there is nothing in the path to log.
 
 GitLab's `openid` scope puts a `groups_direct` claim — every group the reader
 directly belongs to, as full paths — into the assertion, so it is more sensitive
-than its subject alone and can be several kilobytes. The verifier's return type
-is the subject and nothing else, and `no-console` is an ESLint error with no file
+than its subject alone and can be several kilobytes.
+
+A real assertion from gitlab.com turned out to be wider than that. Beside
+`groups_direct` it carried `name`, `nickname`, `preferred_username`,
+`given_name`, `family_name`, `profile`, `picture`, `sub_legacy` and `auth_time`
+— a small identity document rather than a subject and a list of paths, and one
+that names the reader to anybody holding it. The verifier's return type is the
+subject and nothing else, and `no-console` is an ESLint error with no file
 restriction, so the function cannot log any of it.
 
 ### A write is conditional, and a failed one is not kept

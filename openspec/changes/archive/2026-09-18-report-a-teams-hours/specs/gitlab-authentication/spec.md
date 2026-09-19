@@ -1,3 +1,8 @@
+## RENAMED Requirements
+
+- FROM: `### Requirement: AUTH-3 — The access credential is never written to storage`
+- TO: `### Requirement: AUTH-3 — No credential is ever written to storage`
+
 ## MODIFIED Requirements
 
 ### Requirement: AUTH-3 — No credential is ever written to storage

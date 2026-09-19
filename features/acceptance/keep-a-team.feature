@@ -33,7 +33,7 @@ Feature: Keeping a team
     And the suggestions do not offer "Ana Carolina"
     And the team lists "Ana Carolina" once
 
-  # Spec: group-timelog-report / GROUP-15
+  # Spec: team-timelog-report / GROUP-15
   Scenario: The suggestions are whoever logged time, and anybody else is found by name
     Given I am signed in
     When I open the teams screen
@@ -46,7 +46,7 @@ Feature: Keeping a team
     When I look for "Diego" by name
     Then the search offers "Diego Alves"
 
-  # Spec: group-timelog-report / GROUP-15
+  # Spec: team-timelog-report / GROUP-15
   Scenario: A bot that logged time is not offered
     Given I am signed in
     When I open the teams screen
@@ -55,7 +55,7 @@ Feature: Keeping a team
     Then the suggestions offer "Diego Alves"
     And the suggestions do not offer "Release Bot"
 
-  # Spec: group-timelog-report / GROUP-15
+  # Spec: team-timelog-report / GROUP-15
   Scenario: An account that is no longer active logged time, and is still offered
     Given I am signed in
     When I open the teams screen
@@ -64,7 +64,7 @@ Feature: Keeping a team
     Then the suggestions offer "Helena Prado"
     And the suggestions say "Helena Prado" is no longer active
 
-  # Spec: group-timelog-report / GROUP-15
+  # Spec: team-timelog-report / GROUP-15
   Scenario: A suggestion is not a subscription
     Given I am signed in
     When I open the teams screen

@@ -24,9 +24,18 @@ decision it settles.
 - [x] 1.4 Measured: sixteen people cold ~5.5 s, warm ~2.5 s, and concurrent
       chunks ~2.0 s. Chunking does not pay for its constant, so the gateway sends
       one request for the team; recorded in `design.md`
-- [ ] 1.5 Decode a real `id_token` and record `exp − iat` — every statement of
+- [x] 1.5 Decode a real `id_token` and record `exp − iat` — every statement of
       120 seconds is GitLab's documented default, not an observation of this
-      instance; verify by hand and record in `design.md`
+      instance; verify by hand and record in `design.md`.
+      **Measured on gitlab.com, 2026-09-19: `exp − iat` = 120 seconds**, so the
+      documented default is this instance's behaviour and `MAX_AGE_SECONDS = 150`
+      is the lifetime plus the verifier's own thirty seconds of clock tolerance.
+      The same token settled two things the design had only reasoned about: its
+      `auth_time` was 289 seconds before its `iat`, so it was minted on a
+      **refresh grant** rather than at sign-in; and it carried `name`,
+      `nickname`, `preferred_username`, `given_name`, `family_name`, `profile`,
+      `picture`, `sub_legacy` and `auth_time` beside `groups_direct` — a small
+      identity document, not a subject and a list of paths.
 
 ## 2. The written record, first
 
@@ -346,11 +355,16 @@ that consumes them.
 
 ## 15. Archive
 
-- [ ] 15.1 Rename the capability: `git mv` the spec directory to
-      `team-timelog-report`, retitle it, rewrite its Purpose, rename the four
+- [x] 15.1 Rename the capability: `git mv` the spec directory to
+      `team-timelog-report`, retitle it, rewrite its Purpose, rename the six
       scenario headings whose wording OpenSpec required the delta to keep, and
       substitute the citation prefix in the feature files — the citation
       expression matches the capability as `\S+` and never validates it; verify
-      `bun run arch:trace`
-- [ ] 15.2 Archive the change; verify `bunx openspec validate --strict` and
+      `bun run arch:trace`. Two more than planned: GROUP-1 had to carry
+      `The scope is stated with the figures` through the archive, and
+      `A bot account in the membership` names a membership this capability no
+      longer reads. Restore the requirement order the merge appended to the end,
+      too — a renamed requirement is removed and re-added, so GROUP-1 landed
+      five hundred lines below the Purpose that introduces it
+- [x] 15.2 Archive the change; verify `bunx openspec validate --strict` and
       `bun run verify`
