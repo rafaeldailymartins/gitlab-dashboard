@@ -383,6 +383,37 @@ one without reading the reason will reintroduce a bug that is already fixed.
   the team control's own border**: a control that acts on the thing beside it
   belongs attached to it, and at the end of a row of unrelated controls it read
   as a fifth filter.
+- **Every dropdown in the app opens the same panel, out of
+  `shared/ui/popup.ts`.** There are two of them and they answer different
+  questions: a **combobox** for a list that comes from the provider a page at a
+  time and has to be typed at (the group filter, thousands of groups), a
+  **select** for a list already in hand and short enough to read (the team
+  picker, a reader's own teams). Neither should be built out of the other.
+  They still have to look like one control, because they stand next to each
+  other on the report's toolbar — and they did not. The team picker was a native
+  `<select>`, chosen to avoid spending a floating popup's positioning machinery
+  on three items, and that saving was never real: the combobox on the same row
+  already loads it, so the pair shared everything except their appearance. What
+  the reader got was one control opening the app's panel and the one beside it
+  opening the operating system's, in a different font, a different width and a
+  different highlight, six pixels apart. The surface, the rows, the list, the
+  closed control and its size are five constants both read.
+  `entities/preferences` keeps the **native** `SelectField` for the time zone,
+  and that is not the same decision reversed: several hundred zones is a list a
+  custom listbox would have to virtualise to stay responsive, and a native
+  select is also the platform's own picker on a phone.
+  The select needed two corrections Base UI's defaults would have hidden.
+  `alignItemWithTrigger` is false, or the panel lays itself over the trigger
+  with the chosen row on top — native macOS behaviour, and not what the combobox
+  beside it does. And the chevron is rendered plainly rather than through
+  `Select.Icon`, which renders "▼" as its own text: the trigger's accessible
+  name came out as the team's name with an arrow glued to it, which a screen
+  reader reads aloud.
+  **Both pickers are `lazy()`, and that is load-bearing rather than tidy.**
+  Imported eagerly, Base UI's internals are shared with the button and the input
+  every screen already uses, so the bundler hoists the popup machinery into the
+  entry chunk: measured, that put the initial load at 214 kB against a 180 kB
+  budget. Split, it is 174 kB.
 - **A weekend column is drawn from `share`, not from the cell's kind.** A cell is
   only `non-working` once its column has been read and nobody logged in it, so a
   weekend still loading — or one later this month — would lose its tint and its
@@ -567,16 +598,18 @@ one without reading the reason will reintroduce a bug that is already fixed.
 - **Imports**: sorted by `perfectionist`; run `bun run lint:fix`.
 - **UI components**: add them with `bunx shadcn@latest add <name>`; they land in
   `src/shared/ui` (style `base-nova`, Base UI primitives). Do not hand-write
-  what the CLI generates — with three exceptions, all marked in place: `button.tsx`
-  and `input.tsx` carry measured contrast fixes to the invalid border, the
-  outline edge, and the solid and quiet hover states, and `dialog.tsx` carries
-  four corrections to what the generator wrote. Regenerating any of them means
-  re-applying those. Three of button's four are held by `bun run a11y:contrast`,
-  so undoing them fails `verify` rather than shipping.
-  **The CLI rewrites files it was not asked for.** `shadcn add dialog` also
-  overwrote `button.tsx` — dropping every fix above — and wrote `import { cn }
-from "cn"`, installing an unrelated npm package of that name because the alias
-  in `components.json` did not resolve. Read `git diff` after every add: the
+  what the CLI generates — with four exceptions, all marked in place:
+  `button.tsx` and `input.tsx` carry measured contrast fixes to the invalid
+  border, the outline edge, and the solid and quiet hover states, and
+  `dialog.tsx` and `select.tsx` carry corrections to what the generator wrote.
+  Regenerating any of them means re-applying those. Three of button's four are
+  held by `bun run a11y:contrast`, so undoing them fails `verify` rather than
+  shipping. Anything that opens a list also reads `popup.ts`.
+  **The CLI rewrites files it was not asked for, and installs a package that is
+  not real.** `shadcn add dialog` overwrote `button.tsx`, dropping every fix
+  above; both it and `shadcn add select` wrote `import { cn } from "cn"` and
+  installed an unrelated npm package of that name, because the alias in
+  `components.json` does not resolve. Read `git diff` after every add: the
   contrast gate catches the first of those and nothing catches the second.
 - **Design tokens**: CSS custom properties in `src/app/styles.css`. Light values
   on `:root`, dark on `.dark`. Never hardcode a colour in a component.

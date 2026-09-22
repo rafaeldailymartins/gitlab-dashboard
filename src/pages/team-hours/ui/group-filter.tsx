@@ -5,6 +5,7 @@ import type { GroupRef } from '@/entities/team-timelogs'
 
 import { groupSearchQuery, useTeamTimelogGateway } from '@/entities/team-timelogs'
 import { m } from '@/shared/i18n'
+import { cn } from '@/shared/lib/utils'
 import {
   Combobox,
   ComboboxContent,
@@ -13,6 +14,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from '@/shared/ui/combobox'
+import { POPUP_FIELD } from '@/shared/ui/popup'
 
 /** The reason Base UI reports when the reader typed, rather than when it wrote. */
 const TYPED = 'input-change'
@@ -89,7 +91,7 @@ export function GroupFilter({ chosen, onChoose }: GroupFilterProps) {
     >
       <ComboboxInput
         aria-label={m.team_filter_label()}
-        className="h-9 w-56"
+        className={cn(POPUP_FIELD)}
         placeholder={m.team_filter_all()}
       />
       <ComboboxContent>

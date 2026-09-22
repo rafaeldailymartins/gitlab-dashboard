@@ -153,8 +153,11 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
       looked at last and the address gains `team=`; the filter is empty, and the
       line under the heading says the figures cover every hour GitLab will show
       you for these people, wherever they logged it.
-- [ ] Switch team in the picker — a plain select, not a search field. The figures
-      change, the address follows, and a reload keeps that team.
+- [ ] Switch team in the picker, then open the group filter beside it. The two
+      are different controls — one is typed at and one is not — and they must be
+      indistinguishable closed and open: the same height, the same border, the
+      same panel dropping from the same edge. The figures change, the address
+      follows, and a reload keeps that team.
 - [ ] Rows are the team, exactly. Count them against the members list on
       the teams dialog: everybody you put on it has a row, including somebody who logged
       nothing, and no line under the table names anybody.

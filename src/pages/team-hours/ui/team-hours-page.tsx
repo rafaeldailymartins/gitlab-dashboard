@@ -16,31 +16,17 @@ import { type ScreenState, screenStateOf } from '../lib/state'
 import { useSavedTeams } from '../lib/use-saved-teams'
 import { type TeamHoursReport, useTeamReport } from '../lib/use-team-report'
 import { MatrixLegend } from './matrix-legend'
-import { ReportControls } from './report-controls'
+import { ReportToolbar } from './report-toolbar'
 import { TeamMatrix } from './team-matrix'
-import { TeamPicker } from './team-picker'
 
 /**
- * The group filter arrives on its own.
- *
- * It is the only thing on this screen that opens a floating popup, and the
- * positioning machinery behind one is forty kilobytes — a sixth of the whole
- * initial load, for a control most readers never touch. Loaded here it lands in
- * a chunk of its own, fetched as this screen mounts, which is the same reasoning
- * `app/lib/runtime.ts` gives for handing out the client instead of this screen's
- * gateway.
- *
- * The teams dialog arrives the same way and for a stronger reason: it carries a
- * whole editing surface, a group list and a person search, none of which a
- * reader reading a month has asked for.
+ * The teams dialog arrives on its own, and is not in the bundle every reader
+ * downloads: it carries a whole editing surface, a group list and a person
+ * search, none of which a reader reading a month has asked for.
  *
  * Mapped to `default` rather than exported as one: `no-restricted-exports`
  * holds every module here, and a default export would be the one exception.
  */
-const GroupFilter = lazy(async () =>
-  import('./group-filter').then((module) => ({ default: module.GroupFilter })),
-)
-
 const TeamManagerDialog = lazy(async () =>
   import('@/widgets/team-manager').then((module) => ({ default: module.TeamManagerDialog })),
 )
@@ -104,29 +90,14 @@ export function TeamHoursPage({ onChange, search }: TeamHoursPageProps) {
         <SyncControl notices={NO_NOTICES} status={report} />
       </header>
 
-      {/* One row of controls that are the same height and bordered the same way,
-          so the table starts as high on the page as it can: this screen is read
-          by scanning down a team, and every line above the first row is a person
-          the reader has to scroll to find. */}
-      <div className="flex flex-wrap items-center gap-2">
-        <TeamPicker
-          chosen={teamOf(choice)?.id ?? ''}
-          onChoose={(team) => {
-            onChange({ team })
-          }}
-          onManage={manage}
-          teams={saved.teams}
-        />
-        <Suspense fallback={<Skeleton className="h-9 w-56" />}>
-          <GroupFilter
-            chosen={filterRef(report.scope, search.group)}
-            onChoose={(group) => {
-              onChange({ group })
-            }}
-          />
-        </Suspense>
-        <ReportControls onChange={onChange} search={search} />
-      </div>
+      <ReportToolbar
+        filter={filterRef(report.scope, search.group)}
+        onChange={onChange}
+        onManage={manage}
+        search={search}
+        team={teamOf(choice)?.id ?? ''}
+        teams={saved.teams}
+      />
 
       {/* Above the body rather than instead of it: the figures below are the
           reader's whole reach, which is a real report, and the notice says only

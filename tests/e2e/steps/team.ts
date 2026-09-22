@@ -269,14 +269,14 @@ When('I order the rows by total', async ({ page }) => {
 /**
  * Read off the picker, not off the heading. The heading names the screen and
  * stays put; what proves the address was honoured is the control that says which
- * team is being reported — and it says so by its chosen option's name, because
- * the value it carries is an identifier that names nobody.
+ * team is being reported.
+ *
+ * Its text rather than its value: this is the app's own select now, sharing its
+ * panel with the group filter beside it, so the name is what it renders and the
+ * identifier it carries names nobody.
  */
 Then('the team shown is {string}', async ({ page }, name: string) => {
-  const picker = page.getByRole('combobox', { name: TEAM_PICKER })
-
-  await expect(picker).toHaveValue(FISCAL_TEAM.id)
-  await expect(picker.locator('option:checked')).toHaveText(name)
+  await expect(page.getByRole('combobox', { name: TEAM_PICKER })).toHaveText(name)
 })
 
 Then('the month shown is May 2026', async ({ page }) => {

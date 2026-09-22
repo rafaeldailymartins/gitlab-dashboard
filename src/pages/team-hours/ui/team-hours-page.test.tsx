@@ -163,10 +163,17 @@ describe('choosing what to look at', () => {
     const second: Team = { ...FISCAL, id: '018f3b2c-7a41-7c9e-9f2d-5b1a4e6c8d71', name: 'Platform' }
     const { onChange } = page({}, loggedGateway(), fakeTeamsGateway([FISCAL, second]))
 
-    await userEvent.selectOptions(
-      await screen.findByRole('combobox', { name: /^team$/i }),
-      second.id,
+    // Opened and pressed, not `selectOptions`: this is the app's own listbox now,
+    // sharing its panel with the group filter beside it, and a native select's
+    // helper would silently pass against a control that had stopped being one.
+    //
+    // Waited for longer than the default second: the picker is code-split for the
+    // floating popup it opens, and it is not rendered at all until the store has
+    // said which teams there are — so this waits on a round trip and a chunk.
+    await userEvent.click(
+      await screen.findByRole('combobox', { name: /^team$/i }, { timeout: 5000 }),
     )
+    await userEvent.click(await screen.findByRole('option', { name: second.name }))
 
     expect(onChange).toHaveBeenCalledWith({ team: second.id })
   })
