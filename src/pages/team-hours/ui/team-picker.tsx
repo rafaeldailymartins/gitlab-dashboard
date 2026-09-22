@@ -31,17 +31,22 @@ interface TeamPickerProps {
  * width, a different highlight, six pixels apart. Both surfaces now come from
  * `shared/ui/popup.ts`.
  *
- * It is never empty. A reader with no teams does not reach this control — the
- * screen says so instead and offers the way to build one — so there is no
- * placeholder option that would sit in the list forever afterwards.
+ * It is drawn for a reader who keeps no teams too, saying so, rather than not
+ * being drawn at all. Removing it left a gap in the row where a control had
+ * been, which reads as something that failed to load rather than as a list with
+ * nothing in it — and the one state where a reader most needs to understand what
+ * this control is for is the one where it was missing. The row it offers is
+ * disabled: it is the answer, not a choice.
  */
 export function TeamPicker({ chosen, onChoose, teams }: TeamPickerProps) {
+  const empty = teams.length === 0
+
   return (
     <Select
       items={teams.map((team) => ({ label: team.name, value: team.id }))}
       onValueChange={(id: null | string) => {
         // Null is Base UI clearing the value, which this select cannot do: it
-        // has no empty entry, because a reader with no teams never reaches it.
+        // has no empty entry a reader can reach.
         if (id !== null) {
           onChoose(id)
         }
@@ -49,14 +54,28 @@ export function TeamPicker({ chosen, onChoose, teams }: TeamPickerProps) {
       value={chosen}
     >
       <SelectTrigger aria-label={m.team_picker_label()} className={cn(POPUP_FIELD)}>
-        <SelectValue />
+        {empty ? (
+          <span className="truncate text-muted-foreground">{m.team_picker_empty()}</span>
+        ) : (
+          <SelectValue />
+        )}
       </SelectTrigger>
       <SelectContent>
-        {teams.map((team) => (
-          <SelectItem key={team.id} value={team.id}>
-            {team.name}
+        {empty ? (
+          // A row rather than a bare paragraph: a `listbox` owes ARIA at least
+          // one `option`, and `aria-required-children` is a rule this suite
+          // runs. Its value is null, which `chosen` — an empty string before a
+          // team is picked — never equals, so it draws no chosen mark.
+          <SelectItem disabled value={null}>
+            {m.team_picker_empty()}
           </SelectItem>
-        ))}
+        ) : (
+          teams.map((team) => (
+            <SelectItem key={team.id} value={team.id}>
+              {team.name}
+            </SelectItem>
+          ))
+        )}
       </SelectContent>
     </Select>
   )

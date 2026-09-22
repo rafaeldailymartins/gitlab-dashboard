@@ -88,17 +88,15 @@ export function ReportToolbar({
 }: ReportToolbarProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {teams.length === 0 ? null : (
-        <Suspense fallback={<Skeleton className={POPUP_FIELD} />}>
-          <TeamPicker
-            chosen={team}
-            onChoose={(chosen) => {
-              onChange({ team: chosen })
-            }}
-            teams={teams}
-          />
-        </Suspense>
-      )}
+      <Suspense fallback={<Skeleton className={POPUP_FIELD} />}>
+        <TeamPicker
+          chosen={team}
+          onChoose={(chosen) => {
+            onChange({ team: chosen })
+          }}
+          teams={teams}
+        />
+      </Suspense>
       <Suspense fallback={<Skeleton className={POPUP_FIELD} />}>
         <GroupFilter
           chosen={filter}

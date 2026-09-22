@@ -19,13 +19,25 @@ export type TeamChoice =
 /**
  * The team an address names.
  *
- * An address that names one always wins, exactly as the group address used to:
- * a link somebody sent outranks this reader's habit, and it outranks a
+ * An empty list answers first, whatever the address says. "That team is not
+ * yours" is a claim about a list with teams in it; made against no teams it
+ * tells somebody at the very beginning that they have lost something, and it
+ * offers them nothing to do about it. It is also not a rare case: the route
+ * completes an address naming no team from the identifier this reader last
+ * chose, so the visit right after deleting a last team arrives here naming one
+ * that no longer exists — which is precisely a reader with no teams.
+ *
+ * Past that, an address that names one always wins, exactly as the group address
+ * used to: a link somebody sent outranks this reader's habit, and it outranks a
  * convenient fallback even when the team is gone. Naming none falls back to the
  * first team the reader keeps, which is the only choice available that is not
  * an empty screen.
  */
 export function chosenTeam(teams: readonly Team[], id: string): TeamChoice {
+  if (teams.length === 0) {
+    return { kind: 'none' }
+  }
+
   if (id === '') {
     const [first] = teams
 

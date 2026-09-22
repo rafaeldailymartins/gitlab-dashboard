@@ -137,12 +137,34 @@ describe('choosing what to look at', () => {
     expect(await screen.findByText(/no teams yet/i)).toBeInTheDocument()
   })
 
-  it('tells a reader following a link that the team is gone, rather than showing their own', async () => {
-    // An address that names a team always wins, exactly as the group address
-    // used to: a link somebody sent outranks a convenient fallback.
+  // The route completes an address naming no team from the last identifier this
+  // reader chose, so this is the ordinary visit after deleting a last team — and
+  // "that team is not one of yours" would report a loss to somebody who has
+  // nothing to lose and nothing to do about it.
+  it('asks a reader with no teams to build one, even when the address names a team', async () => {
     page({ team: FISCAL.id }, loggedGateway(), fakeTeamsGateway([]))
 
-    expect(await screen.findByText(/not one of yours/i)).toBeInTheDocument()
+    expect(await screen.findByText(/no teams yet/i)).toBeInTheDocument()
+    expect(screen.queryByText(/not one of yours/i)).not.toBeInTheDocument()
+  })
+
+  // Drawn rather than removed: a gap where a control was reads as something that
+  // failed to load, and this is the state where a reader most needs to see what
+  // the control is for.
+  it('still draws the team picker when there are no teams, saying so', async () => {
+    page({ team: '' }, loggedGateway(), fakeTeamsGateway([]))
+
+    const picker = await screen.findByRole('combobox', { name: /^team$/i }, { timeout: 5000 })
+
+    expect(picker).toHaveTextContent(/no teams yet/i)
+
+    await userEvent.click(picker)
+
+    const offered = await screen.findAllByRole('option')
+
+    expect(offered).toHaveLength(1)
+    expect(offered[0]).toHaveTextContent(/no teams yet/i)
+    expect(offered[0]).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('says so when the address names a team this reader does not have', async () => {

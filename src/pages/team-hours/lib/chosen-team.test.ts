@@ -29,9 +29,18 @@ describe('chosenTeam', () => {
     expect(chosenTeam([], '')).toEqual({ kind: 'none' })
   })
 
+  // The route completes an address naming no team from the identifier this
+  // reader last chose, so the visit right after deleting a last team arrives
+  // naming one that is gone — and telling somebody with no teams that a team is
+  // "not one of yours" reports a loss to a reader at the beginning.
+  it('says the reader keeps none even when the address names one', () => {
+    expect(chosenTeam([], PLATFORM.id)).toEqual({ kind: 'none' })
+  })
+
   it('says a named team is not theirs rather than showing them somebody else’s link', () => {
     // The fallback is deliberately not taken here: a link that named a team the
     // reader does not have would otherwise silently become a report on their own.
+    // It is a claim about a list with teams in it, which is why it needs one.
     expect(chosenTeam([FISCAL], PLATFORM.id)).toEqual({ kind: 'unknown' })
   })
 })
