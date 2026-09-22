@@ -47,6 +47,17 @@ Then('the table has a row heading for {string}', async ({ page }, name: string) 
   await expect(page.getByRole('rowheader', { name })).toBeVisible()
 })
 
+/**
+ * Asserted on the table the reader is left looking at.
+ *
+ * Its whole point is that the reader never left it: the team was corrected in a
+ * dialog over these figures, and what proves the correction reached them is the
+ * row that is no longer here.
+ */
+Then('the table has no row heading for {string}', async ({ page }, name: string) => {
+  await expect(page.getByRole('rowheader', { name })).toHaveCount(0)
+})
+
 Then('the table has a column heading for every day of the month', async ({ page }) => {
   // The second header row is the days. The first holds the two corners, which
   // span both rows, and one band per ISO week — all of which are column headers

@@ -61,10 +61,16 @@ export type ReferenceSchedule = Readonly<Record<Weekday, number>>
  * Somebody who logged time in a group, offered as a candidate for a team.
  *
  * `active` and `bot` are carried rather than filtered at the boundary so the
- * rule that drops them is a rule a test can exercise, not an adapter detail.
- * They decide something here and nowhere else: a bot has no timesheet anybody
- * manages, while an account that is no longer active but logged time in the
- * window is somebody who did the work and has since left.
+ * rule that drops one of them is a rule a test can exercise, not an adapter
+ * detail. They decide something here and nowhere else: a bot has no timesheet
+ * anybody manages, while an account that is no longer active but logged time in
+ * the window is somebody who did the work and has since left.
+ *
+ * Nothing on screen renders `active` any more. A team is built from a group in
+ * one action rather than picked out of a list of candidates one name at a time,
+ * so there is no candidate to mark. It is kept because it is what makes "an
+ * inactive account is not dropped" a claim a test can fail on — without it the
+ * rule would be true only for as long as nobody writes the filter.
  */
 export interface SuggestedMember {
   /** False for a blocked, deactivated or banned account. */

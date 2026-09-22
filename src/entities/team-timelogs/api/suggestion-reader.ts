@@ -9,12 +9,16 @@ import { GROUP_SUGGESTIONS as SUGGESTIONS } from './suggestion-documents'
  * How many pages of a group's entries are read before the list is called partial.
  *
  * The answer wanted is a set of distinct *people*, and people saturate long
- * before entries do: a busy group's window is thousands of timelogs and perhaps
- * forty names. Exhausting it would be hundreds of requests to learn forty of
- * them, so this stops and says so instead — and the individual search is the
- * escape hatch that always finds whoever the window missed.
+ * before entries do: a squad of ten logging twice a day fills about four hundred
+ * entries a month, and the newest hundred of them already name everybody. Reading
+ * further mostly buys the same names again — and buys them one round trip at a
+ * time, because each page needs the last page's cursor, while somebody waits.
+ *
+ * Four rather than ten, cut with the window. The group that exceeds it says its
+ * people may not be all of them, and the search by name is the escape hatch that
+ * finds whoever the read missed, logged or not.
  */
-const MAX_PAGES = 10
+const MAX_PAGES = 4
 
 /**
  * Whoever logged time in a group over the window.

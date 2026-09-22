@@ -34,6 +34,41 @@ export function withMember(team: Team, member: TeamMember, at: string): Team {
   return { ...team, members: [...team.members, member], updatedAt: at }
 }
 
+/**
+ * The same team with several more people on it, in one change.
+ *
+ * One edit rather than a fold of `withMember`, because a team built from a group
+ * is one decision and has to be one save: every `apply` here is a conditional
+ * write against a version, so a dozen of them is a dozen chances for one to be
+ * refused and leave the reader half the squad they asked for.
+ *
+ * The ceiling stops it mid-list rather than refusing the lot. A group with more
+ * contributors than a team may hold still gives the reader a usable team, and the
+ * ones that did not fit are reachable by name — where refusing outright would
+ * leave them nothing at all.
+ *
+ * Adding nobody returns the team it was given, dated as it was. Every write here
+ * carries a version, and one that changed no member but moved the instant is a
+ * conflict manufactured out of nothing.
+ */
+export function withMembers(team: Team, members: readonly TeamMember[], at: string): Team {
+  const added = members.filter(
+    (one, index) =>
+      members.findIndex((other) => other.id === one.id) === index &&
+      !team.members.some((already) => already.id === one.id),
+  )
+
+  if (added.length === 0) {
+    return team
+  }
+
+  return {
+    ...team,
+    members: [...team.members, ...added].slice(0, MAX_MEMBERS),
+    updatedAt: at,
+  }
+}
+
 /** The same team under another name. A name the endpoint would refuse is refused here. */
 export function withName(team: Team, name: string, at: string): Team {
   return isValidTeamName(name) ? { ...team, name: name.trim(), updatedAt: at } : team

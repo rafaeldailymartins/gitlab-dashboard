@@ -14,7 +14,7 @@ const PHONE_HEIGHT = 812
 const MINIMUM_STOPS = 5
 
 /**
- * A screen is named in the feature file; only the step knows its address.
+ * A screen is named in the feature file; only the step knows how to reach it.
  *
  * The report is addressed by team and by nothing else. An address naming no team
  * renders a one-paragraph note, and every sweep over this screen would then
@@ -27,6 +27,12 @@ const MINIMUM_STOPS = 5
  * No group is named: the filter is empty by default and deliberately not
  * remembered between visits, so the unscoped report is both the state a reader
  * arrives in and the wider one.
+ *
+ * "teams" is no longer an address at all. The teams a reader keeps are edited in
+ * a dialog over the report, so reaching it is the report's address plus one
+ * click — which is what `opens` is for. Dropping it from these sweeps because it
+ * stopped being a URL would have quietly stopped checking a surface, and a
+ * dialog is exactly where a focus trap and a 375 px overflow live.
  */
 const SCREENS: Record<string, string> = {
   'a day': '/days/2026-08-20',
@@ -34,15 +40,21 @@ const SCREENS: Record<string, string> = {
   insights: '/insights',
   settings: '/settings',
   team: `/team?team=${FISCAL_TEAM.id}&month=2026-05&by=days`,
-  teams: '/teams',
+  teams: `/team?team=${FISCAL_TEAM.id}&month=2026-05&by=days`,
+}
+
+/** What a screen needs after its address before it is the screen being named. */
+const OPENS: Record<string, RegExp> = {
+  teams: /manage teams|gerenciar equipes/iu,
 }
 
 /**
  * What the navigation calls each screen. Kept apart from `SCREENS` because the
  * two are not the same list: a day is a screen the reader can open and not a
- * place the navigation goes, and neither is `/teams` — "Equipes" beside "Equipe"
- * at 375 px is one word twice, so it is reached from a link on the report and a
- * card on settings instead. That is why this list stays at four.
+ * place the navigation goes, and neither are the teams — "Equipes" beside
+ * "Equipe" at 375 px is one word twice, so they are reached from a control on
+ * the report and a card on settings instead. That is why this list stays at
+ * four.
  */
 const NAVIGATION_NAMES: Record<string, string> = {
   dashboard: 'Dashboard',
@@ -105,6 +117,7 @@ Given('my viewport is {int} pixels wide', async ({ page }, width: number) => {
 
 When('I open the {string} screen', async ({ page }, screen: string) => {
   const path = SCREENS[screen] ?? ''
+  const opens = OPENS[screen]
 
   expect(path, `No address is registered for the "${screen}" screen`).not.toBe('')
   await page.goto(path)
@@ -112,6 +125,12 @@ When('I open the {string} screen', async ({ page }, screen: string) => {
   // Measuring while a skeleton is still standing measures the loading layout,
   // not the one the reader ends up with.
   await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0)
+
+  if (opens !== undefined) {
+    await page.getByRole('button', { name: opens }).first().click()
+    await expect(page.locator('[data-slot="dialog-content"]')).toBeVisible()
+    await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0)
+  }
 })
 
 /**

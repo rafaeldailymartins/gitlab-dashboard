@@ -3,6 +3,7 @@ export { httpTeamsGateway } from './api/teams-gateway'
 export {
   newTeam,
   withMember,
+  withMembers,
   withName,
   withoutMember,
   withoutTeam,

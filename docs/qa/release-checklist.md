@@ -17,7 +17,7 @@ which is the mercy in it.
 - **`openid` not ticked on the OAuth application before the bundle that asks for
   it is deployed.** The build succeeds and the app loads; every new sign-in
   fails with `invalid_scope`, for everybody, including readers who never open
-  the teams screen. GitLab validates the requested scope against the
+  the teams dialog. GitLab validates the requested scope against the
   application's own, and `src/entities/sessions/api/gitlab-oauth.ts` asks for
   `read_api openid`. The application is updated first and the bundle deployed
   after; the reverse order is an outage.
@@ -98,7 +98,7 @@ mean the same thing in two places.
       error, the preview URL is missing from the application.
 - [ ] Today's hours match GitLab's own report.
 - [ ] Hard-refresh `/days/<a date>`. The SPA fallback serves it rather than a 404.
-- [ ] Open `/teams` and save a team. The function is deployed and answers: the
+- [ ] Open the teams dialog and save a team. The function is deployed and answers: the
       team survives a reload, and `/.netlify/functions/teams` returns a document
       rather than a 404 or a `503 identity-unavailable`. The acceptance suite
       cannot cover this — it serves a static `dist/` with `vite preview`, which

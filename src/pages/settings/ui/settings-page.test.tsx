@@ -1,10 +1,3 @@
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  RouterProvider,
-} from '@tanstack/react-router'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -18,30 +11,15 @@ afterEach(() => {
 })
 
 /**
- * The screen inside a router, because it links to the teams screen.
+ * No router around it any more.
  *
- * A real router over an in-memory history rather than a mocked `useNavigate`:
- * what a test wants to know is which address a link leads to, and the router's
- * own resolution is the only honest answer.
+ * This screen used to link to `/teams`, which is why it was rendered inside one.
+ * The teams a reader keeps are edited in a dialog over whichever screen asked
+ * for it, so there is no address here to resolve and nothing for a router to
+ * answer.
  */
 function renderSettings() {
-  const rootRoute = createRootRoute()
-  const indexRoute = createRoute({
-    component: () => <SettingsPage />,
-    getParentRoute: () => rootRoute,
-    path: '/',
-  })
-  const teamsRoute = createRoute({
-    component: () => <p>Teams screen</p>,
-    getParentRoute: () => rootRoute,
-    path: '/teams',
-  })
-  const router = createRouter({
-    history: createMemoryHistory({ initialEntries: ['/'] }),
-    routeTree: rootRoute.addChildren([indexRoute, teamsRoute]),
-  })
-
-  return renderWithProviders(<RouterProvider router={router} />)
+  return renderWithProviders(<SettingsPage />)
 }
 
 describe('SettingsPage', () => {
@@ -61,14 +39,14 @@ describe('SettingsPage', () => {
     expect(screen.getByLabelText('Time zone')).toBeInTheDocument()
   })
 
-  it('offers the way to the teams screen, rather than a fifth navigation link', async () => {
+  // Not a link and not a fifth navigation entry: it opens a dialog over this
+  // screen, so nothing about where the reader is changes.
+  it('opens the teams a reader keeps, without going anywhere', async () => {
     stubSystemDarkMode(false)
     renderSettings()
 
-    expect(await screen.findByRole('link', { name: /manage teams/i })).toHaveAttribute(
-      'href',
-      '/teams',
-    )
+    expect(await screen.findByRole('button', { name: /manage teams/i })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /manage teams/i })).not.toBeInTheDocument()
   })
 
   it('groups the appearance settings together', async () => {

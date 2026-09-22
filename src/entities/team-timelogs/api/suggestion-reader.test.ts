@@ -87,18 +87,20 @@ describe('readSuggestions', () => {
     })
   })
 
-  it('stops at ten pages and says the list is partial', async () => {
+  it('stops at four pages and says the list is partial', async () => {
     // The answer wanted is a set of people, and people saturate long before
-    // entries do: exhausting a busy group would be hundreds of requests to
-    // learn forty names. Repeats are expected — `model/suggestions.ts` is where
-    // the same person seen on six pages becomes one candidate.
+    // entries do: a squad of ten logging twice a day fills about four hundred
+    // entries a month and the newest hundred already name everybody. Exhausting
+    // a busy group would be requests nobody waits through to learn the same
+    // names again. Repeats are expected — `model/suggestions.ts` is where the
+    // same person seen on four pages becomes one candidate.
     const { reader, sent } = fakeReader([page(ANA, 'and-another-after-this')])
 
     const read = await readSuggestions(reader, QUERY)
 
-    expect(sent).toHaveLength(10)
+    expect(sent).toHaveLength(4)
     expect(read.partial).toBe(true)
-    expect(read.people).toHaveLength(10)
+    expect(read.people).toHaveLength(4)
   })
 
   it('reads newest first, so a cap that bites drops the least recent', async () => {

@@ -35,12 +35,16 @@ wherever they logged it, personal projects included. A group filter — empty by
 default — narrows them to one group and its subgroups, and the caption and the
 empty cells both say which of the two you are reading.
 
-**Teams** (`/teams`) — the lists themselves: name a team, take people from a
-group's recent time logs, or search GitLab for anybody by name. A suggestion is
-whoever logged time in that group over the last 90 days, not whoever has access
-to it: on one real squad, membership offered seventeen names of which eleven had
-no hours at all, and missed two people who had logged. Teams are reached from
-the report and from Settings, not from a fifth link in the navigation.
+**Teams** — the lists themselves, edited in a dialog over whatever you were
+reading rather than on a screen of their own: you notice a team is wrong while
+reading its month, and there is nothing in that list worth sending anybody, so
+there is nothing to navigate to. Name a GitLab group and the team is made from
+it in one click, carrying everyone who logged time there in the last 30 days;
+after that you take people off, search GitLab for anybody by name, or add
+another group's people in. It is whoever logged, not whoever has access: on one
+real squad, membership offered seventeen names of which eleven had no hours at
+all, and missed two people who had logged. Reached from the report's toolbar and
+from Settings, never from a fifth link in the navigation.
 
 **Settings** — hours per weekday, the time zone that decides when a day starts,
 the language, and the colour scheme, all of it on your device only; plus the way
@@ -129,7 +133,7 @@ an authorize request against the application's own scopes, so the other order
 fails every sign-in with `invalid_scope`. Going the right way round costs
 nothing: a session granted before the scope was added keeps working, because a
 renewal carries the original scopes forward, and it shows an inline notice
-asking you to sign in again on the teams screens only. You are never signed out.
+asking you to sign in again on the teams surface only. You are never signed out.
 
 ### 2. Configure the app
 

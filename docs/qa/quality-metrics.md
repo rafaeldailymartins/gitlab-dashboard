@@ -464,7 +464,7 @@ room inside the 400 compute minutes a month the Free plan allows.
   of the root layout and into the `_authenticated` layout took it to 133.2 kB for
   real: the navigation, the colour-scheme control and their icons are in a route
   chunk a signed-out reader never loads. It reads 174.55 kB today, inside the
-  180 kB budget, and the teams screen is what moved it.
+  180 kB budget, and the teams surface is what moved it.
 - **The acceptance fixture counts days in the reader's zone, not in UTC.** It used
   to place each entry at midday UTC on a day counted from UTC's today, and the
   whole suite failed every evening after 21:00 in Brazil: UTC had already rolled

@@ -29,10 +29,32 @@ Two members SHALL NOT share an identifier. Adding somebody already on the team
 SHALL leave the team as it was rather than adding them twice, because a duplicate
 row would count their hours twice in every total.
 
+Teams SHALL be edited over the report rather than instead of it. A reader
+discovers a team is wrong while reading its month, and the editing surface has no
+address worth sending anybody — it is this reader's own private list — so
+navigating away from the figures to fix the list they are about costs a page load
+and the reader's place, and buys nothing. Closing the editing surface SHALL leave
+the reader where they were, with the report showing what their changes did.
+
+A team SHALL be creatable in one action. The reader names a GitLab group and the
+team is minted, named after it and filled with the people that group's hours
+belong to, in a single save. Building the same team by adding people one at a
+time SHALL remain possible and SHALL remain the way a team is corrected, but it
+is not the way one is started: a lead who wants their squad wants it now, and a
+dozen writes to spell out what one name already said is a chore invented by the
+interface.
+
 #### Scenario: Making a team
 
 - **WHEN** the reader names a new team and adds two people to it
 - **THEN** the team is listed with those two people
+
+#### Scenario: Making a team from a group in one action
+
+- **WHEN** the reader chooses a GitLab group to start a team from
+- **THEN** a team exists named after that group, carrying the people who logged
+  time in it over the stated window
+- **AND** the reader did not have to add any of them individually
 
 #### Scenario: Taking somebody off a team
 
@@ -49,6 +71,13 @@ row would count their hours twice in every total.
 
 - **WHEN** the reader renames a team
 - **THEN** an address naming that team still shows the same team
+
+#### Scenario: Editing a team without leaving the month
+
+- **WHEN** the reader opens the team editor from the report and changes the team
+- **AND** closes it
+- **THEN** they are on the same report, showing the same month, with the change
+  in it
 
 ### Requirement: TEAM-2 — A team survives the device
 

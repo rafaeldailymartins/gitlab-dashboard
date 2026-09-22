@@ -4,18 +4,26 @@ import type { Team } from '@/entities/teams'
 
 import { isValidTeamName, MAX_NAME_LENGTH } from '@/entities/teams'
 import { m } from '@/shared/i18n'
-import { Input } from '@/shared/ui/input'
-import { Label } from '@/shared/ui/label'
+import { cn } from '@/shared/lib/utils'
 
 interface TeamNameFieldProps {
   readonly onRename: (name: string) => void
   readonly team: Team
 }
 
+const FIELD =
+  'w-full rounded-md border border-transparent bg-transparent px-2 py-1 -ml-2 text-lg font-semibold tracking-tight hover:border-input focus:border-input focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none aria-invalid:border-destructive'
+
 /**
- * The team's name.
+ * The team's name, editable where it is read.
  *
- * The one control on this screen that is **not** saved on every keystroke: a
+ * Drawn as the heading it is rather than as a labelled field under one. The name
+ * is the first thing on this pane and the thing every other control refers to;
+ * putting "Team name" above a box containing the team's name said it twice and
+ * made the pane open on a form. The label is still there for anybody who cannot
+ * see that it is a heading, which is what `aria-label` is for.
+ *
+ * The one control on this surface that is **not** saved on every keystroke: a
  * name is typed a letter at a time, and a save per letter would be twenty
  * conditional writes racing each other over one rename. It commits when the
  * field is left or the reader presses Enter.
@@ -30,18 +38,17 @@ interface TeamNameFieldProps {
  * whenever somebody else's rename arrived.
  */
 export function TeamNameField({ onRename, team }: TeamNameFieldProps) {
-  const fieldId = useId()
-  const errorId = `${fieldId}-error`
+  const errorId = useId()
   const [draft, setDraft] = useState(team.name)
   const valid = isValidTeamName(draft)
 
   return (
-    <div className="flex max-w-sm flex-col gap-1.5">
-      <Label htmlFor={fieldId}>{m.teams_name_label()}</Label>
-      <Input
+    <div className="flex min-w-0 flex-1 flex-col gap-1">
+      <input
         aria-describedby={valid ? undefined : errorId}
         aria-invalid={!valid}
-        id={fieldId}
+        aria-label={m.teams_name_label()}
+        className={cn(FIELD)}
         maxLength={MAX_NAME_LENGTH}
         onBlur={() => {
           commit()

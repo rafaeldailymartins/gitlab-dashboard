@@ -68,21 +68,24 @@ src/
     dashboard/    the KPI row, the week strip, the day feed and their derivations
     day-detail/   one day, addressable
     insights/     the month heatmap, the project split, the top-items table
-    settings/     the preference fields, and the card that reaches /teams
-    team-hours/   a team’s month as a person × day matrix, its controls, its
+    settings/     the preference fields, and the card that opens the teams dialog
+    team-hours/   a team’s month as a person × day matrix, its toolbar, its
                   group filter and its notices
-    teams/        the /teams screen: the team list, the editor, the person
-                  search and the suggestions. Not a fifth navigation link —
-                  “Equipes” beside “Equipe” at 375 px is worse than one more
-                  click, so it is reached from the report and from a settings
-                  card
     login/, auth-callback/, not-configured/
   widgets/      composed blocks with more than one consumer
     hours-report/ the query, the report and the status notice — used by the
                   dashboard and by the day screen
-  features/     single user interactions (theme/, group-picker/ — the picker has
-                two consumers, the report and the team editor, which is what
-                steiger’s insignificant-slice rule wants)
+    team-manager/ the dialog the teams a reader keeps are edited in: the rail of
+                  teams, the editor, the person search, and the group list that
+                  builds a whole team in one action. A dialog and not a screen,
+                  opened from the report and from a settings card — a reader
+                  notices a team is wrong while reading its month, and that list
+                  has no address worth sending anybody
+  features/     single user interactions (theme/). The group picker used to live
+                here for its two consumers; the teams surface reaches a group
+                through a list of rows to press rather than a combobox now, so
+                the report is the only consumer and the control went back into
+                pages/team-hours/ui/group-filter.tsx
   entities/     domain slices (plural names, kept consistent by steiger)
     timelogs/
       model/    PURE business rules and ports. No React, no I/O, no strings.
@@ -321,20 +324,65 @@ one without reading the reason will reintroduce a bug that is already fixed.
   maps `request.members` straight to rows and drops nobody; there is no union
   left to compute, because the provider is asked about these people and no
   others.
-- **A team is seeded from whoever logged time in a group, not from its
-  membership.** Membership is an access-control list, and it answers a different
-  question. Measured on one real squad: it offered seventeen names, eleven of
-  which had no hours at all, while eight people had logged in the window and two
-  of those were not members. So the suggestions come from a trailing 90 days of
-  timelogs, the window is stated on screen, and the list says when it may be
-  incomplete rather than presenting a truncated read as the whole answer.
+- **A team is built from whoever logged time in a group, not from its
+  membership, and building it is one action.** Membership is an access-control
+  list, and it answers a different question. Measured on one real squad: it
+  offered seventeen names, eleven of which had no hours at all, while eight
+  people had logged in the window and two of those were not members. So the
+  people come from a trailing **30 days** of timelogs, read to a cap of **four
+  pages**, the window is stated on screen, and the surface says when the read may
+  be incomplete rather than presenting a truncated answer as a census.
+  Those two numbers were ninety days and ten pages, and both were cut for the
+  same reason: the read is strictly sequential — each page needs the last page's
+  cursor — so the window and the cap multiply directly into how long somebody
+  waits looking at nothing, to learn a dozen names out of a thousand entries.
+  What thirty days loses is somebody away for the whole month, and they are one
+  search away by name.
+  Naming the group **is** making the team: it is minted already full, in one
+  conditional write. It used to be a combobox in the editor followed by a plus
+  beside each person, which asked the reader to re-answer, one name at a time and
+  one write at a time, the question they had already answered by naming the
+  squad. The same list is reachable afterwards as "add from a group", which
+  merges and never removes — a refresh that reconciled both ways would take off
+  the colleague the reader added by hand. The team keeps the group's **name** and
+  no reference to it, because a stored path is a second thing that can go stale
+  and an invitation to exactly the resubscription GROUP-15 forbids.
   Candidates are deduplicated by the provider's identifier, never by username,
   for the reason a roster is stored that way: a username is released on a rename
-  and the same person under two of them would be offered twice. Bots are dropped
+  and the same person under two of them would be added twice. Bots are dropped
   — nobody manages a bot's timesheet. Accounts that are no longer active are
   **kept**, which looks like the same clutter and is its opposite: somebody who
   logged time in the window did the work and has since been blocked or left, and
-  their hours are still in the month the reader is reading.
+  their hours are still in the month the reader is reading. Nothing renders that
+  flag any more — there is no list of candidates to mark — and `SuggestedMember`
+  carries it all the same, because it is what makes "an inactive account is not
+  dropped" a claim a test can fail on rather than a rule that holds until
+  somebody writes the filter.
+- **The teams a reader keeps are edited in a dialog over the report, and `/teams`
+  is gone.** This reverses the decision the surface shipped with, and that
+  decision was sound about the wrong thing: the accessibility and 375 px sweeps
+  do address screens by URL, there was no dialog primitive in `shared/ui`, and
+  `/settings` is a real precedent for a place the app's own state is edited.
+  Every clause of that is still true and none of it is a reason to take the
+  reader off the figures. Settings are edited once, from anywhere, with nothing
+  on screen depending on them; a team is edited _because of what the report in
+  front of you shows_, and the report is where you were going back to. The
+  surface never had an address worth sending anybody — it is one reader's private
+  list, which is why the route carried no search parameters — so the navigation
+  bought the interruption and nothing else. The sweeps did not lose it: `SCREENS`
+  in `tests/e2e/steps/keyboard.ts` reaches "teams" by the report's address plus
+  one click, which is where a focus trap and a 375 px overflow actually live.
+- **The report's controls are one row of `h-9` strips, named by `aria-label`.**
+  Four controls sat at three different heights, two of them under stacked labels
+  and the fourth an underlined text link, so `items-end` was aligning things that
+  were never the same shape. The visible labels were the worst of it and they
+  were also redundant: a `select` and a `combobox` both take an accessible name
+  from `aria-label` — which is what the assistive tree reads and what
+  `getByLabel` finds — while the label above restated what the control's own
+  value already says. The way into the teams dialog is an icon button **inside
+  the team control's own border**: a control that acts on the thing beside it
+  belongs attached to it, and at the end of a row of unrelated controls it read
+  as a fifth filter.
 - **A weekend column is drawn from `share`, not from the cell's kind.** A cell is
   only `non-working` once its column has been read and nobody logged in it, so a
   weekend still loading — or one later this month — would lose its tint and its
@@ -519,11 +567,17 @@ one without reading the reason will reintroduce a bug that is already fixed.
 - **Imports**: sorted by `perfectionist`; run `bun run lint:fix`.
 - **UI components**: add them with `bunx shadcn@latest add <name>`; they land in
   `src/shared/ui` (style `base-nova`, Base UI primitives). Do not hand-write
-  what the CLI generates — with two exceptions, both marked in place and both
-  measured: `button.tsx` and `input.tsx` carry contrast fixes to the invalid
-  border, the outline edge, and the solid and quiet hover states. Regenerating
-  either component means re-applying them. Three of the four are held by
-  `bun run a11y:contrast`, so undoing them fails `verify` rather than shipping.
+  what the CLI generates — with three exceptions, all marked in place: `button.tsx`
+  and `input.tsx` carry measured contrast fixes to the invalid border, the
+  outline edge, and the solid and quiet hover states, and `dialog.tsx` carries
+  four corrections to what the generator wrote. Regenerating any of them means
+  re-applying those. Three of button's four are held by `bun run a11y:contrast`,
+  so undoing them fails `verify` rather than shipping.
+  **The CLI rewrites files it was not asked for.** `shadcn add dialog` also
+  overwrote `button.tsx` — dropping every fix above — and wrote `import { cn }
+from "cn"`, installing an unrelated npm package of that name because the alias
+  in `components.json` did not resolve. Read `git diff` after every add: the
+  contrast gate catches the first of those and nothing catches the second.
 - **Design tokens**: CSS custom properties in `src/app/styles.css`. Light values
   on `:root`, dark on `.dark`. Never hardcode a colour in a component.
 - **Time**: GitLab reports seconds. Convert with `secondsToHours` and accumulate

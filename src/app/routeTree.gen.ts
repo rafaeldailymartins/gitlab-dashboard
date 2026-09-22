@@ -11,7 +11,6 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated.insights'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated.team'
-import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated.teams'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthenticatedDaysDateRouteImport } from './routes/_authenticated.days.$date'
 
@@ -44,11 +43,6 @@ const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
   path: '/team',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
-  id: '/teams',
-  path: '/teams',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
@@ -66,7 +60,6 @@ export interface FileRoutesByFullPath {
   '/insights': typeof AuthenticatedInsightsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/team': typeof AuthenticatedTeamRoute
-  '/teams': typeof AuthenticatedTeamsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/days/$date': typeof AuthenticatedDaysDateRoute
 }
@@ -75,7 +68,6 @@ export interface FileRoutesByTo {
   '/insights': typeof AuthenticatedInsightsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/team': typeof AuthenticatedTeamRoute
-  '/teams': typeof AuthenticatedTeamsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthenticatedIndexRoute
   '/days/$date': typeof AuthenticatedDaysDateRoute
@@ -87,7 +79,6 @@ export interface FileRoutesById {
   '/_authenticated/insights': typeof AuthenticatedInsightsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
-  '/_authenticated/teams': typeof AuthenticatedTeamsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/days/$date': typeof AuthenticatedDaysDateRoute
@@ -100,7 +91,6 @@ export interface FileRouteTypes {
     | '/insights'
     | '/settings'
     | '/team'
-    | '/teams'
     | '/auth/callback'
     | '/days/$date'
   fileRoutesByTo: FileRoutesByTo
@@ -109,7 +99,6 @@ export interface FileRouteTypes {
     | '/insights'
     | '/settings'
     | '/team'
-    | '/teams'
     | '/auth/callback'
     | '/'
     | '/days/$date'
@@ -120,7 +109,6 @@ export interface FileRouteTypes {
     | '/_authenticated/insights'
     | '/_authenticated/settings'
     | '/_authenticated/team'
-    | '/_authenticated/teams'
     | '/auth/callback'
     | '/_authenticated/'
     | '/_authenticated/days/$date'
@@ -176,13 +164,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeamRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/teams': {
-      id: '/_authenticated/teams'
-      path: '/teams'
-      fullPath: '/teams'
-      preLoaderRoute: typeof AuthenticatedTeamsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
@@ -204,7 +185,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
-  AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedDaysDateRoute: typeof AuthenticatedDaysDateRoute
 }
@@ -213,7 +193,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
-  AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedDaysDateRoute: AuthenticatedDaysDateRoute,
 }

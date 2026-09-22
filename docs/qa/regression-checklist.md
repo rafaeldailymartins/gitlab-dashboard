@@ -17,7 +17,7 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
 - [ ] "Continue with GitLab" reaches GitLab's own authorization page.
 - [ ] The scopes on that page include the OpenID one as well as `read_api`. An
       application without `openid` ticked refuses every sign-in outright with
-      `invalid_scope`, so this fails here rather than on the teams screen.
+      `invalid_scope`, so this fails here rather than on the teams dialog.
 - [ ] Granting access returns to the dashboard with hours on it.
 - [ ] `localStorage` holds `gitlab.refreshToken` and nothing else that looks like
       a credential: neither the access token nor the `id_token` the teams
@@ -90,9 +90,18 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
 
 ## Teams
 
-- [ ] `/teams` is not in the navigation and should not be: the header still
-      carries four links. It is reached from "Manage teams" on the report and
-      from the teams card on `/settings`, and both land on the same screen.
+- [ ] The teams surface is not in the navigation and should not be: the header
+      still carries four links. It opens as a dialog from the teams button in the
+      report's toolbar and from the teams card on `/settings`, and both open the
+      same one. There is no `/teams` address any more; typing one 404s, which is
+      the honest answer.
+- [ ] Open it from the report, change the team, close it. You are on the same
+      report, on the same month, with the change in it — no navigation, no
+      reload, no lost place.
+- [ ] Press "New team", then a group. The team is made in one action, named after
+      the group and carrying everyone who logged time in it over the stated
+      window. Watch the network panel: at most four `GroupSuggestions` requests,
+      and one write.
 - [ ] Press "New team". A team appears already chosen, and the notice under the
       heading reads "Saved." before you have typed anything: every edit here is a
       save, and there is no draft to lose.
@@ -120,7 +129,7 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
       not be saved and the person is **still on the list**: the screen shows what
       the store holds, never what you typed. Turn it back on, remove them again,
       reload — that one stuck.
-- [ ] Open `/teams` on a second device, signed in as the same reader. The same
+- [ ] Open your teams on a second device, signed in as the same reader. The same
       teams are there. Add somebody there; then, without reloading the first
       device, remove somebody on it. The first says the teams were changed
       somewhere else, the list in front of you becomes the second device's
@@ -134,7 +143,7 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
       carries the old scopes forward, so this one is done on the production URL:
       sign in there before promoting, and do not sign out afterwards. `/team`
       says, in place of the report, that permission to identify you is missing
-      and that signing in again grants it; `/teams` says the same above an empty
+      and that signing in again grants it; the teams dialog says the same above an empty
       list. The dashboard, `/insights` and a day screen are untouched, and
       nothing has signed you out. Sign in again: both screens work.
 
@@ -147,7 +156,7 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
 - [ ] Switch team in the picker — a plain select, not a search field. The figures
       change, the address follows, and a reload keeps that team.
 - [ ] Rows are the team, exactly. Count them against the members list on
-      `/teams`: everybody you put on it has a row, including somebody who logged
+      the teams dialog: everybody you put on it has a row, including somebody who logged
       nothing, and no line under the table names anybody.
 - [ ] Watch the first round in the network panel: one `TeamHoursPage` request
       carries the whole team, however many people are on it. Somebody whose month
@@ -217,9 +226,9 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
       whichever team you looked at last.
 - [ ] Add `&group=…` to the same address. It loads narrowed; drop the parameter
       again and the same month loads unnarrowed.
-- [ ] Open `/teams` directly. It loads, and nothing you do there puts anything
-      in the address: these are your own teams, and there is nothing to send
-      anybody.
+- [ ] Open the teams dialog from anywhere. Nothing you do in it puts anything in
+      the address, and closing it leaves the address exactly as it was: these are
+      your own teams, and there is nothing to send anybody.
 - [ ] Hard-refresh any deep link. The Netlify SPA fallback serves it.
 
 ## The phone

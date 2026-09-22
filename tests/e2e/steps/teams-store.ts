@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 import { createBdd } from 'playwright-bdd'
 
 import { deviceContents } from '../support/device'
@@ -92,10 +92,22 @@ Then('the screen says the team was changed somewhere else', async ({ page }) => 
   )
 })
 
+/**
+ * Read off the dialog, not off the page.
+ *
+ * The report behind it says the same thing, for the same reason and about the
+ * same store — it is the same query. Two true sentences are two matches, so the
+ * scope is what makes this an assertion about the surface the reader is on
+ * rather than a strict-mode failure.
+ */
+function teamsDialog(page: Page): Locator {
+  return page.locator('[data-slot="dialog-content"]')
+}
+
 Then('the screen says my teams could not be loaded', async ({ page }) => {
-  await expect(page.getByText(/could not be loaded|não foi possível carregar/iu)).toBeVisible(
-    SETTLES,
-  )
+  await expect(
+    teamsDialog(page).getByText(/could not be loaded|não foi possível carregar/iu),
+  ).toBeVisible(SETTLES)
 })
 
 /**
@@ -108,10 +120,12 @@ Then('the screen says my teams could not be loaded', async ({ page }) => {
 Then(
   'the screen says permission to identify me is needed, and offers a fresh sign-in',
   async ({ page }) => {
+    const notice = teamsDialog(page)
+
     await expect(
-      page.getByText(/permission to identify you|permissão de identificar/iu),
+      notice.getByText(/permission to identify you|permissão de identificar/iu),
     ).toBeVisible(SETTLES)
-    await expect(page.getByText(/sign in again|entre de novo/iu)).toBeVisible()
+    await expect(notice.getByText(/sign in again|entre de novo/iu)).toBeVisible()
   },
 )
 

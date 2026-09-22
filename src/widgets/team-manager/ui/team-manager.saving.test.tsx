@@ -8,7 +8,7 @@ import type { Team, TeamsDocument, TeamsFailure, TeamsGateway } from '@/entities
 
 import { TeamsError } from '@/entities/teams'
 
-import { TeamsPage } from './teams-page'
+import { TeamManager } from './team-manager'
 
 const FISCAL: Team = {
   id: '018f3b2c-7a41-7c9e-9f2d-5b1a4e6c8d70',
@@ -53,8 +53,8 @@ function deferredTeams(initial: readonly Team[]) {
   }
 }
 
-function page(teams: TeamsGateway) {
-  return renderReport(<TeamsPage />, { teams })
+function manager(teams: TeamsGateway) {
+  return renderReport(<TeamManager />, { teams })
 }
 
 /** A store that will not answer at all, for the two reasons that happens. */
@@ -73,7 +73,7 @@ describe('what a save says', () => {
   it('says it is saving, and then that it saved', async () => {
     const { finish, gateway } = deferredTeams([FISCAL])
 
-    page(gateway)
+    manager(gateway)
     await userEvent.click(await removeButton(ANA.name))
 
     expect(screen.getByRole('status')).toHaveTextContent(/saving/iu)
@@ -86,23 +86,22 @@ describe('what a save says', () => {
   })
 
   it('announces politely, and leaves the focus where the reader put it', async () => {
-    const { finish, gateway } = deferredTeams([])
+    const { finish, gateway } = deferredTeams([FISCAL])
 
-    page(gateway)
-    const add = await screen.findByRole('button', { name: 'New team' })
-    await userEvent.click(add)
+    manager(gateway)
+    const remove = await removeButton(ANA.name)
+    await userEvent.click(remove)
 
     // A reader clicking ten names should not be interrupted ten times, which is
     // what an assertive region — or one that took the cursor — would do.
     expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite')
-    expect(add).toHaveFocus()
+    expect(remove).toHaveFocus()
 
     finish()
 
     await waitFor(() => {
       expect(screen.getByRole('status')).toHaveTextContent(/^saved/iu)
     })
-    expect(add).toHaveFocus()
   })
 
   it('shows the version somebody else wrote, rather than the change that lost', async () => {
@@ -111,7 +110,7 @@ describe('what a save says', () => {
       teams: [{ ...FISCAL, members: [member(ANA), member(BRUNO), member(CAMILA)] }],
     }
 
-    page(contestedTeams(theirs))
+    manager(contestedTeams(theirs))
     await userEvent.click(await removeButton(ANA.name))
 
     expect(await screen.findByText(/changed somewhere else/iu)).toBeInTheDocument()
@@ -122,21 +121,17 @@ describe('what a save says', () => {
   })
 
   it('says so when the store cannot be reached', async () => {
-    page(refusingTeams({ kind: 'unavailable' }))
+    manager(refusingTeams({ kind: 'unavailable' }))
 
     expect(await screen.findByText(/could not be loaded/iu)).toBeInTheDocument()
   })
 
   it('asks a session that predates the identity scope to sign in again', async () => {
-    page(refusingTeams({ kind: 'identity-unavailable' }))
+    manager(refusingTeams({ kind: 'identity-unavailable' }))
 
     expect(await screen.findByText(/sign in again/iu)).toBeInTheDocument()
     // Not an outage: waiting repairs one of these two failures and never the
     // other, so one sentence for both would send this reader waiting forever.
     expect(screen.queryByText(/could not be loaded/iu)).not.toBeInTheDocument()
-    // And the reader keeps their place. Discarding a session that still works
-    // everywhere else, because a secondary screen wanted a scope it was never
-    // granted, costs them the visit for nothing.
-    expect(screen.getByRole('heading', { level: 1, name: /teams/iu })).toBeInTheDocument()
   })
 })

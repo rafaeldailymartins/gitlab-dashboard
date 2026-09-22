@@ -5,6 +5,7 @@ import type { Team } from './team'
 import {
   newTeam,
   withMember,
+  withMembers,
   withName,
   withoutMember,
   withoutTeam,
@@ -89,6 +90,49 @@ describe('withoutMember', () => {
 
   it('can empty a team', () => {
     expect(withoutMember(squad(), ADA.id, LATER).members).toEqual([])
+  })
+})
+
+describe('withMembers', () => {
+  const LINUS = { id: 'gid://gitlab/User/3', name: 'Linus Torvalds', username: 'linus' }
+
+  it('adds everybody who is not already there, in one dated change', () => {
+    const team = withMembers(squad(), [GRACE, LINUS], LATER)
+
+    expect(team.members).toEqual([ADA, GRACE, LINUS])
+    expect(team.updatedAt).toBe(LATER)
+  })
+
+  it('keeps the ones already on the team rather than adding them twice', () => {
+    const team = withMembers(squad(), [{ ...ADA, name: 'Ada again' }, GRACE], LATER)
+
+    expect(team.members).toEqual([ADA, GRACE])
+  })
+
+  it('adds somebody named twice in the same batch once', () => {
+    const team = withMembers(squad(), [GRACE, { ...GRACE, name: 'Grace again' }], LATER)
+
+    expect(team.members).toEqual([ADA, GRACE])
+  })
+
+  // A version moved with no member moved is a conflict made out of nothing.
+  it('leaves the team alone, instant included, when nobody is new', () => {
+    const before = squad()
+
+    expect(withMembers(before, [ADA], LATER)).toBe(before)
+    expect(withMembers(before, [], LATER)).toBe(before)
+  })
+
+  // A usable team beats no team: the rest are still reachable by name.
+  it('fills up to the ceiling rather than refusing the whole batch', () => {
+    const crowd = Array.from({ length: MAX_MEMBERS + 5 }, (_, index) => ({
+      ...GRACE,
+      id: `gid://gitlab/User/crowd-${String(index)}`,
+    }))
+    const team = withMembers(squad(), crowd, LATER)
+
+    expect(team.members).toHaveLength(MAX_MEMBERS)
+    expect(team.members[0]).toBe(ADA)
   })
 })
 

@@ -132,71 +132,81 @@ same cell read twice.
 
 ### Teams
 
-The screen at `/teams`, reached from the report and from a card on `/settings`.
-It is a screen rather than a dialog, so this pass addresses it by URL like every
-other one.
+The dialog, opened from the report's toolbar and from a card on `/settings`. It
+is a dialog rather than a screen, which is the one thing this pass has to work
+harder for: open it from the report and check it from there, because what is
+behind it is part of what is being tested.
 
-22. Move by heading. There should be one level-1 heading, "Teams", and four
-    level-2 ones: the list of teams (spoken, not drawn), the people on the
-    chosen team, the suggestions and the search. Which team is being edited is
-    in none of them — it is in the pressed tab and in the name field — so
-    confirm a reader who jumped straight to "People on this team" can still
-    find out which team that is without leaving the section.
-23. Reach the team tabs. They are toggle buttons inside a group named "Your
+22. Open it from the report. Focus should move into the dialog, the report
+    behind it should be unreachable by Tab, and Escape should close it and leave
+    focus on the control that opened it. A reader who cannot get back to the
+    button they pressed has lost their place on a screen they never left.
+23. Move by heading inside it. The dialog is titled "Teams" and described in one
+    sentence; inside are the list of teams (spoken, not drawn), the people on
+    the chosen team, and the search (also spoken, not drawn — the field is
+    labelled and a heading above it would be the same word twice). Which team is
+    being edited is in none of them: it is in the pressed button in the rail and
+    in the name field, which is the first thing in the pane. Confirm a reader who
+    jumped to "People on this team" can still find out which team that is without
+    leaving the section.
+24. Reach the team rail. They are toggle buttons inside a group named "Your
     teams", not a tablist: Tab moves between them and each announces its pressed
     state. Arrow keys do nothing and no tab panel should be announced. Both are
     deliberate — a tablist owes the reader arrow-key navigation and a panel per
-    tab, and what is below is one editor that changes its contents.
-24. Add somebody, then remove them. Each change should be announced politely,
+    tab, and what is beside it is one pane that changes its contents.
+25. Add somebody, then remove them. Each change should be announced politely,
     "Saving…" and then "Saved.", with the cursor left where it was: the reader
     is in the middle of clicking names, and ten additions must not be ten
     interruptions. Confirm the announcement arrives on the **first** change of
     the visit. The region is in the document from the start, empty, for exactly
     this — one added at the moment it has something to say has not been watched,
     and that first announcement is the one that goes missing.
-25. Work both ways of adding a person. From a group: the window the suggestions
-    cover is read as text, "no longer active" is part of the spoken row rather
-    than a colour, and each button names the person it adds. By name: the same,
-    from the search field.
-26. Clear the team's name, or leave only spaces in it. That is the whole of the
+26. Work both ways of putting people on a team. From a group: press "New team",
+    confirm the window the people are read over is read out as text, and that
+    each group row announces its name and its path and reads as something to
+    press rather than as a value to choose. By name: the search field is named,
+    and each button names the person it adds.
+27. Clear the team's name, or leave only spaces in it. That is the whole of the
     reachable error: the field carries `maxLength`, so the length half of the
-    rule cannot be typed into. The error should be announced without moving
-    focus, the field should read as invalid, and what was typed should still be
-    there — the draft is kept whether or not the store would take it.
+    rule cannot be typed into. The name field is drawn as the pane's heading and
+    named by `aria-label`, so confirm it is still announced as a text field with
+    a name. The error should be announced without moving focus, the field should
+    read as invalid, and what was typed should still be there — the draft is kept
+    whether or not the store would take it.
 
 ### Settings
 
-27. Each weekday input should announce its own weekday and its current value.
-28. Enter 30 in one. The error should be announced without moving focus, and the
+28. Each weekday input should announce its own weekday and its current value.
+29. Enter 30 in one. The error should be announced without moving focus, and the
     field should read as invalid.
-29. Change the language. Everything should be re-announced in the new language,
+30. Change the language. Everything should be re-announced in the new language,
     including the error still on screen.
 
 ## Colour and contrast
 
-30. In both colour schemes, check the chart tokens against their card: the
+31. In both colour schemes, check the chart tokens against their card: the
     lightest heatmap band, the target line and the smallest bar. The contrast
     gate measures all of it against both card surfaces on every `verify`, so
     this step is looking for what a ratio cannot see: a band that
     passes its floor and still reads as the one above it, or a mark that clears
     3:1 and still disappears into the page.
-31. Turn on the operating system's high-contrast or forced-colours mode. Nothing
+32. Turn on the operating system's high-contrast or forced-colours mode. Nothing
     should become invisible; bars may lose their fill, which is why every figure
     is also written out.
-32. Simulate protanopia and deuteranopia on `/insights`, `/team` and `/teams`.
-    The project split should still be readable — it always is, because each row
-    is labelled. On the team report, a day above the reference should still be
-    distinguishable from one that met it: the bar crosses a dashed rule, which
-    is a difference in shape rather than in hue. On `/teams`, the team being
-    edited is a filled tab among unfilled ones; the fill is the only thing on
-    that screen carrying a state, so confirm what survives the simulation is the
-    weight change the pressed tab also carries.
-33. Read the sign-in screen's left panel in both colour schemes. It is the one
+33. Simulate protanopia and deuteranopia on `/insights`, `/team` and the teams
+    dialog. The project split should still be readable — it always is, because
+    each row is labelled. On the team report, a day above the reference should
+    still be distinguishable from one that met it: the bar crosses a dashed rule,
+    which is a difference in shape rather than in hue. In the dialog, the team
+    being edited is a filled row among unfilled ones; the fill is the only thing
+    in there carrying a state, so confirm what survives the simulation is the
+    weight change the pressed row also carries.
+34. Read the sign-in screen's left panel in both colour schemes. It is the one
     large branded surface in the app, and its decorative week is `aria-hidden`,
     which means axe's `color-contrast` rule skips those labels entirely. This
     step is their only automated-coverage gap: the weekday labels and the
     positioning line have to be legible on the panel, not just present.
-34. Set a weekday target low enough to meet, and read the brass seal on the met
+35. Set a weekday target low enough to meet, and read the brass seal on the met
     figure. `--seal` is the one interface colour axe has never evaluated: no
     fixture day in the acceptance suite reaches its target, so the state that
     uses it never renders in a browser under test. Its ratios are held by

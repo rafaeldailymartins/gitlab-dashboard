@@ -42,9 +42,10 @@ Feature: Using every screen
       | teams     |
 
   # "teams" is missing from the table below on purpose, and adding it is a
-  # failure rather than a fix: /teams is reached from a link on the report and a
-  # card on settings, never from the navigation, so it has no link to be marked
-  # as current.
+  # failure rather than a fix: the teams a reader keeps are edited in a dialog
+  # over the report, reached from a control there and a card on settings. It is
+  # not a screen the navigation goes to, so it has no link to be marked as
+  # current.
   # Spec: dashboard-ui / UI-16
   Scenario Outline: The navigation says which screen I am on
     Given I am signed in
