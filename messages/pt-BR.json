@@ -135,7 +135,7 @@
   "teams_back": "Voltar",
   "teams_changed_elsewhere": "Suas equipes foram alteradas em outro lugar, então esta é aquela versão. Sua alteração não foi salva.",
   "teams_delete_team": "Excluir esta equipe",
-  "teams_description": "Uma equipe é uma lista de pessoas que você pode acompanhar as horas lançadas delas no GitLab.",
+  "teams_description": "Uma equipe é uma lista de pessoas cujas horas lançadas no GitLab você pode acompanhar.",
   "teams_group_search_label": "Buscar nos seus grupos do GitLab",
   "teams_group_search_placeholder": "Buscar um grupo",
   "teams_heading": "Equipes",
