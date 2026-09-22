@@ -64,12 +64,6 @@ Feature: Keeping a team
     And I look for "Diego" by name
     Then the search offers "Diego Alves"
 
-  # Spec: team-timelog-report / GROUP-15
-  Scenario: The window the people were read over is stated
-    Given I am signed in
-    When I open my teams
-    And I go to start a team
-    Then starting a team says how far back it looks
 
   # Spec: team-timelog-report / GROUP-15
   Scenario: A bot that logged time is not put on the team

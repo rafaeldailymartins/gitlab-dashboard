@@ -1,9 +1,8 @@
 import { useMemo } from 'react'
 
-import type { IsoDate } from '@/shared/lib/date'
-
 import { m } from '@/shared/i18n'
 
+import type { Seeding } from '../lib/use-group-seeding'
 import type { ManagerState } from '../lib/use-manager-state'
 import type { TeamEdits } from '../lib/use-team-edits'
 
@@ -15,7 +14,7 @@ import { TeamStarter } from './team-starter'
 
 interface ManagerPaneProps {
   readonly edits: TeamEdits
-  readonly seeding: { readonly busy: null | string; readonly since: IsoDate }
+  readonly seeding: Seeding
   readonly state: ManagerState
 }
 
@@ -59,7 +58,6 @@ export function ManagerPane({ edits, seeding, state }: ManagerPaneProps) {
         onBack={edits.teams.length === 0 ? null : back}
         onBlank={state.useNothing}
         onGroup={state.useGroup}
-        since={seeding.since}
       />
     )
   }

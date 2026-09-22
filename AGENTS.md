@@ -330,8 +330,19 @@ one without reading the reason will reintroduce a bug that is already fixed.
   offered seventeen names, eleven of which had no hours at all, while eight
   people had logged in the window and two of those were not members. So the
   people come from a trailing **30 days** of timelogs, read to a cap of **four
-  pages**, the window is stated on screen, and the surface says when the read may
-  be incomplete rather than presenting a truncated answer as a census.
+  pages**. Neither number is said on screen and both are in the code: a group is
+  a _template_, so what the starter promises is that the reader can change who is
+  on the team, not how far back the provider was read. That sentence was the
+  difference between "nobody logged here" and "nobody logged here lately" while
+  the reader picked names out of a list; there is no list — one click later they
+  are looking at the team. The notice that said a busy group may have been read
+  short went with it, for the same reversal: a census that might be short is a
+  serious claim about a list that _is_ the answer and a mild one about a starting
+  point being edited in front of you. What covers both bounds now is the search,
+  which reaches anybody the provider knows, logged or not, and sits under the
+  team rather than behind a control. `SuggestionAnswer.partial` is still computed
+  and still tested at the cap — the fact stops at `useGroupSeeding`, which is the
+  cheapest way to be able to say it again.
   Those two numbers were ninety days and ten pages, and both were cut for the
   same reason: the read is strictly sequential — each page needs the last page's
   cursor — so the window and the cap multiply directly into how long somebody

@@ -84,20 +84,6 @@ When('I open my teams from the report', async ({ page }) => {
   await opened(page)
 })
 
-/**
- * As far as the starter and no further.
- *
- * `I start a new team` goes on to press "start an empty team", because a
- * scenario about naming one needs a team to name. This one stops where the
- * reader decides, which is where the window they are deciding over is stated.
- */
-When('I go to start a team', async ({ page }) => {
-  await page.getByRole('button', { name: /^new team$|^nova equipe$/iu }).click()
-  await expect(
-    page.getByRole('button', { name: /start an empty team|começar uma equipe vazia/iu }),
-  ).toBeVisible()
-})
-
 When('I start a new team', async ({ page }) => {
   await page.getByRole('button', { name: /^new team$|^nova equipe$/iu }).click()
   await page.getByRole('button', { name: /start an empty team|começar uma equipe vazia/iu }).click()
@@ -191,14 +177,6 @@ Then('the search offers {string}', async ({ page }, name: string) => {
   const add = new RegExp(`^(add|adicionar) ${name}$`, 'iu')
 
   await expect(searchResults(page).getByRole('button', { name: add })).toBeVisible()
-})
-
-/**
- * A list of who logged time answers a different question depending on when, and
- * a reader who is not told the window cannot tell an absence from a holiday.
- */
-Then('starting a team says how far back it looks', async ({ page }) => {
-  await expect(dialog(page).getByText(/ since | desde /iu)).toBeVisible()
 })
 
 Then('I keep the teams {string} and {string}', async ({ page }, first: string, second: string) => {

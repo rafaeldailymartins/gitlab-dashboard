@@ -6,7 +6,7 @@ import { groupSuggestionsPayloadSchema, toSuggestedMember } from './schemas'
 import { GROUP_SUGGESTIONS as SUGGESTIONS } from './suggestion-documents'
 
 /**
- * How many pages of a group's entries are read before the list is called partial.
+ * How many pages of a group's entries are read before the read gives up.
  *
  * The answer wanted is a set of distinct *people*, and people saturate long
  * before entries do: a squad of ten logging twice a day fills about four hundred
@@ -14,9 +14,12 @@ import { GROUP_SUGGESTIONS as SUGGESTIONS } from './suggestion-documents'
  * further mostly buys the same names again — and buys them one round trip at a
  * time, because each page needs the last page's cursor, while somebody waits.
  *
- * Four rather than ten, cut with the window. The group that exceeds it says its
- * people may not be all of them, and the search by name is the escape hatch that
- * finds whoever the read missed, logged or not.
+ * Four rather than ten, cut with the window. Where the cap bites, the answer
+ * carries `partial: true` and nothing on screen says so: a census that might be
+ * short is a serious claim about a list that *is* the answer, and this list is a
+ * team the reader is already looking at. What covers it is the search by name,
+ * which reaches whoever the read missed, logged or not. See
+ * `widgets/team-manager/lib/use-group-seeding.ts`.
  */
 const MAX_PAGES = 4
 

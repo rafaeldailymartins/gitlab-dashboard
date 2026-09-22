@@ -30,7 +30,7 @@ describe('the teams dialog', () => {
 
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
     expect(screen.getByText(/^teams$/iu)).toBeInTheDocument()
-    expect(screen.getByText(/a list of people you keep/iu)).toBeInTheDocument()
+    expect(screen.getByText(/hours logged in gitlab you can follow/iu)).toBeInTheDocument()
   })
 
   it('shows the teams it was opened for', async () => {

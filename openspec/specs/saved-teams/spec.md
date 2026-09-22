@@ -44,6 +44,13 @@ is not the way one is started: a lead who wants their squad wants it now, and a
 dozen writes to spell out what one name already said is a chore invented by the
 interface.
 
+How far back that group was read is `team-timelog-report` GROUP-15's to decide,
+and this requirement SHALL NOT presume the answer. It said "over the stated
+window" while GROUP-15 required the window to be stated; GROUP-15 no longer does,
+and a scenario here asserting it would have left the two capabilities disagreeing
+about the same click, with nothing to catch it — `openspec validate` reads one
+capability at a time.
+
 #### Scenario: Making a team
 
 - **WHEN** the reader names a new team and adds two people to it
@@ -53,7 +60,7 @@ interface.
 
 - **WHEN** the reader chooses a GitLab group to start a team from
 - **THEN** a team exists named after that group, carrying the people who logged
-  time in it over the stated window
+  time in it over the window
 - **AND** the reader did not have to add any of them individually
 
 #### Scenario: Taking somebody off a team

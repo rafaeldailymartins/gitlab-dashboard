@@ -1,10 +1,8 @@
 import { useId } from 'react'
 
 import type { GroupRef } from '@/entities/team-timelogs'
-import type { IsoDate } from '@/shared/lib/date'
 
-import { m, useActiveLocale } from '@/shared/i18n'
-import { formatLongDate } from '@/shared/lib/format'
+import { m } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 
 import { GroupList } from './group-list'
@@ -17,8 +15,6 @@ interface TeamStarterProps {
   readonly onBack: (() => void) | null
   readonly onBlank: () => void
   readonly onGroup: (group: GroupRef) => void
-  /** The first day the people are read over, for the sentence that states it. */
-  readonly since: IsoDate
 }
 
 /**
@@ -29,20 +25,20 @@ interface TeamStarterProps {
  * at a time, the question they had already answered by naming the group — and
  * spent a conditional write on each of those answers.
  *
- * The window is stated here rather than beside the people, because here is the
- * only moment it is a choice the reader is making. A list of who logged time
- * answers a different question depending on when, and somebody who was away for
- * the whole window is absent for a reason the reader can only act on if they
- * know the reason.
+ * A group is a **template** here, and the wording is the design. It is not a
+ * subscription and not a filter: what it produces is a team the reader owns from
+ * that moment, which is why the sentence promises they can change who is on it
+ * rather than explaining how far back the provider was read. That window used to
+ * be stated here and is not any more — see `use-group-seeding.ts` for what that
+ * costs and why it stopped being the reader's problem.
  *
  * Starting blank is kept and is not the first thing offered. It is the only way
  * to build a team of people who have logged nothing yet — a new joiner, most
  * often — but it is the rarer errand, and putting it first would make every
  * reader walk past the fast path to reach the slow one.
  */
-export function TeamStarter({ busy, onBack, onBlank, onGroup, since }: TeamStarterProps) {
+export function TeamStarter({ busy, onBack, onBlank, onGroup }: TeamStarterProps) {
   const headingId = useId()
-  const { locale } = useActiveLocale()
 
   return (
     <section aria-labelledby={headingId} className="flex min-h-0 flex-col gap-3 p-5">
@@ -54,9 +50,7 @@ export function TeamStarter({ busy, onBack, onBlank, onGroup, since }: TeamStart
         <PaneHeading id={headingId} onBack={onBack} title={m.teams_start_heading()} />
       )}
 
-      <p className="text-sm text-muted-foreground">
-        {m.teams_start_description({ since: formatLongDate(since, locale) })}
-      </p>
+      <p className="text-sm text-muted-foreground">{m.teams_start_description()}</p>
 
       <GroupList busy={busy} label={m.teams_group_search_label()} onChoose={onGroup} />
 

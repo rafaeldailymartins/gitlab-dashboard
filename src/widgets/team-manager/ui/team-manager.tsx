@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 
-import { m } from '@/shared/i18n'
 import { Skeleton } from '@/shared/ui/skeleton'
 
 import { useGroupSeeding } from '../lib/use-group-seeding'
@@ -60,9 +59,6 @@ export function TeamManager() {
           load. */}
       <footer className="flex flex-wrap items-center gap-x-3 border-t border-border bg-muted/40 px-5 py-1.5">
         <SaveNotice state={edits.state} />
-        {state.incomplete ? (
-          <p className="text-xs text-muted-foreground">{m.teams_group_incomplete()}</p>
-        ) : null}
       </footer>
     </>
   )

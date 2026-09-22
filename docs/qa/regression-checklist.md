@@ -99,28 +99,31 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
       report, on the same month, with the change in it — no navigation, no
       reload, no lost place.
 - [ ] Press "New team", then a group. The team is made in one action, named after
-      the group and carrying everyone who logged time in it over the stated
-      window. Watch the network panel: at most four `GroupSuggestions` requests,
-      and one write.
-- [ ] Press "New team". A team appears already chosen, and the notice under the
-      heading reads "Saved." before you have typed anything: every edit here is a
-      save, and there is no draft to lose.
+      the group and carrying everyone who logged time in it over the window.
+      Watch the network panel: at most four `GroupSuggestions` requests, and one
+      write. The pane says a group is a template and that you can change who is
+      on the team; it does **not** state the window, and nothing says the read
+      may have been short. Both were removed with the candidate list they were
+      about — see `team-timelog-report` GROUP-15.
+- [ ] Press "New team", then "Start an empty team". A team appears already
+      chosen, and the notice under it reads "Saved." before you have typed
+      anything: every edit here is a save, and there is no draft to lose.
 - [ ] Rename it. The save happens when the field is left or Enter is pressed —
       watch the network: one `PUT` for the rename, not one per letter.
 - [ ] Empty the name. The field says a name is needed, nothing is sent, and what
       you typed stays in the field.
-- [ ] Choose a group under "Group to suggest from". The names offered are whoever
-      logged time there since the date the list states — ninety days back — and
-      not the group's membership: somebody with access who logged nothing in that
-      window is absent, and somebody who logged without being a member is there.
-- [ ] Somebody who has since left is still offered, marked "no longer active".
-      They logged the time, so a month that holds it is about them.
-- [ ] On a group with more entries than one read covers, the list says so rather
-      than presenting itself as the whole answer.
-- [ ] Add two or three of them. Each add saves on its own, and whoever is added
-      stops being offered.
-- [ ] Add somebody who has logged nothing anywhere — a new joiner — through "Add
-      anybody by name". The suggestions cannot reach them and the search can.
+- [ ] Build a team from a group and read who landed on it. It is whoever logged
+      time there in the window and not the group's membership: somebody with
+      access who logged nothing is absent, and somebody who logged without being
+      a member is there. A bot is not there. Somebody who has since left **is**:
+      they logged the time, so a month that holds it is about them.
+- [ ] Press "Add from a group" on a team that already has people, and choose a
+      group. Whoever is missing joins; nobody is taken off, including somebody
+      you added by hand who never logged in that group.
+- [ ] Add somebody who has logged nothing anywhere — a new joiner — through the
+      search under the member list. A group cannot reach them and the search can;
+      it is also the only cover for a window or a page cap that missed somebody,
+      so confirm it is on screen without opening anything.
 - [ ] Watch one of those saves in the network panel: a `PUT` to
       `/.netlify/functions/teams` carrying an `Authorization: Bearer` header, no
       cookie, and no identifier anywhere in the address. The answer says

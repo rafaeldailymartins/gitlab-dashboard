@@ -31,10 +31,10 @@ const GUILD: Team = {
 }
 
 /** A provider whose group holds these people, whatever else it is asked. */
-function groupOf(people: readonly ReturnType<typeof suggestedMember>[], partial = false) {
+function groupOf(people: readonly ReturnType<typeof suggestedMember>[]) {
   return {
     ...fakeTeamGateway(),
-    suggestions: vi.fn(() => Promise.resolve({ partial, people })),
+    suggestions: vi.fn(() => Promise.resolve({ partial: false, people })),
   } satisfies TeamTimelogGateway
 }
 
@@ -169,11 +169,28 @@ describe('a team built from a group', () => {
     })
   })
 
-  it('says when the group held more entries than were read', async () => {
-    manager(fakeTeamsGateway([]), groupOf([suggestedMember(ANA)], true))
+  // The notice that used to say so is gone: a census that might be short is a
+  // serious claim about a list that *is* the answer, and a mild one about a
+  // starting point the reader is already looking at. What must not happen is the
+  // opposite — the screen claiming these are everybody.
+  it('builds the team from what a short read found, and claims nothing more', async () => {
+    const teams = fakeTeamsGateway([])
+    const short = {
+      ...fakeTeamGateway(),
+      suggestions: vi.fn(() => Promise.resolve({ partial: true, people: [suggestedMember(ANA)] })),
+    } satisfies TeamTimelogGateway
+
+    manager(teams, short)
     await userEvent.click(await groupRow())
 
-    expect(await screen.findByText(/may not be everybody/iu)).toBeInTheDocument()
+    await waitFor(() => {
+      expect(teams.write).toHaveBeenCalledWith(
+        expect.objectContaining({ teams: [expect.objectContaining({ members: [member(ANA)] })] }),
+      )
+    })
+    expect(screen.queryByText(/everybody|all of them|complete/iu)).not.toBeInTheDocument()
+    // And the way to add whoever it missed is on screen, not behind a control.
+    expect(screen.getByRole('searchbox', { name: /search gitlab for a person/iu })).toBeVisible()
   })
 
   it('starts an empty one when the reader asks for that instead', async () => {

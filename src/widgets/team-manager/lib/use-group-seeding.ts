@@ -9,7 +9,7 @@ import {
   teamSuggestionsQuery,
   useTeamTimelogGateway,
 } from '@/entities/team-timelogs'
-import { addDays, type IsoDate, spanInstantsIn, toIsoDate } from '@/shared/lib/date'
+import { addDays, spanInstantsIn, toIsoDate } from '@/shared/lib/date'
 
 /**
  * How far back the people a team is built from are read.
@@ -23,8 +23,14 @@ import { addDays, type IsoDate, spanInstantsIn, toIsoDate } from '@/shared/lib/d
  * What thirty days loses is somebody who was away for the whole month, and that
  * is a trade made knowingly: they are one search away by name, and the
  * alternative was every reader paying for the rare one every time they build a
- * team. It is stated on screen either way, because a list of who logged time
- * with no window behind it reads as the group's membership.
+ * team.
+ *
+ * The number is no longer said out loud, and that changed with what a group is
+ * for. It used to seed a list of candidates the reader picked from, where the
+ * window was the difference between "nobody logged here" and "nobody logged here
+ * lately"; a group is a template now, and what the reader is looking at a second
+ * later is the team itself, with everybody on it and a search that reaches
+ * anybody who is not.
  */
 const WINDOW_DAYS = 30
 
@@ -32,15 +38,7 @@ export interface Seeding {
   /** The path of the group being read, or null when none is. */
   readonly busy: null | string
   /** Reads a group and answers with the people a team from it would carry. */
-  readonly read: (fullPath: string) => Promise<SeedResult>
-  /** The first day the window covers, for the sentence that states it. */
-  readonly since: IsoDate
-}
-
-interface SeedResult {
-  readonly members: readonly TeamMember[]
-  /** True when the group holds more entries than the read covered. */
-  readonly partial: boolean
+  readonly read: (fullPath: string) => Promise<readonly TeamMember[]>
 }
 
 /**
@@ -56,6 +54,12 @@ interface SeedResult {
  * the same group in one sitting pays for one read, and an in-flight read is
  * shared rather than doubled.
  *
+ * `SuggestionAnswer.partial` is deliberately not carried past here. The adapter
+ * still reports it and is still tested on it — it is a true fact about the read
+ * — but nothing on screen says it any more: a census that might be short matters
+ * when the list *is* the answer, and this list is a starting point the reader is
+ * already looking at and editing.
+ *
  * Exact instants, so none of the report's widen-then-cut discipline applies:
  * this window is not a month and has no day boundary anybody could round.
  */
@@ -65,10 +69,9 @@ export function useGroupSeeding(): Seeding {
   const { preferences } = usePreferences()
   const { timeZone } = preferences
   const [busy, setBusy] = useState<null | string>(null)
-  const since = addDays(toIsoDate(new Date(), timeZone), -WINDOW_DAYS)
 
   const read = useCallback(
-    async (fullPath: string): Promise<SeedResult> => {
+    async (fullPath: string): Promise<readonly TeamMember[]> => {
       const today = toIsoDate(new Date(), timeZone)
       const window = {
         ...spanInstantsIn(addDays(today, -WINDOW_DAYS), today, timeZone),
@@ -80,10 +83,7 @@ export function useGroupSeeding(): Seeding {
       try {
         const answer = await client.fetchQuery(teamSuggestionsQuery(gateway, window))
 
-        return {
-          members: suggestionsFrom(answer.people).map((one) => memberOf(one.person)),
-          partial: answer.partial,
-        }
+        return suggestionsFrom(answer.people).map((one) => memberOf(one.person))
       } finally {
         setBusy(null)
       }
@@ -91,7 +91,7 @@ export function useGroupSeeding(): Seeding {
     [client, gateway, timeZone],
   )
 
-  return { busy, read, since }
+  return { busy, read }
 }
 
 /**

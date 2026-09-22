@@ -727,6 +727,14 @@ naming the squad — and the same group SHALL remain reachable afterwards, as a 
 to merge in whoever has appeared since, rather than as a control that is always
 on screen.
 
+A group is a **template**, and the screen SHALL say so rather than describing how
+the provider was read. What the reader gets is a team they own from that moment,
+which is why what they are told is that they can change who is on it. The window
+the people were read over used to be stated here and is not any more: that
+sentence was the difference between "nobody logged here" and "nobody logged here
+lately" while the reader was picking names out of a list, and there is no such
+list — one click later they are looking at the team, with everybody on it.
+
 The seed is whoever logged, not whoever is a member. A group's membership is a
 list of people with access, most of whom may never have touched time tracking;
 the people a lead is building a report about are the people whose hours there are
@@ -740,15 +748,17 @@ People saturate long before entries do — a squad's month is hundreds of timelo
 and perhaps a dozen names — so reading further mostly buys the same names again,
 and the reader is left looking at nothing while it happens.
 
+Both bounds can leave somebody out, and what covers that is the search rather
+than a sentence. A colleague the window missed, one the cap missed, and one who
+has logged nothing anywhere are the same problem to the reader and have the same
+fix: the search SHALL reach anybody the provider knows, logged or not, and SHALL
+be on screen beside the team rather than behind a control.
+
 A seeded team SHALL be a team and nothing more. The reader chooses who stays, and
 the team SHALL NOT change afterwards because the group's contributors did. A
 roster that followed a group would take a colleague off a lead's report the week
 they moved team, and would silently remove their hours from every total in every
 month already reported — including months they were on the team for.
-
-The window the people were read over SHALL be stated. A list of who logged time
-answers a different question depending on when, and a reader who is not told the
-window cannot tell an absence from a holiday.
 
 Bot accounts SHALL be left out: nobody manages a bot's timesheet, and a reader
 who genuinely wants one can add it by name. Accounts that are not active SHALL
@@ -756,15 +766,10 @@ NOT be left out. An inactive account that logged time in the window is somebody
 who did the work and has since been blocked or left, which is the opposite of the
 clutter the old rule removed from a membership list.
 
-Where the group could not be read to exhaustion the screen SHALL say so rather
-than presenting a partial list as a census.
-
 #### Scenario: Seeding a team from who logged time in a group
 
 - **WHEN** the reader chooses a group to start a team from
-- **THEN** the team carries the people who logged time in it over the stated
-  window
-- **AND** the window is stated
+- **THEN** the team carries the people who logged time in it over the window
 
 #### Scenario: Seeding from a group reached through an ancestor
 
@@ -792,7 +797,9 @@ than presenting a partial list as a census.
 #### Scenario: More contributors than were read
 
 - **WHEN** the group holds more entries than the read covers
-- **THEN** the screen says the people it found may not be all of them
+- **THEN** the team carries whoever the read did find
+- **AND** nothing on the screen claims they are all of them
+- **AND** anybody it missed can still be added by name
 
 #### Scenario: Adding from a group a team already exists
 

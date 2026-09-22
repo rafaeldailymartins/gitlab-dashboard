@@ -162,10 +162,12 @@ behind it is part of what is being tested.
     this — one added at the moment it has something to say has not been watched,
     and that first announcement is the one that goes missing.
 26. Work both ways of putting people on a team. From a group: press "New team",
-    confirm the window the people are read over is read out as text, and that
-    each group row announces its name and its path and reads as something to
-    press rather than as a value to choose. By name: the search field is named,
-    and each button names the person it adds.
+    confirm the pane says what a group is for — a template, changeable
+    afterwards — and that each group row announces its name and its path and
+    reads as something to press rather than as a value to choose. By name: the
+    search field is named, and each button names the person it adds. The search
+    is the only cover for a window or a page cap that missed somebody, so
+    confirm it is reachable from the team without opening anything.
 27. Clear the team's name, or leave only spaces in it. That is the whole of the
     reachable error: the field carries `maxLength`, so the length half of the
     rule cannot be typed into. The name field is drawn as the pane's heading and

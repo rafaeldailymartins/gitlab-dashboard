@@ -16,8 +16,6 @@ export interface ManagerState {
   readonly chosen: null | Team
   /** Forgets which team was chosen, for the one deleted out from under the pane. */
   readonly clear: () => void
-  /** True when the last group read stopped at its cap before the group ran out. */
-  readonly incomplete: boolean
   readonly pane: Pane
   readonly show: (pane: Pane) => void
   /** Reads a group and puts whoever logged time there on a team. */
@@ -61,7 +59,6 @@ type Pane =
 export function useManagerState(edits: TeamEdits, seeding: Seeding): ManagerState {
   const [chosenId, setChosenId] = useState<null | string>(null)
   const [pane, setPane] = useState<Pane>('editing')
-  const [incomplete, setIncomplete] = useState(false)
   const chosen = chosenOf(edits.teams, chosenId)
 
   function adopt(team: Team) {
@@ -79,15 +76,13 @@ export function useManagerState(edits: TeamEdits, seeding: Seeding): ManagerStat
       setChosenId(null)
       setPane('editing')
     },
-    incomplete,
     pane,
     show: setPane,
     useGroup: (group) => {
       const into = pane === 'adding' ? chosen : null
 
-      void seeding.read(group.fullPath).then((seed) => {
-        setIncomplete(seed.partial)
-        merge({ edits, group, into, members: seed.members }, adopt)
+      void seeding.read(group.fullPath).then((members) => {
+        merge({ edits, group, into, members }, adopt)
       })
     },
     useNothing: () => {
