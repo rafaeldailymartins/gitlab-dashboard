@@ -65,7 +65,6 @@ export function TeamMatrix({
   const [order, setOrder] = useState<RowOrder>(DEFAULT_ORDER)
   const { columns, columnTotals, grandTotal, rows, weeks } = report.grid
   const visible = useMemo(() => ordered(rows, order), [rows, order])
-  const keys = useMemo(() => columns.map((column) => column.key), [columns])
   const marks = useMemo(() => marksOf(columns, today), [columns, today])
   // A group that resolved is the only narrowing there is: no filter and a
   // filter this reader cannot open both leave the figures at their whole reach.
@@ -117,10 +116,10 @@ export function TeamMatrix({
           ))}
         </tbody>
         <MatrixFoot
+          columns={columns}
           columnTotals={columnTotals}
           complete={report.complete}
           grandTotal={grandTotal}
-          keys={keys}
           marks={marks}
         />
       </table>
@@ -170,5 +169,7 @@ function widthOf(column: GridColumn, granularity: Granularity): string {
     return 'w-24'
   }
 
-  return column.referenceHours === 0 ? 'w-8' : 'w-12'
+  // Narrower than a working day, and wide enough for the weekday's own name:
+  // the abbreviation is why this is not 'w-8' any more.
+  return column.referenceHours === 0 ? 'w-11' : 'w-12'
 }

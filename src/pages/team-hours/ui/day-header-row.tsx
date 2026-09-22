@@ -65,32 +65,33 @@ function DayHeading({
   readonly today: IsoDate
 }) {
   const isToday = column.from === today
+  const quiet = column.referenceHours === 0
 
   return (
     <span className="flex flex-col items-center gap-px leading-none">
       <span
         aria-hidden
-        className={
-          column.referenceHours === 0 ? 'tabular text-xs text-muted-foreground' : 'tabular text-xs'
-        }
+        className={quiet ? 'tabular text-xs text-muted-foreground' : 'tabular text-xs'}
       >
         {Number(column.from.slice(-2))}
       </span>
-      {/* A column nobody is expected to log in is half as wide as the others,
-          which is not room for an abbreviation — and the tint and the number
-          already say which day it is. */}
-      {column.referenceHours === 0 ? null : (
-        <span
-          aria-hidden
-          className={
-            isToday
-              ? 'rounded-sm bg-primary px-1 text-[10px] text-primary-foreground'
-              : 'px-1 text-[10px] text-muted-foreground'
-          }
-        >
-          {shortWeekdayName(weekdayOf(column.from), locale)}
-        </span>
-      )}
+      {/* Named like every other column, weekends included. They used to carry
+          the number alone, on the argument that a column nobody is expected to
+          log in is half as wide as the others and that the tint already says
+          which day it is. Both halves were wrong: the tint says *a* day expects
+          nothing, not *which* day, so a reader counting across a month had two
+          columns in every seven they had to work out — and the width was this
+          table's own choice, which is why it moved rather than the label. */}
+      <span
+        aria-hidden
+        className={
+          isToday
+            ? 'rounded-sm bg-primary px-1 text-[10px] text-primary-foreground'
+            : 'px-1 text-[10px] text-muted-foreground'
+        }
+      >
+        {shortWeekdayName(weekdayOf(column.from), locale)}
+      </span>
       <span className="sr-only">{formatDayWithWeekday(column.from, locale)}</span>
     </span>
   )

@@ -285,6 +285,25 @@ describe('the matrix', () => {
     expect(within(days ?? document.body).getAllByRole('columnheader')).toHaveLength(31)
   })
 
+  // Weekends used to carry the number alone, on the argument that a column
+  // nobody is expected to log in has no room for the abbreviation. The tint says
+  // *a* day expects nothing, not which one, so two columns in every seven were
+  // left for the reader to work out — and the width was this table's own choice.
+  it('names every weekday, weekends included', async () => {
+    page()
+
+    await screen.findByRole('rowheader', { name: new RegExp(ANA.name) })
+
+    const days = screen.getAllByRole('row')[1]
+    const headings = within(days ?? document.body).getAllByRole('columnheader')
+    // 2 May 2026 is a Saturday, and 3 May a Sunday: the second and third columns.
+    const weekend = [headings[1], headings[2]]
+
+    for (const heading of weekend) {
+      expect(heading).toHaveTextContent(/S(at|un)/u)
+    }
+  })
+
   it('states the reference the bars are measured against', async () => {
     page()
 

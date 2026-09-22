@@ -1,4 +1,4 @@
-import { lazy, type ReactNode, Suspense, useMemo, useState } from 'react'
+import { lazy, type ReactNode, Suspense, useEffect, useMemo, useState } from 'react'
 
 import type { GroupRef } from '@/entities/team-timelogs'
 
@@ -16,7 +16,7 @@ import { type ScreenState, screenStateOf } from '../lib/state'
 import { useSavedTeams } from '../lib/use-saved-teams'
 import { type TeamHoursReport, useTeamReport } from '../lib/use-team-report'
 import { MatrixLegend } from './matrix-legend'
-import { ReportToolbar } from './report-toolbar'
+import { loadTeamManager, ReportToolbar } from './report-toolbar'
 import { TeamMatrix } from './team-matrix'
 
 /**
@@ -24,12 +24,44 @@ import { TeamMatrix } from './team-matrix'
  * downloads: it carries a whole editing surface, a group list and a person
  * search, none of which a reader reading a month has asked for.
  *
+ * It is fetched before it is asked for, though — see `loadTeamManager`, which
+ * the toolbar's button warms on hover and which this screen warms once the
+ * browser has nothing else to do. A chunk requested by the click is a click that
+ * waits for the network.
+ *
  * Mapped to `default` rather than exported as one: `no-restricted-exports`
  * holds every module here, and a default export would be the one exception.
  */
 const TeamManagerDialog = lazy(async () =>
-  import('@/widgets/team-manager').then((module) => ({ default: module.TeamManagerDialog })),
+  loadTeamManager().then((module) => ({ default: module.TeamManagerDialog })),
 )
+
+/**
+ * Warms that chunk while the browser is idle, and gives up where there is no
+ * idle callback to ask for: the hover and focus on the button cover that case,
+ * and a timer racing the month's own requests would be worse than nothing.
+ */
+function useWarmTeamManager(): void {
+  useEffect(() => {
+    if (typeof requestIdleCallback !== 'function') {
+      return
+    }
+
+    const id = requestIdleCallback(
+      () => {
+        void loadTeamManager()
+      },
+      { timeout: IDLE_TIMEOUT_MS },
+    )
+
+    return () => {
+      cancelIdleCallback(id)
+    }
+  }, [])
+}
+
+/** Long enough that the month's own requests go first, short enough to be there. */
+const IDLE_TIMEOUT_MS = 4000
 
 /** The sync control carries no caveats on this screen. See where it is used. */
 const NO_NOTICES: readonly string[] = []
@@ -64,6 +96,9 @@ interface TeamHoursPageProps {
  */
 export function TeamHoursPage({ onChange, search }: TeamHoursPageProps) {
   const saved = useSavedTeams()
+
+  useWarmTeamManager()
+
   const [managing, setManaging] = useState(false)
   const choice = useMemo(() => chosenTeam(saved.teams, search.team), [saved.teams, search.team])
   const report = useTeamReport(search, teamOf(choice))

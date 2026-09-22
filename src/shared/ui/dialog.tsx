@@ -8,7 +8,7 @@ import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 
 /*
- * Four deviations from what `shadcn add dialog` writes, all to be kept if this
+ * Five deviations from what `shadcn add dialog` writes, all to be kept if this
  * component is ever regenerated.
  *
  * - `cn` comes from `@/shared/lib/utils`. The generator wrote `from "cn"` and
@@ -18,6 +18,12 @@ import { Button } from '@/shared/ui/button'
  * - The backdrop is `bg-black/60`. A tenth of an alpha over this app's own dark
  *   surfaces is not a dimming, and the dialog it is meant to lift reads as a
  *   panel that happens to be in front.
+ * - It carries **no** `backdrop-filter`. The generated `backdrop-blur-xs` is a
+ *   composite of the whole page on every frame of the animation, and behind this
+ *   dialog the whole page is a month-wide table with sticky headers. It bought
+ *   nothing that could be seen under a 60% black wash, and it was not measured
+ *   as free — it was measured as making no difference on the main thread, which
+ *   is the one place a blur was never going to cost anything.
  * - The close button is labelled from Paraglide. No user-facing string in this
  *   repository is a literal.
  * - No `sm:max-w-sm` default. This dialog is two panes wide, and a default the
@@ -31,7 +37,7 @@ const CONTENT =
   'fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-popover text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/10 duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95'
 
 const OVERLAY =
-  'fixed inset-0 isolate z-50 bg-black/60 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0'
+  'fixed inset-0 isolate z-50 bg-black/60 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0'
 
 export const Dialog = DialogPrimitive.Root
 

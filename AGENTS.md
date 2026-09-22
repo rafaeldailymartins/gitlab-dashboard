@@ -414,14 +414,41 @@ one without reading the reason will reintroduce a bug that is already fixed.
   every screen already uses, so the bundler hoists the popup machinery into the
   entry chunk: measured, that put the initial load at 214 kB against a 180 kB
   budget. Split, it is 174 kB.
-- **A weekend column is drawn from `share`, not from the cell's kind.** A cell is
-  only `non-working` once its column has been read and nobody logged in it, so a
-  weekend still loading — or one later this month — would lose its tint and its
-  narrow width, and the table would change shape as the pages landed. `share` is
-  null exactly when the reference expects nothing, which is the fact the column
-  is drawn from. The widths live in a `<colgroup>`: a fixed table takes its
-  widths from the first row, and the first row here is the week bands, whose
-  cells span several columns and say nothing about any one of them.
+- **The teams dialog's chunk is fetched before it is clicked.** Code-splitting it
+  was right and it made the first open a network request the reader was waiting
+  through: measured on the built bundle served locally, 525 ms and two requests,
+  and 2.5 seconds on a machine six times slower, with an 850 ms task parsing it.
+  So the button starts the import on `pointerenter` and on `focus`, and the
+  report screen starts it again from `requestIdleCallback` — which is skipped
+  where there is none rather than replaced by a timer that would race the
+  month's own requests. Warm, the same open is 21 ms on a normal machine.
+  What is left is the page behind it being laid out again: 248 ms at six times
+  slower over the month's table against 112 ms over `/settings`, which is the
+  scroll lock changing the document's width and a month-wide fixed table with
+  sticky cells re-measuring inside it. That is the dialog's price for locking the
+  page, and it is paid once per open rather than per frame.
+- **A weekend column is drawn from `share`, not from the cell's kind, and it is
+  named like every other column.** A cell is only `non-working` once its column
+  has been read and nobody logged in it, so a weekend still loading — or one
+  later this month — would lose its tint and its narrow width, and the table
+  would change shape as the pages landed. `share` is null exactly when the
+  reference expects nothing, which is the fact the column is drawn from. The
+  widths live in a `<colgroup>`: a fixed table takes its widths from the first
+  row, and the first row here is the week bands, whose cells span several columns
+  and say nothing about any one of them.
+  Those columns used to carry the date alone, on the argument that one nobody is
+  expected to log in is half as wide as the others and has no room for the
+  weekday's abbreviation — and that the tint said which day it was anyway. The
+  second half was false: the tint says _a_ day expects nothing, never which one,
+  so a reader counting across a month had two columns in every seven to work out.
+  The width was this table's own choice, so the width moved rather than the
+  label: `w-11` against `w-12`, still narrow enough that a month reads as five
+  weeks rather than as thirty-one stripes.
+  The tint runs through the footer too. It did not, and the stripe stopped one
+  row short of the bottom — along the row a reader's eye actually travels, which
+  is the one place the break showed. It can be both tinted and `sticky` because
+  `--chart-empty` is opaque; an alpha would have the rows scrolling underneath it
+  show through.
 - **The chosen team is remembered; the group filter deliberately is not.**
   `lib/remembered.ts` keeps the team's identifier — never a name, never a
   colleague, never a figure, all of which `persist: false` forbids — so a return
