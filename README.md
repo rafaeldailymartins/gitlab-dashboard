@@ -5,10 +5,11 @@ tracking (`/spend`) on issues and merge requests. You sign in with your own
 GitLab account — there is no Personal Access Token to paste anywhere.
 
 Almost all of it is a static single-page app: the browser talks to GitLab's
-GraphQL API directly. The exception is the teams you define — a team is a list
-of people you keep, and one serverless function on this app's own origin holds
-it, so a team built on the laptop is there on the phone. No hours pass through
-it, and nothing else needs a server.
+GraphQL API directly. The exceptions are the teams you define — a team is a list
+of people you keep — and your working schedule, which two serverless functions
+on this app's own origin hold, so a team built on the laptop is there on the
+phone and the hours you count a day as are the same on both. No hours pass
+through them, and nothing else needs a server.
 
 ## What it shows
 
@@ -48,8 +49,13 @@ all, and missed two people who had logged. Reached from the report's toolbar and
 from Settings, never from a fifth link in the navigation.
 
 **Settings** — hours per weekday, the time zone that decides when a day starts,
-the language, and the colour scheme, all of it on your device only; plus the way
-through to your teams, which are the one thing that is not.
+the language, and the colour scheme. The first two follow you: they are facts
+about you rather than about a machine, and since the team table measures its bars
+against your daily target, a laptop and a phone disagreeing about it would draw
+the same month two different ways. They are kept beside your teams, under a key
+derived from who the store verified you are. The language and the colour scheme
+stay on the device — the theme is applied before the first paint, which nothing
+fetched over the network can be. Plus the way through to your teams.
 
 ## How the data flows
 
@@ -58,9 +64,11 @@ Browser (static files on a CDN)
   ├── PKCE authorize   ──> gitlab.com/oauth/authorize
   ├── token / refresh  ──> gitlab.com/oauth/token      (no client secret)
   ├── hours            ──> gitlab.com/api/graphql      (Bearer, CORS allows it)
-  └── teams            ──> /.netlify/functions/teams   (id_token, same origin)
+  ├── teams            ──> /.netlify/functions/teams        (id_token, same origin)
+  └── settings         ──> /.netlify/functions/preferences  (id_token, same origin)
 
-One function over Netlify Blobs: lists of people, never hours.
+Two functions over Netlify Blobs, through one handler: lists of people and
+your own schedule, never hours.
 One public setting: VITE_GITLAB_CLIENT_ID
 ```
 
@@ -97,8 +105,9 @@ belong to people other than you.
 - TanStack Router (SPA, file-based routes) and TanStack Query
 - Tailwind CSS v4 with shadcn/ui components on Base UI
 - Paraglide JS for i18n (English and Brazilian Portuguese)
-- One Netlify Function over Netlify Blobs (`@netlify/blobs`) for the teams, with
-  `jose` verifying the caller's GitLab identity token against GitLab's own keys
+- Two Netlify Functions over Netlify Blobs (`@netlify/blobs`), one handler
+  behind them, for the teams and the schedule — with `jose` verifying the
+  caller's GitLab identity token against GitLab's own keys
 - Bun as package manager, script runner and runtime
 - Feature-Sliced Design with a Clean Architecture core — see `AGENTS.md`
 
@@ -133,8 +142,10 @@ administrator is involved.
 an authorize request against the application's own scopes, so the other order
 fails every sign-in with `invalid_scope`. Going the right way round costs
 nothing: a session granted before the scope was added keeps working, because a
-renewal carries the original scopes forward, and it shows an inline notice
-asking you to sign in again on the teams surface only. You are never signed out.
+renewal carries the original scopes forward. It shows an inline notice asking
+you to sign in again on the teams surface, and a quiet line on the settings
+screen saying your schedule is not reaching your other devices; both surfaces
+fall back to what this device itself holds. You are never signed out.
 
 ### 2. Configure the app
 
@@ -215,28 +226,31 @@ in across visits with the smallest blast radius a browser-only client can offer.
 The scope is `read_api openid`: read-only on GitLab's data plus an assertion of
 who you are, and the authorize request is asserted to ask for nothing more.
 
-The teams endpoint holds one document per reader, and it holds a roster: the
-name, username and GitLab id of everybody you put on a team. No hours, and
-nothing about anybody who is not on one. Who is calling is established from the
+The two endpoints hold one document each per reader. The teams one holds a
+roster: the name, username and GitLab id of everybody you put on a team. The
+settings one holds your daily targets and your time zone. No hours in either,
+and nothing about anybody who is not on a team. Who is calling is established from the
 GitLab `id_token`, verified offline against GitLab's published keys with `jose`
 — RS256 named in the call rather than taken from the token, the audience checked
 against this application's own id, and nothing minted more than 150 seconds ago
 accepted, which bounds replay whatever the token claims for its own expiry. The
-storage key is `v1/<sub>`, built from that verified subject and from nothing the
-request carried: no field in the body, no value in the address, and no
-identifier in the route at all — so naming somebody else's teams is not
-expressible rather than merely refused. The assertion itself is never stored: it
+storage key is `v1/<sub>`, plus a suffix the function module chooses for its own
+document, built from that verified subject and from nothing the request carried:
+no field in the body, no value in the address, and no identifier in the route at
+all — so naming somebody else's teams is not expressible rather than merely
+refused. The assertion itself is never stored: it
 lives in a closure beside the access token, and it is minted through the same
 single renewal a burst of requests already shares. A write must carry the
 version it was made against — `If-Match`, or `If-None-Match: *` for a first
 write — and one carrying neither is refused with `428`, because a `PUT` with no
 precondition is a client that never read.
 
-What that does not do is keep the rosters from the host. Netlify Blobs holds
-each document as it was written, unencrypted, so whoever can reach the site's
-blob store can read which colleagues you grouped together. Nothing about their
-hours is there, and nothing that is not already a public GitLab profile, but the
-grouping is yours and the host can see it.
+What that does not do is keep those documents from the host. Netlify Blobs holds
+each one as it was written, unencrypted, so whoever can reach the site's blob
+store can read which colleagues you grouped together, and what you set a working
+day to be. Nothing about anybody's hours is there, and nothing that is not
+already a public GitLab profile, but the grouping is yours and the host can see
+it.
 
 The endpoint reads no cookie and emits no CORS header at all, which is what
 makes it CSRF-exempt rather than CSRF-lucky: a cross-site form cannot set an
@@ -249,7 +263,7 @@ no function, so nothing else can prove them.
 The production bundle ships a strict Content-Security-Policy: `default-src
 'none'`, `connect-src` limited to `'self'` and your GitLab origin, and
 `script-src 'self'` plus the hash of the one inline script that sets the theme
-before the first paint. The teams endpoint needs no entry of its own: it is on
+before the first paint. Neither endpoint needs an entry of its own: both are on
 this origin, which `'self'` already covers. That is the deciding reason the
 store is the host's own function rather than a database somewhere else — every
 alternative would have widened this line and added a preflight to answer. The
@@ -259,11 +273,11 @@ written there would need `'unsafe-inline'`.
 
 ## Deployment
 
-The app deploys to Netlify as static files plus the one function in
+The app deploys to Netlify as static files plus the two functions in
 `netlify/functions/`. Set `VITE_GITLAB_CLIENT_ID` in the Netlify site's
-environment variables — the function reads the same variable, because the
+environment variables — both functions read the same variable, because the
 audience an assertion has to carry is the application id the browser signs in
-with, which is why the teams feature adds no new setting. Add the deployed
+with, which is why neither of them adds a new setting. Add the deployed
 origin's `/auth/callback` URL to the GitLab OAuth application's redirect URIs.
 And tick `openid` on that application before the bundle asking for it goes out.
 Those three are the ones that fail at sign-in rather than at build time.

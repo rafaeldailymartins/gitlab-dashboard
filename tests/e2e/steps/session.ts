@@ -4,6 +4,7 @@ import { createBdd } from 'playwright-bdd'
 import { failTimelogs, stubEmptyTimelogs, stubTimelogs } from '../support/gitlab-api'
 import { stubTeamHours } from '../support/gitlab-teams'
 import { ACCEPTANCE_ORIGIN } from '../support/origin'
+import { stubPreferencesStore } from '../support/preferences-api'
 import { stubTeamsStore } from '../support/teams-api'
 
 const { Given, Then, When } = createBdd()
@@ -154,6 +155,8 @@ Given('I am signed in', async ({ page }) => {
   // And the store the teams live in, which is not GitLab at all. Without it the
   // report has no team to be about, and the sweep would measure a note.
   await stubTeamsStore(page)
+  // And the one the reader's own settings live in, under the same rules.
+  await stubPreferencesStore(page)
   await page.goto('/')
   await page.getByRole('button', { name: /continue with gitlab/i }).click()
   await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible()

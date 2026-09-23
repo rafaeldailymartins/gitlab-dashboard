@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import type { DocumentStore } from './document-store.mjs'
 import type { Identity } from './identity.mjs'
-import type { TeamStore } from './team-store.mjs'
 
-import { handleTeams } from './handle-teams.mjs'
-import { memoryTeamStore } from './team-store.mjs'
-import { MAX_BODY_BYTES } from './teams-document.mjs'
+import { memoryDocumentStore } from './document-store.mjs'
+import { handleDocument } from './handle-document.mjs'
+import { MAX_BODY_BYTES, TEAMS_DOCUMENT } from './teams-document.mjs'
 
 const ADA = 'assertion-for-ada'
 const BRUNO = 'assertion-for-bruno'
@@ -21,10 +21,10 @@ function verify(token: string): Promise<Identity> {
   )
 }
 
-let store: TeamStore
+let store: DocumentStore
 
 beforeEach(() => {
-  store = memoryTeamStore()
+  store = memoryDocumentStore()
 })
 
 function document(name = 'Squad Fiscal') {
@@ -44,7 +44,8 @@ function document(name = 'Squad Fiscal') {
 function get(token?: string): Promise<Response> {
   const headers = token === undefined ? {} : { authorization: `Bearer ${token}` }
 
-  return handleTeams(new Request('https://app.example/.netlify/functions/teams', { headers }), {
+  return handleDocument(new Request('https://app.example/.netlify/functions/teams', { headers }), {
+    document: TEAMS_DOCUMENT,
     store,
     verify,
   })
@@ -61,7 +62,7 @@ function put(token: string, body: unknown, preconditions: Record<string, string>
     method: 'PUT',
   })
 
-  return handleTeams(request, { store, verify })
+  return handleDocument(request, { document: TEAMS_DOCUMENT, store, verify })
 }
 
 /** The first write a reader ever makes: nothing is stored to match against. */
@@ -92,7 +93,7 @@ describe('the credential', () => {
         headers: { authorization: header },
       })
 
-      const response = await handleTeams(request, { store, verify })
+      const response = await handleDocument(request, { document: TEAMS_DOCUMENT, store, verify })
 
       expect(response.status).toBe(401)
     },
@@ -100,7 +101,7 @@ describe('the credential', () => {
 
   it('does not reach the store before it has one', async () => {
     let touched = false
-    const watched: TeamStore = {
+    const watched: DocumentStore = {
       read: (key) => {
         touched = true
 
@@ -113,7 +114,8 @@ describe('the credential', () => {
       },
     }
 
-    await handleTeams(new Request('https://app.example/.netlify/functions/teams'), {
+    await handleDocument(new Request('https://app.example/.netlify/functions/teams'), {
+      document: TEAMS_DOCUMENT,
       store: watched,
       verify,
     })
@@ -129,7 +131,7 @@ describe('the credential', () => {
       method: 'DELETE',
     })
 
-    const response = await handleTeams(request, { store, verify })
+    const response = await handleDocument(request, { document: TEAMS_DOCUMENT, store, verify })
 
     expect(response.status).toBe(405)
   })
@@ -244,7 +246,7 @@ describe('writing', () => {
       method: 'PUT',
     })
 
-    const response = await handleTeams(request, { store, verify })
+    const response = await handleDocument(request, { document: TEAMS_DOCUMENT, store, verify })
 
     expect(response.status).toBe(415)
   })
@@ -265,17 +267,17 @@ describe('writing', () => {
 })
 
 describe('when the store will not answer', () => {
-  const broken: TeamStore = {
+  const broken: DocumentStore = {
     read: () => Promise.reject(new Error('blobs are down')),
     write: () => Promise.reject(new Error('blobs are down')),
   }
 
   it('says so on a read, rather than claiming the reader has no teams', async () => {
-    const response = await handleTeams(
+    const response = await handleDocument(
       new Request('https://app.example/.netlify/functions/teams', {
         headers: { authorization: `Bearer ${ADA}` },
       }),
-      { store: broken, verify },
+      { document: TEAMS_DOCUMENT, store: broken, verify },
     )
 
     expect(response.status).toBe(503)
@@ -289,7 +291,11 @@ describe('when the store will not answer', () => {
       method: 'PUT',
     })
 
-    const response = await handleTeams(request, { store: broken, verify })
+    const response = await handleDocument(request, {
+      document: TEAMS_DOCUMENT,
+      store: broken,
+      verify,
+    })
 
     expect(response.status).toBe(503)
   })

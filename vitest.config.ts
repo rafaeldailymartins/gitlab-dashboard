@@ -113,12 +113,12 @@ export default defineConfig({
          * That is also what makes the credential rules testable at all: the
          * acceptance suite serves a static build and has no function in it.
          *
-         * The alias is shared with the other two projects for one file:
-         * `teams-contract.test.mts` imports the browser's lenient decoder and
-         * runs it beside the endpoint's strict validator, which is the only way
-         * the two halves of one stored shape can be held against each other.
-         * They live in different layers and different runtimes, so nothing else
-         * makes them meet.
+         * The alias is shared with the other two projects for the contract
+         * tests: `{teams,preferences}-contract.test.mts` import the browser's
+         * lenient codec and run it beside the endpoint's strict validator, which
+         * is the only way the two halves of one stored shape can be held against
+         * each other. They live in different layers and different runtimes, so
+         * nothing else makes them meet.
          */
         resolve: { alias },
         test: {

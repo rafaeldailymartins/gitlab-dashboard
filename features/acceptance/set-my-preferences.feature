@@ -1,6 +1,8 @@
 Feature: Setting my preferences
   Hours are counted against a schedule the reader sets, and shown in the
-  language and colour scheme they chose. All of it stays on their device.
+  language and colour scheme they chose. The schedule follows them to their
+  other devices; the language and the colour scheme stay on the one they were
+  chosen on.
 
   # Spec: localization / I18N-3
   Scenario: Switching language changes the whole screen
@@ -16,6 +18,15 @@ Feature: Setting my preferences
     And I choose Portuguese
     And I reload the settings screen
     Then the settings screen is in Portuguese
+
+  # Spec: user-preferences / PREF-7
+  Scenario: A schedule set on one device is in effect on another
+    Given I am signed in
+    When I open the "settings" screen
+    And I set Monday to 6 hours
+    Then the store holds Monday at 6 hours
+    When I open the application on another device
+    Then my Monday target is 6 hours
 
   # Spec: user-preferences / PREF-2
   Scenario: A daily target out of range is refused

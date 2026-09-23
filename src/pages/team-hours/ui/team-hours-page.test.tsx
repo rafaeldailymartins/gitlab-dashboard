@@ -161,7 +161,7 @@ describe('choosing what to look at', () => {
   it('asks the reader to build a team before reporting on one', async () => {
     page({ team: '' }, loggedGateway(), fakeTeamsGateway([]))
 
-    expect(await screen.findByText(/no teams yet/i)).toBeInTheDocument()
+    expect(await screen.findByText(/create one to see the hours table/i)).toBeInTheDocument()
   })
 
   // The route completes an address naming no team from the last identifier this
@@ -171,17 +171,23 @@ describe('choosing what to look at', () => {
   it('asks a reader with no teams to build one, even when the address names a team', async () => {
     page({ team: FISCAL.id }, loggedGateway(), fakeTeamsGateway([]))
 
-    expect(await screen.findByText(/no teams yet/i)).toBeInTheDocument()
+    expect(await screen.findByText(/create one to see the hours table/i)).toBeInTheDocument()
     expect(screen.queryByText(/not one of yours/i)).not.toBeInTheDocument()
   })
 
   // Drawn rather than removed: a gap where a control was reads as something that
   // failed to load, and this is the state where a reader most needs to see what
   // the control is for.
+  //
+  // The test's own budget is raised above the finder's. The picker is
+  // code-split and is not rendered until the store has answered, so this waits
+  // on a round trip and a chunk — and a finder allowed to wait exactly as long
+  // as the test can only ever report the test timing out, never what it failed
+  // to find.
   it('still draws the team picker when there are no teams, saying so', async () => {
     page({ team: '' }, loggedGateway(), fakeTeamsGateway([]))
 
-    const picker = await screen.findByRole('combobox', { name: /^team$/i }, { timeout: 5000 })
+    const picker = await screen.findByRole('combobox', { name: /^team$/i }, { timeout: 8000 })
 
     expect(picker).toHaveTextContent(/no teams yet/i)
 
@@ -192,7 +198,7 @@ describe('choosing what to look at', () => {
     expect(offered).toHaveLength(1)
     expect(offered[0]).toHaveTextContent(/no teams yet/i)
     expect(offered[0]).toHaveAttribute('aria-disabled', 'true')
-  })
+  }, 15_000)
 
   it('says so when the address names a team this reader does not have', async () => {
     page({ team: '018f3b2c-7a41-7c9e-9f2d-000000000000' })

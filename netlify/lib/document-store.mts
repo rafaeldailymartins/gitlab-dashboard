@@ -1,11 +1,5 @@
-export interface StoredRecord {
-  /** Opaque. Whatever the store gave us, handed back unread. */
-  readonly etag: string
-  readonly text: string
-}
-
 /**
- * Where a reader's teams rest, as the handler needs it and no more.
+ * Where a reader's documents rest, as the handler needs it and no more.
  *
  * A port rather than the store itself, for two reasons. The handler's rules —
  * who may read what, what a write must carry, what a conflict answers — are the
@@ -13,7 +7,7 @@ export interface StoredRecord {
  * outside its own platform. And the acceptance suite serves a static build with
  * no function in it, so these tests are the only place those rules are proved.
  */
-export interface TeamStore {
+export interface DocumentStore {
   read(key: string): Promise<null | StoredRecord>
   /**
    * Writes only if the stored version is `expected`.
@@ -25,11 +19,17 @@ export interface TeamStore {
   write(key: string, text: string, expected: null | string): Promise<WriteResult>
 }
 
+export interface StoredRecord {
+  /** Opaque. Whatever the store gave us, handed back unread. */
+  readonly etag: string
+  readonly text: string
+}
+
 type WriteResult =
   { readonly etag: string; readonly ok: true } | { readonly ok: false; readonly reason: 'conflict' }
 
 /** A store for the tests and for local development. Holds nothing on exit. */
-export function memoryTeamStore(): TeamStore {
+export function memoryDocumentStore(): DocumentStore {
   const records = new Map<string, StoredRecord>()
   let version = 0
 

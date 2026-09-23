@@ -183,19 +183,24 @@ behind it is part of what is being tested.
     field should read as invalid.
 30. Change the language. Everything should be re-announced in the new language,
     including the error still on screen.
+31. Block `/.netlify/functions/preferences` and change a target. The line saying
+    the settings are not reaching your other devices should be announced once,
+    politely, without moving focus — it is a `role="status"`, and it is the only
+    live region on this screen. Nothing should be announced on an ordinary
+    change: a setting that saved is not news.
 
 ## Colour and contrast
 
-31. In both colour schemes, check the chart tokens against their card: the
+32. In both colour schemes, check the chart tokens against their card: the
     lightest heatmap band, the target line and the smallest bar. The contrast
     gate measures all of it against both card surfaces on every `verify`, so
     this step is looking for what a ratio cannot see: a band that
     passes its floor and still reads as the one above it, or a mark that clears
     3:1 and still disappears into the page.
-32. Turn on the operating system's high-contrast or forced-colours mode. Nothing
+33. Turn on the operating system's high-contrast or forced-colours mode. Nothing
     should become invisible; bars may lose their fill, which is why every figure
     is also written out.
-33. Simulate protanopia and deuteranopia on `/insights`, `/team` and the teams
+34. Simulate protanopia and deuteranopia on `/insights`, `/team` and the teams
     dialog. The project split should still be readable — it always is, because
     each row is labelled. On the team report, a day above the reference should
     still be distinguishable from one that met it: the bar crosses a dashed rule,
@@ -203,12 +208,12 @@ behind it is part of what is being tested.
     being edited is a filled row among unfilled ones; the fill is the only thing
     in there carrying a state, so confirm what survives the simulation is the
     weight change the pressed row also carries.
-34. Read the sign-in screen's left panel in both colour schemes. It is the one
+35. Read the sign-in screen's left panel in both colour schemes. It is the one
     large branded surface in the app, and its decorative week is `aria-hidden`,
     which means axe's `color-contrast` rule skips those labels entirely. This
     step is their only automated-coverage gap: the weekday labels and the
     positioning line have to be legible on the panel, not just present.
-35. Set a weekday target low enough to meet, and read the brass seal on the met
+36. Set a weekday target low enough to meet, and read the brass seal on the met
     figure. `--seal` is the one interface colour axe has never evaluated: no
     fixture day in the acceptance suite reaches its target, so the state that
     uses it never renders in a browser under test. Its ratios are held by

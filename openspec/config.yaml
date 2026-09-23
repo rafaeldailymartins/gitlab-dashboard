@@ -14,16 +14,20 @@ context: |
   is an optional filter, empty by default, and what an empty cell may claim
   follows it.
 
-  Architecture: a browser SPA plus one serverless function. The browser
+  Architecture: a browser SPA plus two serverless functions over one handler.
+  The browser
   authenticates with GitLab through OAuth 2.0 Authorization Code + PKCE (public
   client, scope `read_api openid`) and calls gitlab.com/api/graphql directly;
   GitLab allows both cross-origin, and every hour on screen is read that way.
-  `netlify/functions/teams.mts` keeps the teams a reader defines, in Netlify
-  Blobs, on this origin — so the bundle's `connect-src 'self'` already reaches
-  it and there is no CORS preflight. It authenticates from an `openid` id_token
-  verified offline against JWKS and from nothing else, and derives its storage
-  key `v1/${sub}` from the verified subject rather than from anything the
-  request carried. Deployed to Netlify: static files plus that function. Tick
+  `netlify/functions/{teams,preferences}.mts` keep, in Netlify Blobs on this
+  origin, the teams a reader defines and the two settings that are about the
+  person rather than the machine — the daily target and the time zone — so the
+  bundle's `connect-src 'self'` already reaches them and there is no CORS
+  preflight. Both authenticate from an `openid` id_token verified offline
+  against JWKS and from nothing else, and both derive their storage key from the
+  verified subject rather than from anything the request carried: `v1/${sub}`
+  and `v1/${sub}/preferences`, the suffix being a constant the function module
+  chooses. Deployed to Netlify: static files plus those functions. Tick
   `openid` on the GitLab OAuth application before deploying a bundle that asks
   for it, or every sign-in fails with `invalid_scope`.
 

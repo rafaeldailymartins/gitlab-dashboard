@@ -40,14 +40,17 @@ assertion on the rule.
 ### 3. Components and adapters
 
 `src/**/*.test.tsx` for what renders, `src/**/api/*.test.ts` for what talks to a
-provider — and there are two of those now. MSW intercepts GitLab's GraphQL
+provider — and there are three of those now. MSW intercepts GitLab's GraphQL
 endpoint using fixtures shaped from a real recorded response, and it intercepts
-`/.netlify/functions/teams` as well:
-`src/entities/teams/api/teams-gateway.test.ts` keeps the request that went out
-and reads it back, so what the browser half of the teams endpoint sends is
-asserted rather than assumed — the identity assertion and nothing else beside
+both document endpoints as well: `src/entities/teams/api/teams-gateway.test.ts`
+and `src/entities/preferences/api/preferences-gateway.test.ts` keep the request
+that went out and read it back, so what the browser half of each endpoint sends
+is asserted rather than assumed — the identity assertion and nothing else beside
 it, the version a write names, `If-None-Match: *` on a first write, and one
-renewal and retry after a refusal rather than a loop. Screens are rendered
+renewal and retry after a refusal rather than a loop. Where the two differ is
+the whole point of having both: a refused teams write is reported to the reader,
+and a refused settings write is resolved without them, in one bounded retry that
+compares the instants and stops. Screens are rendered
 against a fake gateway, so a test states what the reader sees for a given set of
 hours.
 
@@ -56,10 +59,10 @@ failed, refreshing, unsettled — and that each is distinguishable from the othe
 **Not responsible for:** whether the browser lays it out correctly, whether the
 colours pass contrast, or whether a real screen reader announces it. A component
 test computes an accessible name; it does not check that the platform would. Nor
-what the teams endpoint makes of a request: this level settles what goes out,
+what either endpoint makes of a request: this level settles what goes out,
 level 4 settles what comes back.
 
-### 4. The serverless function, with the platform outside
+### 4. The serverless functions, with the platform outside
 
 `netlify/**/*.test.mts`, the `functions` Vitest project: environment node, no
 DOM, no React, and no Netlify. The blob store and the identity verifier are
@@ -72,8 +75,10 @@ It is a level of its own because nothing else can see what it sees. Level 3
 stubs the endpoint, and level 5 serves a static `dist/`, which has no function
 in it. So the rules carrying the security of the whole feature are proved here
 or nowhere: that the storage key is built from a subject the signature
-established and from nothing the request carried, so one reader addressing
-another's teams is not expressible rather than merely refused; that nothing
+established and from nothing the request carried — plus a suffix the function
+module chooses, which is what keeps one reader's two documents apart without
+letting a request name either — so one reader addressing another's anything is
+not expressible rather than merely refused; that nothing
 touches the store until the credential is checked, which is what makes an
 unauthenticated request cost one verification against a warm key set and no
 store access at all; that a write carrying neither `If-Match` nor
@@ -82,8 +87,20 @@ never read; and that a signature from a key the provider does not publish — or
 an assertion for another application, from another issuer, expired, or minted
 long ago under a generous expiry — is not an identity.
 
-**Responsible for:** what the endpoint accepts, what it refuses, and which of
-the two costs anything.
+`document-endpoint.test.mts` is about the three ways an endpoint answers
+before the handler is reached at all — no application id, a provider that will
+not publish its keys, and a discovery that failed and must not be remembered.
+That last one was a copy in two function files and tested in neither.
+
+Two more tests in it are not about a request at all. `teams-contract.test.mts` and
+`preferences-contract.test.mts` run the browser's lenient codec beside the
+endpoint's strict validator over one table of documents, because the two live in
+different layers and different runtimes and nothing else makes them meet. They
+are allowed to disagree in exactly one direction — everything the browser writes,
+the endpoint accepts — and the other direction is a reader who cannot save.
+
+**Responsible for:** what each endpoint accepts, what it refuses, which of the
+two costs anything, and that the browser never writes something it will refuse.
 **Not responsible for:** the platform. That Netlify's blob store honours
 `onlyIfMatch` and `onlyIfNew` is its claim, and a double injected in its place
 cannot make that claim on its behalf; the adapter over it holds no rule worth a
@@ -107,7 +124,7 @@ operability with a visible focus indicator, no sideways scrolling at 375 pixels,
 cumulative layout shift, a return visit painting from cache without asking
 GitLab, and nothing of a colleague's being left on the device to paint from.
 **Not responsible for:** arithmetic. If a total is wrong, that is a model bug and
-a model test should have failed first. Nor the teams endpoint's rules, which it
+a model test should have failed first. Nor either endpoint's rules, which it
 cannot reach at all: level 4 holds them.
 
 ## What no level covers, and why

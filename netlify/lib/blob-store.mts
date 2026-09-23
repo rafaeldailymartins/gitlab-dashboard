@@ -1,6 +1,6 @@
 import { getStore } from '@netlify/blobs'
 
-import type { TeamStore } from './team-store.mjs'
+import type { DocumentStore } from './document-store.mjs'
 
 /**
  * The store name. One blob per reader lives under it, keyed by their subject.
@@ -29,7 +29,7 @@ const REGION = 'us-east-1'
  * would also make the version check below unreliable — a caller could hold a
  * version that is already stale through no fault of its own.
  */
-export function blobTeamStore(): TeamStore {
+export function blobDocumentStore(): DocumentStore {
   const store = getStore({ consistency: 'strong', name: STORE, region: REGION })
 
   return {

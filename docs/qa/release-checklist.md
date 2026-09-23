@@ -43,9 +43,9 @@ Applications**.
       application would require a secret the browser cannot hold.
 - [ ] Scopes are `read_api` and `openid`, and nothing else. The app never
       writes; `openid` grants no authority over anything, and buys one thing —
-      an assertion the teams endpoint can check against GitLab's published keys,
-      so that endpoint never has to be handed a credential that reads all of
-      GitLab in order to learn a user id.
+      an assertion both document endpoints can check against GitLab's published
+      keys, so neither has to be handed a credential that reads all of GitLab in
+      order to learn a user id.
 - [ ] **`openid` is ticked before the bundle that asks for it is deployed.** A
       reader whose session predates the scope is not signed out: their refresh
       token renews without an `id_token`, everything but their teams keeps
@@ -63,9 +63,10 @@ Applications**.
 `VITE_GITLAB_BASE_URL` is optional and defaults to `https://gitlab.com`. Set it
 only for a self-managed instance.
 
-## The teams endpoint
+## The document endpoints
 
-`netlify/functions/teams.mts` is the one piece of this app that does not run in
+`netlify/functions/{teams,preferences}.mts` are the pieces of this app that do
+not run in
 the browser. It adds no new setting — it reads the same two variables the bundle
 is built with — which is exactly where it can go wrong, because they now have to
 mean the same thing in two places.
@@ -104,6 +105,11 @@ mean the same thing in two places.
       cannot cover this — it serves a static `dist/` with `vite preview`, which
       runs no function — so a preview is the first place the endpoint exists at
       all.
+- [ ] Change a weekday target in `/settings`. The same holds for
+      `/.netlify/functions/preferences`, which is a second function and so a
+      second thing that can fail to deploy. Clear this device's `preferences`
+      key, reload, and confirm the value comes back — which is the whole of what
+      a second device is.
 - [ ] Work the manual pass in `regression-checklist.md`.
 
 ### The two checks no suite can make
@@ -123,14 +129,16 @@ in a test file. `docs/qa/test-plan.md` delegates them here by name.
       row should report no hidden hours. A shortfall here means the aggregate and
       the nodes disagree about which entries they cover, which is the one failure
       the instrument itself cannot detect.
-- [ ] **A second account cannot reach the first's teams.** Sign in as a different
-      GitLab account, in a different browser profile, against the deployed site.
-      It gets its own empty team list. Then, still as that account, call
-      `/.netlify/functions/teams` by hand with its own bearer assertion and
-      confirm the document it receives is its own. The storage key is derived
-      server-side from the verified subject and from nothing the request carried,
-      so no browser can ask for somebody else's — which is exactly why no browser
-      test can prove it either.
+- [ ] **A second account cannot reach the first's teams, or their settings.**
+      Sign in as a different GitLab account, in a different browser profile,
+      against the deployed site. It gets its own empty team list and its own
+      default schedule. Then, still as that account, call
+      `/.netlify/functions/teams` and `/.netlify/functions/preferences` by hand
+      with its own bearer assertion and confirm each document it receives is its
+      own. Both keys are derived server-side from the verified subject and from
+      nothing the request carried — the second one by appending a constant the
+      function module chooses — so no browser can ask for somebody else's, which
+      is exactly why no browser test can prove it either.
 
 ## After promoting to production
 
@@ -151,13 +159,17 @@ deploy-scoped one, precisely so a team does not die with the deploy that wrote
 it. A rollback leaves every reader's teams exactly where they are — which is the
 behaviour you want, and also the thing that makes the next paragraph matter.
 
-**The stored document's shape does migrate.** `netlify/lib/teams-document.mts`
-pins `version` to a literal, so a document written by a later shape is refused
-outright rather than half-understood, and the key carries `v1/` as well. A
-release that changes that shape and is then rolled back leaves readers holding
-documents the restored function will not read: their teams come back as "could
-not be loaded" until they are rolled forward again. Any change to that schema
-needs its own rollback answer before it ships; this section is not it.
+**The stored documents' shapes do migrate, and a rollback loses what it cannot
+read.** `netlify/lib/teams-document.mts` and `netlify/lib/preferences-document.mts`
+each pin `version` to a literal, so a document written by a later shape is
+refused outright rather than half-understood, and the key carries `v1/` as well.
+The restored function does not report that: `storedOf` answers an unreadable
+document with the empty one, which is right for a truncated write and is exactly
+what makes a rollback quiet. A reader's teams come back as none, and their
+settings come back as "the store has never heard of you" — so the first device
+to reconnect republishes whatever it happens to hold, over everybody else's, and
+nothing on any screen says a thing. Any change to either schema needs its own
+rollback answer before it ships; this section is not it.
 
 **The OAuth scope is asymmetric.** A rolled-back bundle asking for `read_api`
 against an application that still has `openid` ticked is fine — GitLab only

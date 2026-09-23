@@ -1,6 +1,8 @@
 // zod 4's documented import form, matching `src/entities/*/api/schemas.ts`.
 import * as z from 'zod'
 
+import type { DocumentKind } from './handle-document.mjs'
+
 /**
  * What a reader's teams look like at rest, and what this endpoint will accept.
  *
@@ -120,4 +122,16 @@ function reportDuplicates(
   if (new Set(identifiers).size !== identifiers.length) {
     context.issues.push({ code: 'custom', input: identifiers, message })
   }
+}
+/**
+ * The document kind the teams endpoint is built from.
+ *
+ * `suffix` is empty: this is the reader's document, and the one that was here
+ * before there were two. Changing it would move every stored roster.
+ */
+export const TEAMS_DOCUMENT: DocumentKind = {
+  empty: EMPTY_DOCUMENT,
+  maxBytes: MAX_BODY_BYTES,
+  parse: parseDocument,
+  suffix: '',
 }

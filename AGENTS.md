@@ -12,7 +12,7 @@ Paraglide.
 
 | Command                           | What it does                                                                                                                |
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `bun run dev`                     | Dev server on http://localhost:3000, with the teams endpoint served by `config/vite/teams-dev.ts`                           |
+| `bun run dev`                     | Dev server on http://localhost:3000, with both document endpoints served by `config/vite/api-dev.ts`                        |
 | `bun run verify`                  | Every fast gate: format, lint, ARIA, contrast, translations, types, architecture, dead code, type coverage, vulnerabilities |
 | `bun run test`                    | Unit, component, Gherkin domain and serverless-function tests (`domain` + `functions` + `ui` Vitest projects)               |
 | `bun run test:coverage`           | Same, with coverage thresholds enforced                                                                                     |
@@ -104,12 +104,14 @@ src/
                   gateway to the endpoint below, and the edits in progress
   shared/       ui (shadcn plus ours), api (the GraphQL client, the query client
                 and the cache persister), lib, i18n, config
-netlify/        the teams endpoint: `functions/teams.mts` is the wiring, and
-                `lib/` holds everything worth testing — the handler and its
-                credential rules, the identity verifier, the blob store and the
-                in-memory one the tests and `bun run dev` use
+netlify/        the two document endpoints: `functions/{teams,preferences}.mts`
+                name a document and nothing else, and `lib/` holds everything
+                worth testing — the endpoint body they share, the handler under
+                it and its credential rules, each document's own shape, the
+                identity verifier, the blob store and the in-memory one the
+                tests and `bun run dev` use
 config/         eslint/ (the layer, purity and limit rules) and
-                vite/teams-dev.ts, which serves that same handler under
+                vite/api-dev.ts, which serves that same handler under
                 `bun run dev` in thirty lines rather than a platform emulator
 scripts/        build and gate tooling: the CSP writer, the traceability check,
                 the contrast measurement, the translation-parity check, and the
@@ -593,8 +595,8 @@ one without reading the reason will reintroduce a bug that is already fixed.
   names, and writing one to IndexedDB is the same leak by a quieter route. The
   one thing kept across visits is the chosen team's identifier, which this app
   minted and which names nobody.
-- **There is a backend now, and it is one function on this origin.**
-  `netlify/functions/teams.mts` over Netlify Blobs. Same origin is the whole
+- **There is a backend now, and it is two functions over one handler on this
+  origin.** `netlify/functions/{teams,preferences}.mts` over Netlify Blobs. Same origin is the whole
   reason the store is Netlify's rather than a database elsewhere: the app's
   `connect-src 'self'` already reaches it, so there is no CSP change, no CORS
   preflight and no allow-list to keep right. It authenticates from the
@@ -621,10 +623,10 @@ one without reading the reason will reintroduce a bug that is already fixed.
   version it was made against (`If-Match`, or `If-None-Match: *` for a first
   write) and one with neither is refused **428** rather than accepted, because a
   `PUT` with no precondition is a client that never read, and the silent clobber
-  is the failure mode a last-write-wins store has. `TeamStore` is a port for the
-  same reason: those rules are the part worth testing, and the acceptance suite
-  serves a static `dist/` with `vite preview`, which runs no function — so the
-  `functions` Vitest project is the only place they are proved.
+  is the failure mode a last-write-wins store has. `DocumentStore` is a port for
+  the same reason: those rules are the part worth testing, and the acceptance
+  suite serves a static `dist/` with `vite preview`, which runs no function — so
+  the `functions` Vitest project is the only place they are proved.
 - **The OAuth scope is `read_api openid`, and the deployment order is
   load-bearing.** Tick `openid` on the GitLab OAuth application **before**
   deploying the bundle that asks for it; the other order fails every sign-in with
@@ -633,9 +635,93 @@ one without reading the reason will reintroduce a bug that is already fixed.
   above learn who is calling without this app vouching for the claim itself. A
   session granted before the scope changed keeps working and is not signed out:
   it authorises everything else it always did, so the reader sees an inline
-  reconnect notice on the teams surface only, and authorising once more repairs
-  it. Signing them out would lose their place for no gain, and saying
+  reconnect notice on the teams surface and the quiet unsynced line on
+  `/settings`, and authorising once more repairs both. Both surfaces degrade to
+  what the device itself holds, which is what they showed before any of this
+  existed. Signing them out would lose their place for no gain, and saying
   "unavailable" would send them looking for an outage.
+- **Two of the four settings follow the reader; two stay on the device.** The
+  daily target and the time zone are facts about the _person_ — they decide what
+  a full day is and which calendar day an entry lands on — so they are kept in
+  the reader's own store beside their teams, under `v1/${sub}/preferences`. The
+  colour scheme and the language are facts about the _machine_, and the theme is
+  applied by an inline script **before the first paint**, which a value fetched
+  over the network cannot be.
+  That distinction stopped being cosmetic when the team table began measuring its
+  bars against the daily target: the same month drew different bars on two
+  laptops belonging to one person, and a report whose shape depends on which
+  machine is open is a report nobody can quote.
+  **The device is still the read path.** `useStoredValue` reads `localStorage`
+  synchronously on the first render, so no screen gained a skeleton and no query
+  was introduced. The store is a second opinion that arrives afterwards and can
+  only ever replace what is on screen with something the same reader wrote more
+  recently somewhere else.
+  **Reconciliation is last write wins on a recorded instant, and that is
+  deliberately not how a team is reconciled.** A roster is edited by somebody
+  watching it, so a stale write there is refused and reported — losing a
+  colleague silently is the worst thing that surface can do. Settings change in
+  the background, one field at a time, from a form nobody is waiting on for a
+  verdict; what a race costs is one number the reader can see and set again, and
+  a dialog about it would be a dialog over nothing.
+  The endpoint's discipline is **not** weakened to get that. It still refuses a
+  write naming the wrong version and still refuses one naming none. Last-write-
+  wins is a _client policy_ in one bounded retry, in
+  `api/preferences-gateway.ts`: on a conflict, compare the instants; theirs is
+  newer, adopt it; ours is newer, write once more against the version we were
+  just handed; a second conflict is read rather than retried, which terminates
+  and gives the same answer.
+  `updatedAt` lives on the envelope, never on `Preferences`. No screen reading a
+  target has any business with when it was set, and the instant is stamped in the
+  provider because the model may not reach for a clock. A document with no
+  readable instant carries **null**, and a device holding one does not compete:
+  it adopts whatever the store has, and pushes only against a store that holds
+  nothing at all. Both halves are load-bearing and they are not symmetric.
+  Adopting is what stops a fresh install — defaults, nothing recorded — from
+  pushing those defaults over settings the reader really set on another machine.
+  Pushing against an empty store is what carries settings a device was already
+  holding before any of this existed, without waiting for the reader to touch a
+  field. That push is **stamped on its way out, and an undated document is never
+  sent at all** — the endpoint refuses one, because nothing could order it
+  against another device's, so sending it would report a failure to a reader who
+  had just arrived and set nothing. It shipped that way for an afternoon and no
+  gate saw it: the gateway test asserts what goes out, the handler test asserts
+  what a well-formed request gets back, and neither is where the two shapes meet.
+  `netlify/lib/preferences-contract.test.mts` is that place now.
+  It was an epoch date first, exactly as an unreadable team is, and that
+  said "1970" about a document nobody dated: two devices that had both never
+  recorded an instant then agreed with each other while holding different
+  settings, so neither adopted and the two drifted apart in silence. A reader can
+  still lose a setting they can see, but only to an instant — the other device
+  wrote later, which is the whole rule.
+  A store that will not answer costs nothing but the syncing. The values the
+  reader set are in effect — written to the device before anything was sent —
+  and `/settings` says in one quiet line that they are not being carried. It is
+  said there and nowhere else: a setting that silently stops following somebody
+  is found out months later, on the wrong figure.
+- **One handler serves both documents, and one endpoint body serves both
+  functions.** `handle-document.mts` is parameterised by the key suffix it
+  appends, the document it parses and the size it accepts;
+  `document-endpoint.mts` is everything in front of it — the configuration read,
+  the key discovery and its cache, the 503 that says only that identity could
+  not be established — so `netlify/functions/{teams,preferences}.mts` are three
+  lines each, naming a document and a path. They were fifty lines each and
+  identical, and the copy held the least obvious rule of the three: a **failed**
+  discovery must not be cached, or one bad minute outlasts itself for the whole
+  life of the instance. `config/vite/api-dev.ts` was a third copy, and a worse
+  one — it discovered on every request. It runs the same body now, with the
+  memory store passed in, so what is left in it is the translation between what
+  Vite hands a middleware and what a function is called with. The security
+  property is unchanged and worth restating, because a refactor is where it could
+  quietly be lost: **the suffix is a constant a function module chooses, never a
+  value read from the request.** `v1/${sub}` and `v1/${sub}/preferences` are both
+  derived from a subject the signature established and from nothing a caller
+  sent, so addressing another reader's anything stays inexpressible rather than
+  refused. Duplicating sixty lines of credential handling into a second module
+  was the alternative and is worse: two copies are two places to fix a rule, and
+  the second is the one somebody forgets. `config/vite/api-dev.ts` serves both
+  under one store for the same reason the deployed ones share one — a suffix that
+  was not distinct would have the two documents overwriting each other, and each
+  would look perfectly well-formed on its own.
 - **Two linters.** ESLint carries the type-aware, React and testing-library
   rules; Biome carries the ARIA rules and the unique-id rule. Replacing ESLint
   with Biome was measured twice and rejected — `docs/qa/quality-metrics.md` has
@@ -690,7 +776,7 @@ one without reading the reason will reintroduce a bug that is already fixed.
   `playwright-bdd` with step definitions in `tests/e2e/steps/`, including
   `axe-core` accessibility assertions.
 - `src/**/*.test.ts(x)` — unit and component tests, co-located.
-- `netlify/**/*.test.mts` — the teams endpoint's rules, in the `functions`
+- `netlify/**/*.test.mts` — both document endpoints' rules, in the `functions`
   project: node, no DOM, and no Netlify. The blob store and the identity verifier
   are ports, so these inject an in-memory store and a locally minted key pair
   rather than reaching for `getStore`, which throws outside a Netlify

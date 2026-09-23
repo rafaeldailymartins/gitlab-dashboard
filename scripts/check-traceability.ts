@@ -52,7 +52,7 @@ const UNCITED_BY_DESIGN = new Map([
   ],
   [
     'TEAM-3',
-    "A browser cannot forge a credential or address another reader's key, so no scenario can observe the rule that makes naming somebody else’s teams unexpressible rather than merely refused. `netlify/lib/handle-teams.test.mts` and `netlify/lib/identity.test.mts` prove it against the real handler in the `functions` Vitest project — which is also why the acceptance suite route-stubs the endpoint rather than running it: a stub cannot prove a rule it is itself implementing.",
+    "A browser cannot forge a credential or address another reader's key, so no scenario can observe the rule that makes naming somebody else’s teams unexpressible rather than merely refused. `netlify/lib/handle-document.test.mts` and `netlify/lib/identity.test.mts` prove it against the real handler in the `functions` Vitest project — which is also why the acceptance suite route-stubs the endpoint rather than running it: a stub cannot prove a rule it is itself implementing.",
   ],
 ])
 

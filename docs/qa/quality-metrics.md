@@ -4,119 +4,102 @@ Every metric below has a target, a command that measures it, and a place that
 enforces it. A metric nobody enforces is a wish, not a metric.
 
 The "measured" column records what the command printed, so a drift is visible
-without running anything. Every figure in it was taken between 20:45 and 21:16 on
-**2026-09-18**, on `feat/report-a-teams-hours` — a branch being written while the
-figures were being taken, which is worth saying because two gates are red and
-several counts moved inside that half hour. The rows report what the commands
-printed rather than the state the branch is heading for, and where a figure is
-volatile the sentence beside it says when it was read and which command answers
-it. A sentence reporting an older measurement carries its own date; one with no
-date belongs to this window.
+without running anything. Every figure in it was taken on **2026-09-23**, on
+`feat/report-a-teams-hours`, after the settings sync landed — one pass with every
+gate green, which is the state a branch should be read in. Where a figure is
+volatile the sentence beside it says which command answers it. A sentence
+reporting an older measurement carries its own date; one with no date belongs to
+this pass.
 
 ## Enforced gates
 
 | Metric                             | Target                                       | Measured                       | Command                         | Enforced at              |
 | ---------------------------------- | -------------------------------------------- | ------------------------------ | ------------------------------- | ------------------------ |
 | Formatting                         | no deviation                                 | pass                           | `bun run format:check`          | pre-commit, `verify`, CI |
-| Lint (type-aware)                  | 0 errors, 0 warnings                         | **red on this branch**         | `bun run lint`                  | pre-commit, `verify`, CI |
-| Lint (ARIA and element ids)        | 0 errors                                     | pass, 114 files                | `bun run lint:a11y`             | `verify`, CI             |
+| Lint (type-aware)                  | 0 errors, 0 warnings                         | pass                           | `bun run lint`                  | pre-commit, `verify`, CI |
+| Lint (ARIA and element ids)        | 0 errors                                     | pass, 121 files                | `bun run lint:a11y`             | `verify`, CI             |
 | Colour contrast                    | every pair above its floor, in both schemes  | pass, 80 pairs                 | `bun run a11y:contrast`         | `verify`, CI             |
-| TypeScript                         | 0 errors under full strictness               | **red on this branch**         | `bun run typecheck`             | pre-push, `verify`, CI   |
+| TypeScript                         | 0 errors under full strictness               | pass                           | `bun run typecheck`             | pre-push, `verify`, CI   |
 | FSD conventions                    | 0 problems                                   | pass                           | `bun run arch:layers`           | pre-push, `verify`, CI   |
-| Dependency graph (cycles, orphans) | 0 violations                                 | pass, 227 modules, 747 edges   | `bun run arch:graph`            | pre-push, `verify`, CI   |
+| Dependency graph (cycles, orphans) | 0 violations                                 | pass, 244 modules, 825 edges   | `bun run arch:graph`            | pre-push, `verify`, CI   |
 | Dead code (files, exports, deps)   | 0 findings                                   | pass                           | `bun run deadcode`              | pre-push, `verify`, CI   |
-| Translations                       | every key in every language, and none unused | 169 messages, complete in 2    | `bun run i18n:check`            | `verify`, CI             |
-| Requirement traceability           | every requirement cited                      | 76 declared: 70 cited, 6 other | `bun run arch:trace`            | `verify`, CI             |
-| Type coverage                      | ≥ 99%                                        | 99.87% (47 644 of 47 703)      | `bun run types:coverage`        | `verify`, CI             |
+| Translations                       | every key in every language, and none unused | 171 messages, complete in 2    | `bun run i18n:check`            | `verify`, CI             |
+| Requirement traceability           | every requirement cited                      | 77 declared: 71 cited, 6 other | `bun run arch:trace`            | `verify`, CI             |
+| Type coverage                      | ≥ 99%                                        | 99.88% (50 594 of 50 651)      | `bun run types:coverage`        | `verify`, CI             |
 | Dependency vulnerabilities         | **0, at any severity**                       | 0, over 864 packages           | `bun run security:audit`        | pre-push, `verify`, CI   |
-| Test coverage, statements          | ≥ 90%                                        | 97.44%                         | `bun run test:coverage`         | CI                       |
-| Test coverage, branches            | ≥ 90%                                        | 94.52%                         | `bun run test:coverage`         | CI                       |
-| Test coverage, functions           | ≥ 90%                                        | 97.73%                         | `bun run test:coverage`         | CI                       |
-| Test coverage, lines               | ≥ 90%                                        | 97.32%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, statements          | ≥ 90%                                        | 96.75%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, branches            | ≥ 90%                                        | 93.29%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, functions           | ≥ 90%                                        | 95.19%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, lines               | ≥ 90%                                        | 96.93%                         | `bun run test:coverage`         | CI                       |
 | Test coverage, `model/`            | **100%**                                     | 100%                           | `bun run test:coverage`         | CI                       |
-| Mutation score, `model/`           | ≥ 85%                                        | 92.99%, 66 of 970 survived     | `bun run test:mutation`         | scheduled CI             |
-| Initial bundle                     | ≤ 180 kB gzip                                | 174.55 kB                      | `bun run build && bun run size` | CI                       |
+| Mutation score, `model/`           | ≥ 85%                                        | 93.46%, 66 of 1039 survived    | `bun run test:mutation`         | scheduled CI             |
+| Initial bundle                     | ≤ 180 kB gzip                                | 175.75 kB                      | `bun run build && bun run size` | CI                       |
 | Accessibility (WCAG 2.1 AA)        | 0 axe violations, light and dark             | pass, 16 audits, chromium      | `bun run test:e2e`              | CI                       |
 | Cumulative layout shift            | < 0.1, cold and warm                         | pass, both, chromium           | `bun run test:e2e`              | CI                       |
 | No sideways scrolling at 375 px    | every screen                                 | pass, 7 screens, chromium      | `bun run test:e2e`              | CI                       |
 
-The last three rows are read off one local run at 21:00, chromium alone over the
-98 scenarios `bddgen` expanded at that moment; the matrix is CI's job, and that
-same run had four scenarios red — three of them flakes and one of them a real
-claim about the code. Both kinds are in "Known measurement caveats", and neither
-touches the axe, layout-shift or 375-pixel assertions, which all passed.
+The last three rows are read off one local run, chromium alone over the 108
+scenarios `bddgen` expanded on this pass; the matrix is CI's job.
 
 **The traceability row is two numbers, not one.** `bun run arch:trace` prints
-`76 requirements, 70 cited by scenarios, 6 covered another way`, and the
+`77 requirements, 71 cited by scenarios, 6 covered another way`, and the
 difference between those last two is the part worth reading. The six are listed
 in the script's `UNCITED_BY_DESIGN` map with the reason a browser cannot observe
 them, each naming the test that can: `AUTH-10` counts token exchanges, which no
 screen shows, and `TEAM-3` is the rule that a reader cannot address another
 reader's storage key — a browser can neither forge a credential nor reach the
-deployed function, so `netlify/lib/handle-teams.test.mts` and
-`netlify/lib/identity.test.mts` carry it instead. A single "76/76" hides that
+deployed function, so `netlify/lib/handle-document.test.mts` and
+`netlify/lib/identity.test.mts` carry it instead. A single "77/77" hides that
 six requirements rest on a map an author can add to. The gate fails in both
 directions, including on an entry naming a requirement that no longer exists, so
 the map cannot quietly outlive what it excuses.
 
-**Two gates are red while this branch is being written, and the rows say so.**
-Neither is worth recording as a number, because the number does not keep: an
-earlier revision of this document, on this same day, recorded seven lint errors,
-and not one of those seven is among the five the command printed at 21:13. What
-is worth recording is where they sit.
-
-`bun run lint` has five. Four are in test files added within the hour — an import
-ordering, a named-import ordering, a `.length > 0` check and a binding nothing
-reads. The fifth is in shipped code and is the only one a reviewer should look at
-twice: `react/jsx-no-leaked-render` on the `scoped` prop at
-`pages/team-hours/ui/team-hours-page.tsx:180`. `eslint.config.js` sets that rule
-to `validStrategies: ['ternary']`, so a bare `&&` is refused wherever it
-appears — including an attribute whose operands are both already booleans, as
-these are.
-
-`bun run typecheck` has one, and it arrived between one reading of this table and
-the next: `netlify/lib/teams-contract.test.mts` imports `./teams-document.mts` by
-its `.mts` extension, which `allowImportingTsExtensions` would have to be on to
-permit. That file is the new contract test described under "Test projects". The
-gate was green at 20:50, before it existed, and red at 21:16 — which is the
-honest reason the header above gives a window rather than a moment.
-
-`verify` fails until both are clean, and the merge request is where that has to
-happen.
+**Two gates were red while this branch was being written, and this table used to
+say so.** Both are green on this pass. What is worth keeping is not the numbers —
+five lint errors and one type error, none of which survived the hour — but their
+shape: every one of them was in a file that had not existed when the previous
+reading was taken. That is the honest reason this document dates a whole pass
+rather than each row, and the reason `verify` is the thing that has to be green
+rather than a table anybody can update by hand.
 
 ## Test projects
 
-`vitest.config.ts` defines three, and `bun run test` runs all of them: 1574 tests
-across 112 files at 21:08 on 2026-09-18. Every count in this section moves with
-every test written, and on this branch that has been several times an hour —
+`vitest.config.ts` defines three, and `bun run test` runs all of them: 1651 tests
+across 117 files on this pass. Every count in this section moves with every test
+written, and on this branch that has been several times an hour —
 `bun run test` prints the totals, and the split below is `--project=<name>`
 three times.
 
-| Project     | Environment | What it runs                                                                      | Files | Tests |
-| ----------- | ----------- | --------------------------------------------------------------------------------- | ----: | ----: |
-| `domain`    | node        | `src/**/model/**`, `shared/lib/{duration,people}.ts`, and `tests/domain/` Gherkin |    35 |   730 |
-| `ui`        | happy-dom   | components and hooks against a DOM, with GitLab's API mocked by MSW               |    70 |   742 |
-| `functions` | node        | `netlify/**/*.test.mts` — the teams endpoint, its identity verifier, its document |     7 |   102 |
+| Project     | Environment | What it runs                                                                                     | Files | Tests |
+| ----------- | ----------- | ------------------------------------------------------------------------------------------------ | ----: | ----: |
+| `domain`    | node        | `src/**/model/**`, `shared/lib/{duration,people}.ts`, and `tests/domain/` Gherkin                |    36 |   751 |
+| `ui`        | happy-dom   | components and hooks against a DOM, with GitLab's API mocked by MSW                              |    71 |   771 |
+| `functions` | node        | `netlify/**/*.test.mts` — both document endpoints, the handler they share, its identity verifier |    10 |   129 |
 
 **`functions` is not a third place to put tests; it is the only place the
 endpoint's rules can be proved.** The acceptance suite serves a static `dist/`
 through `vite preview`, which runs no Netlify function, so it route-stubs
-`/.netlify/functions/teams` — and a stub cannot prove a rule it is itself
+`/.netlify/functions/{teams,preferences}` — and a stub cannot prove a rule it is itself
 implementing. The blob store and the identity verifier are ports, so this project
 injects an in-memory store and a locally minted key pair instead of reaching for
 a platform: `getStore` outside a Netlify environment throws
 `MissingBlobsEnvironmentError` before it hands back anything to test against.
 
-`teams-contract.test.mts` is the odd file in that project and the reason it
-resolves the `@` alias the other two use: it imports the browser's lenient
-decoder and runs it beside the endpoint's strict validator, which is the only
-place the two halves of one stored shape are held against each other. They sit in
-different layers and different runtimes, so nothing else makes them meet.
+`{teams,preferences}-contract.test.mts` are the odd files in that project and the
+reason it resolves the `@` alias the other two use: they import the browser's
+lenient codec and run it beside the endpoint's strict validator, which is the
+only place the two halves of one stored shape are held against each other. They
+sit in different layers and different runtimes, so nothing else makes them meet.
+The settings pair earned its own file after a review, and earned it the hard way:
+the browser was sending a document carrying no instant, which the endpoint
+refuses — and every level either side of this one was green, because a gateway
+test asserts what goes out and a handler test asserts what a well-formed request
+gets back, and neither of them is where the two shapes meet.
 
 Above those, `bddgen` expands `features/acceptance/*.feature` into one Playwright
 spec per scenario, and `bun --bun bddgen && playwright test --list` is what
-counts them. At 21:11 on 2026-09-18 that was 103 locally, which is chromium
-alone; CI runs three engines — chromium, webkit and a Pixel 7 viewport — for 309.
+counts them. On this pass that was 108 locally, which is chromium alone; CI runs
+three engines — chromium, webkit and a Pixel 7 viewport — for 324.
 
 ## Two linters, on purpose
 
@@ -225,7 +208,8 @@ out, and what is left out is left out for a reason:
 **The serverless function is measured too**, at the global floor rather than the
 hundred-percent one — the include list names `netlify/**/*.mts`. The rules that
 hold the feature's security are pure decisions over a request and a document,
-and `handle-teams.mts` sits at 98.27% of statements. What surrounds them is I/O
+and `handle-document.mts` sits at 98.3% of statements, with
+`document-endpoint.mts` beside it. What surrounds them is I/O
 wiring, which the floor is the right instrument for: a `model/` threshold there
 would be satisfied by tests that assert a platform behaves the way the mock was
 written to.
@@ -238,10 +222,20 @@ Two files in it read 0%, and honestly so:
   could execute this file is one that stubs `@netlify/blobs`, which would assert
   that the stub does what the stub was written to do. It is a port implementation
   and the port is what the handler is tested against.
-- `netlify/functions/teams.mts` is the wiring that hands that port and the
-  identity verifier to `handleTeams`. It reads the environment and constructs the
-  store; running it in a test means the same stub, and the rules it wires up are
-  tested one module down.
+- `netlify/functions/{teams,preferences}.mts` are three lines each: a document, a
+  path, and `documentEndpoint`. Everything they used to do themselves — reading
+  the environment, discovering the provider's keys, answering 503 when identity
+  cannot be established — moved into `netlify/lib/document-endpoint.mts` when
+  the second one made it a copy, and `document-endpoint.test.mts` covers it
+  there. What is left in these two is a constant and an export, which is the
+  right amount of untested.
+
+  That move is also the clearest thing in this document about what a coverage
+  percentage is worth. It was made because fifty lines were duplicated, not to
+  raise a number, and the number moved 1.5 points on its own: statements went
+  from 95.29% to 96.75% without a single new assertion about behaviour that was
+  not already being made somewhere. A figure that swings that far on where code
+  is filed is a floor, which is what this section says it is.
 
 Both are covered by the deploy check in `release-checklist.md` instead, which is
 the only place a real store and a real token exist together.
@@ -252,7 +246,7 @@ path to make a number go up is not an acceptable fix.
 ## Coverage is a floor, not a target
 
 The thresholds are 90% overall and 100% on `model/`. Measured coverage sits at
-97.44% of statements and 94.52% of branches, and that gap is worth naming:
+96.75% of statements and 93.29% of branches, and that gap is worth naming:
 nothing forced it, and chasing it is not free.
 
 100% on `model/` is right. That layer is pure functions with no I/O, and it is
@@ -285,13 +279,13 @@ linter — with coverage as the floor that stops whole paths going unexercised.
 
 ## Known measurement caveats
 
-- **The mutation score is 92.99%, and where it is spent matters more than the
-  number.** 970 mutants over 24 files: 900 killed, 66 survived, 2 timed out, 2
+- **The mutation score is 93.46%, and where it is spent matters more than the
+  number.** 1039 mutants over 25 files: 969 killed, 66 survived, 2 timed out, 2
   with no covering test. Those figures are read off
-  `reports/mutation/report.json`, written at 19:31 on 2026-09-18, rather than
-  from a fresh run — Stryker takes tens of minutes, which is why it is on a
-  schedule and not on the blocking path. The report is only worth reading while
-  nothing it measured has moved under it, so the check before quoting it is
+  `reports/mutation/report.json` rather than from a fresh run — Stryker takes
+  tens of minutes, which is why it is on a schedule and not on the blocking
+  path. The report is only worth reading while nothing it measured has moved
+  under it, so the check before quoting it is
   `find src -newer reports/mutation/report.json -name "*.ts"`. It has to come
   back with nothing but `src/paraglide/`, which every gate rewrites; a `model/`
   file in that list means the score above is about code that no longer exists.
@@ -307,6 +301,16 @@ linter — with coverage as the floor that stops whole paths going unexercised.
   survives being regrouped, because the tests reject a malformed member without
   asserting which clause rejected it. The two mutants with no covering test are
   both in `entities/teams/model/ports.ts`: nothing constructs a `TeamsError`.
+- **The total is stable between runs; the per-file split is not, and this
+  document used to imply otherwise.** Two runs over identical code, minutes
+  apart, printed 93.65% and 93.46% — and moved four survivors between
+  `preferences/model/daily-target.ts` and `preferences/model/preferences.ts`
+  while doing it. `coverageAnalysis: "perTest"` decides which tests each mutant
+  is run against, and that attribution is not stable under parallel workers, so
+  the same mutant can face fewer tests in one run than in another. What follows
+  for reading this section: the total is worth quoting to a tenth, a per-file
+  percentage is not, and the survivors worth acting on are the ones that appear
+  in every run. The ones named below do.
 - **Not every survivor is a gap, and the equivalent ones must not be "fixed".**
   A narrowing guard TypeScript requires but that carries no behaviour produces a
   mutant nothing can kill. Both are still in the list and both are still
@@ -314,9 +318,13 @@ linter — with coverage as the floor that stops whole paths going unexercised.
   in `decodePreferences`, whose own comment records that spreading a non-object
   yields no key and every field falls back anyway, and the same narrowing written
   as a rejection in `dailyTargetFrom`. Removing either would mean weakening the
-  types. What is not equivalent is an `||` flipped between distinct rejections,
-  or `index < binary.length` becoming `<=` in `id-token.ts` with nothing
-  noticing. The survivors have not been triaged since the team work landed;
+  types. A third joined them with the settings sync: `here > there` in
+  `preferences/model/reconcile.ts` survives becoming `>=`, because the equal
+  case answered `agree` and returned two lines earlier, so no input reaches that
+  comparison with the two instants equal. Every other survivor in that slice is
+  one of the two narrowings above. What is not equivalent is an `||` flipped
+  between distinct rejections, or `index < binary.length` becoming `<=` in
+  `id-token.ts` with nothing noticing. The survivors have not been triaged since the team work landed;
   `reports/mutation/index.html` lists every one with its location.
 - **Type coverage is 99.87%, and the shortfall is listed by name.**
   `bun run types:coverage` prints every expression it cannot type — 59 of 47 703
@@ -329,7 +337,7 @@ linter — with coverage as the floor that stops whole paths going unexercised.
   that a field can be read off it or it can be spread — the two team decoders,
   the OAuth pending-authorization guard, the provider-metadata reader in
   `netlify/lib/identity.mts` twice, and the conflict body in
-  `netlify/lib/handle-teams.mts`. A further three shipped assertions cost
+  `netlify/lib/handle-document.mts`. A further three shipped assertions cost
   nothing and so never appear in that list at all: `as unknown` at a
   `JSON.parse` or `response.json()` boundary, in `gitlab-oauth.ts`,
   `id-token.ts` and `shared/api/graphql.ts`, because `unknown` is a real type.
@@ -359,9 +367,9 @@ linter — with coverage as the floor that stops whole paths going unexercised.
   floor — and it is not in the mutate list. Deterministic row order is a spec
   requirement, and coverage alone is the weaker of the two instruments we have
   for it.
-- **The acceptance suite cannot reach the teams endpoint.** It serves a static
+- **The acceptance suite cannot reach either document endpoint.** It serves a static
   `dist/` through `vite preview`, and a static server runs no Netlify function,
-  so the suite route-stubs `/.netlify/functions/teams`. Every credential rule the
+  so the suite route-stubs `/.netlify/functions/{teams,preferences}`. Every credential rule the
   endpoint holds — that the storage key is derived from the verified subject and
   from nothing the request carried, that nothing touches the store before the
   token is checked, that a write with no precondition is refused 428 — is proved

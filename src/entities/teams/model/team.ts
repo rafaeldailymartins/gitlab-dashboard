@@ -54,7 +54,8 @@ const UNKNOWN_INSTANT = '1970-01-01T00:00:00.000Z'
  * Stated twice on purpose. The endpoint enforces them because it is reachable by
  * anyone holding a valid identity assertion, including this reader's own
  * compromised tab; these exist so the interface refuses before a round trip
- * rather than after one. `tests/contract/` is what keeps the two agreeing.
+ * rather than after one. `netlify/lib/teams-contract.test.mts` is what keeps the
+ * two agreeing.
  */
 export const MAX_TEAMS = 50
 export const MAX_MEMBERS = 200

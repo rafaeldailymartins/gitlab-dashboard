@@ -60,4 +60,31 @@ describe('WeekdayTargetInput', () => {
 
     expect(screen.getByLabelText('Mon')).not.toHaveAttribute('aria-describedby')
   })
+
+  /*
+   * Until the settings began following the reader between devices, the only
+   * thing that moved `hours` was this field, so a draft seeded once on mount was
+   * never wrong. Now the store can move it — and a field left showing the number
+   * this device used to have, while every other screen measures against the one
+   * it now has, is the worst kind of stale: two numbers on one screen, both
+   * looking authoritative.
+   */
+  it('follows a target that changed somewhere else', () => {
+    const { rerender } = render(<WeekdayTargetInput hours={8} label="Mon" onCommit={vi.fn()} />)
+
+    rerender(<WeekdayTargetInput hours={6} label="Mon" onCommit={vi.fn()} />)
+
+    expect(screen.getByLabelText('Mon')).toHaveValue(6)
+  })
+
+  // The half that must not regress with it: a field being emptied on the way to
+  // a new value commits nothing, so nothing moves `hours`, so nothing refills it.
+  it('does not refill a field the reader is in the middle of clearing', async () => {
+    const { rerender } = render(<WeekdayTargetInput hours={8} label="Mon" onCommit={vi.fn()} />)
+
+    await userEvent.clear(screen.getByLabelText('Mon'))
+    rerender(<WeekdayTargetInput hours={8} label="Mon" onCommit={vi.fn()} />)
+
+    expect(screen.getByLabelText('Mon')).toHaveValue(null)
+  })
 })

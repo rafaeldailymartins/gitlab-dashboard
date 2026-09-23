@@ -14,10 +14,11 @@
   # installs with the same two flags, for the same reason.
   BUN_FLAGS = "--frozen-lockfile --ignore-scripts"
 
-# The one piece of this app that does not run in the browser: the store for the
-# teams a reader defines. It is on this origin so the bundle's own
-# `connect-src 'self'` already reaches it, which is why `scripts/write-csp.ts`
-# needs no second origin and why there is no CORS preflight to answer.
+# The part of this app that does not run in the browser: two endpoints over one
+# handler, holding the teams a reader defines and the working schedule they set.
+# Both are on this origin so the bundle's own `connect-src 'self'` already
+# reaches them, which is why `scripts/write-csp.ts` needs no second origin and
+# why there is no CORS preflight to answer.
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"

@@ -87,6 +87,29 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
       of the wrong theme before the first paint.
 - [ ] Set the scheme to "Follow my system", then change the system setting. The
       app follows without a reload.
+- [ ] Change a weekday's target and watch the network panel. **One** `PUT` to
+      `/.netlify/functions/preferences` a moment after you stop typing, not one
+      per keystroke — and it names the version it replaces in `If-Match`.
+- [ ] Open the app on a second device signed in as the same reader. It reports
+      and measures against the target you just set. Then change the target
+      _there_ and come back to the first: it follows, without either device
+      asking you to resolve anything.
+- [ ] Watch the first paint on that second device. The numbers it shows before
+      the store answers are its own — nothing waits on the network, and no
+      settings field is a skeleton.
+- [ ] Set a different colour scheme and language on each device. They **stay**
+      different: those are about the machine, and the theme is applied before
+      the first paint, which nothing fetched could be.
+- [ ] Block `/.netlify/functions/preferences` in the network panel and change a
+      target. It takes effect immediately, every screen keeps working, and
+      `/settings` — and only `/settings` — says the settings are not reaching
+      your other devices.
+- [ ] The first visit of all: clear this device's `preferences` key, reload, and
+      open `/settings` without touching a field. If the store holds nothing, one
+      `PUT` goes out carrying an `updatedAt`; if it holds something, no `PUT` goes
+      out at all and the stored values are what you are looking at. Either way
+      nothing says the settings are not reaching your other devices — a reader
+      who has just arrived must not be told they are stuck.
 
 ## Teams
 
