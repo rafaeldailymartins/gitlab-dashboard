@@ -23,7 +23,7 @@ const UNREADABLE_IN_GROUP =
   /nothing in this group that you can read|nada neste grupo que você possa ler/iu
 
 /** What the key calls that same mark, under each of the two reaches. */
-const KEY_ANYWHERE = /working day, nothing logged anywhere|dia útil, nada lançado em lugar nenhum/iu
+const KEY_ANYWHERE = /^(nothing logged|sem lançamentos)$/iu
 const KEY_IN_GROUP = /working day, nothing in this group|dia útil, nada neste grupo/iu
 
 /**

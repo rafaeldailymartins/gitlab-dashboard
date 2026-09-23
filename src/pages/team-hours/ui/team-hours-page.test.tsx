@@ -7,6 +7,8 @@ import { fakeTeamGateway, fakeTeamsGateway, renderRoutedReport, SQUAD } from '~t
 import type { TeamHoursPage as PageType } from '@/entities/team-timelogs'
 import type { Team } from '@/entities/teams'
 
+import { memoryStorage } from '@/shared/lib/storage'
+
 import type { TeamSearch } from '../lib/search-params'
 
 import { TeamHoursPage } from './team-hours-page'
@@ -20,6 +22,19 @@ const FISCAL: Team = {
 
 const MAY: TeamSearch = { by: 'days', group: '', month: '2026-05', team: FISCAL.id }
 const HOUR = 3600
+
+/** One of Bruno's cells. He logged nothing, so each says what the day expected. */
+async function brunosDay(index: number) {
+  const name = new RegExp(BRUNO.name)
+
+  await screen.findByRole('rowheader', { name })
+
+  const row = screen
+    .getAllByRole('row')
+    .find((one) => within(one).queryByRole('rowheader', { name }))
+
+  return within(row ?? document.body).getAllByRole('cell')[index]
+}
 
 /** Ana logged six hours; Bruno logged nothing and the provider resolved both. */
 function loggedGateway() {
@@ -59,6 +74,18 @@ function page(
   )
 
   return { ...view, onChange }
+}
+
+/** The screen under a daily target the reader set in Settings. */
+function pageUnder(dailyTarget: Record<number, number>) {
+  const storage = memoryStorage()
+
+  storage.write('preferences', JSON.stringify({ dailyTarget }))
+  renderRoutedReport(<TeamHoursPage onChange={vi.fn()} search={MAY} />, {
+    storage,
+    teams: fakeTeamsGateway([FISCAL]),
+    timelogs: loggedGateway(),
+  })
 }
 
 /**
@@ -329,7 +356,45 @@ describe('the matrix', () => {
   it('states the reference the bars are measured against', async () => {
     page()
 
-    expect(await screen.findByText(/measured against/i)).toBeInTheDocument()
+    expect(await screen.findByText(/measured against the day’s target/i)).toBeInTheDocument()
+  })
+})
+
+describe('the reader’s working schedule', () => {
+  // 2 May 2026 is a Saturday and 6 May a Wednesday: the second and sixth columns.
+  const SATURDAY = 1
+  const WEDNESDAY = 5
+
+  it('expects hours on a Saturday the reader expects hours on', async () => {
+    pageUnder({ 1: 8, 2: 8, 3: 0, 4: 8, 5: 8, 6: 4, 7: 0 })
+
+    expect(await brunosDay(SATURDAY)).toHaveTextContent('No hours logged anywhere.')
+  })
+
+  it('expects nothing of a weekday the reader expects nothing of', async () => {
+    pageUnder({ 1: 8, 2: 8, 3: 0, 4: 8, 5: 8, 6: 4, 7: 0 })
+
+    const wednesday = await brunosDay(WEDNESDAY)
+
+    // No sentence at all: an empty day nobody expected anything of is not news.
+    expect(wednesday).toBeEmptyDOMElement()
+    expect(wednesday).toHaveClass('bg-chart-empty')
+  })
+
+  it('measures a day against the reader’s target for it, not against eight hours', async () => {
+    // Ana logged six hours on Monday the 4th. Under a four-hour Monday that is
+    // over the reference, which the key only explains when a cell carries it.
+    pageUnder({ 1: 4, 2: 8, 3: 8, 4: 8, 5: 8, 6: 0, 7: 0 })
+
+    expect(await screen.findByText('Over the reference')).toBeInTheDocument()
+  })
+
+  it('finds nothing over the reference under the default schedule', async () => {
+    page()
+
+    await screen.findByText(/measured against/i)
+
+    expect(screen.queryByText('Over the reference')).not.toBeInTheDocument()
   })
 
   it('makes no cell a place the keyboard stops', async () => {

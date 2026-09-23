@@ -22,12 +22,12 @@ export type {
 export type { TeamReport } from './model/report'
 export { teamReportFrom } from './model/report'
 export { suggestionsFrom } from './model/suggestions'
-export { REFERENCE_SCHEDULE } from './model/types'
 export type {
   GroupRef,
   Member,
   PeriodTotal,
   Person,
+  ReferenceSchedule,
   SuggestedMember,
   TeamTimelogEntry,
 } from './model/types'

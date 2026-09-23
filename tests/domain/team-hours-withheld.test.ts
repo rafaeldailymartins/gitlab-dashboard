@@ -1,12 +1,11 @@
 import { describeFeature, loadFeature } from '@amiceli/vitest-cucumber'
 import { expect } from 'vitest'
-import { ANA, BRUNO, entry, member } from '~tests/support/gitlab-team-timelogs'
+import { ANA, BRUNO, EIGHT_BY_FIVE, entry, member } from '~tests/support/gitlab-team-timelogs'
 
 import {
   type DeclaredTotals,
   type Person,
   readerWindow,
-  REFERENCE_SCHEDULE,
   type TeamHoursPage,
   type TeamReport,
   teamReportFrom,
@@ -69,7 +68,7 @@ function reportOf(slices: readonly Slice[]): TeamReport {
   return teamReportFrom([page], {
     granularity: 'days',
     members: slices.map((slice) => member(slice.person)),
-    reference: REFERENCE_SCHEDULE,
+    reference: EIGHT_BY_FIVE,
     timeZone: 'UTC',
     today: isoDate('2026-06-15'),
     window: WINDOW,

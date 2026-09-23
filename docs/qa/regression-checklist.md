@@ -215,7 +215,9 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
 - [ ] Make a team with nobody on it and open the report on it. It says so, and
       asks GitLab nothing — no `TeamHoursPage` request is made.
 - [ ] The key lists only the marks the table uses, plus the reference bar, which
-      says the bars are measured against 8 h a day.
+      says the bars are measured against the day's target. Set Saturday to
+      4 h and Wednesday to 0 in Settings: Saturday's columns lose their tint and
+      Wednesday's gain it, and nothing is requested from GitLab.
 - [ ] Of all of that, the device keeps one thing: `localStorage` holds
       `team-report-team`, an opaque identifier this app minted, and no name, no
       colleague and no figure. IndexedDB holds no team and no roster.

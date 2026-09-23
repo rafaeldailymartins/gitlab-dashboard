@@ -1,4 +1,10 @@
-import type { Member, Person, SuggestedMember, TeamTimelogEntry } from '@/entities/team-timelogs'
+import type {
+  Member,
+  Person,
+  ReferenceSchedule,
+  SuggestedMember,
+  TeamTimelogEntry,
+} from '@/entities/team-timelogs'
 
 /**
  * Fixtures for a team's timelogs, shaped from a real `users { timelogs }`
@@ -44,6 +50,16 @@ export const DIEGO: Person = {
   username: 'diego.prado',
   webUrl: 'https://gitlab.com/diego.prado',
 }
+
+/**
+ * Eight hours Monday to Friday, nothing at the weekend — the schedule the rules
+ * are exercised against.
+ *
+ * It is also the reader's default daily target, so a screen rendered without
+ * preferences measures against the same thing. The screen itself never reads
+ * this: it passes whatever the reader set under their working schedule.
+ */
+export const EIGHT_BY_FIVE: ReferenceSchedule = { 1: 8, 2: 8, 3: 8, 4: 8, 5: 8, 6: 0, 7: 0 }
 
 let nextId = 13_709_983
 

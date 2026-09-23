@@ -51,9 +51,12 @@ export interface Person {
 /**
  * How many hours a full day is, per ISO weekday.
  *
- * A constant this app states on screen rather than a claim about anybody's
- * contract. It is a parameter so the rules can be exercised against any
- * schedule, and so the one the screen uses is a value a test can pin.
+ * The screen passes the reader's own working hours — the daily target they set
+ * in Settings, which is the same shape — and states in its legend that this is
+ * what the bars are measured against. It is a parameter rather than an import
+ * so this slice knows nothing of preferences, and so the rules can be exercised
+ * against any schedule. A weekday of zero is a column that expects nothing,
+ * whichever day of the week it is.
  */
 export type ReferenceSchedule = Readonly<Record<Weekday, number>>
 
@@ -96,22 +99,4 @@ export interface TeamTimelogEntry {
   readonly seconds: number
   /** An instant. Which day it belongs to is decided in the reader's zone. */
   readonly spentAt: Date
-}
-
-/**
- * Eight hours Monday to Friday, nothing at the weekend.
- *
- * The screen names this in its legend. The alternative — measuring colleagues
- * against the reader's own configured target — would draw a part-time
- * teammate's every day as visibly short, which is an assertion about somebody
- * else's working arrangement that this app has no basis for making.
- */
-export const REFERENCE_SCHEDULE: ReferenceSchedule = {
-  1: 8,
-  2: 8,
-  3: 8,
-  4: 8,
-  5: 8,
-  6: 0,
-  7: 0,
 }

@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ANA, member } from '~tests/support/gitlab-team-timelogs'
+import { ANA, EIGHT_BY_FIVE, member } from '~tests/support/gitlab-team-timelogs'
 
 import type { Team } from '@/entities/teams'
 
-import { REFERENCE_SCHEDULE, teamGrid } from '@/entities/team-timelogs'
+import { teamGrid } from '@/entities/team-timelogs'
 import { isoDate } from '@/shared/lib/date'
 
 import type { TeamChoice } from './chosen-team'
@@ -33,7 +33,7 @@ const READ: TeamHoursReport = {
     granularity: 'days',
     members: [],
     period: MAY,
-    reference: REFERENCE_SCHEDULE,
+    reference: EIGHT_BY_FIVE,
     timeZone: 'UTC',
     today: MAY.to,
   }),

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { ANA, BRUNO, CAMILA, entry, member } from '~tests/support/gitlab-team-timelogs'
+import {
+  ANA,
+  BRUNO,
+  CAMILA,
+  EIGHT_BY_FIVE,
+  entry,
+  member,
+} from '~tests/support/gitlab-team-timelogs'
 
 import { isoDate } from '@/shared/lib/date'
 
@@ -8,7 +15,6 @@ import type { ReportOptions } from './report'
 import type { Person } from './types'
 
 import { teamReportFrom } from './report'
-import { REFERENCE_SCHEDULE } from './types'
 import { readerWindow } from './window'
 
 const WINDOW = readerWindow(isoDate('2026-05-12'))
@@ -23,7 +29,7 @@ function options(overrides: Partial<ReportOptions> = {}): ReportOptions {
   return {
     granularity: 'days',
     members: [member(ANA)],
-    reference: REFERENCE_SCHEDULE,
+    reference: EIGHT_BY_FIVE,
     timeZone: 'UTC',
     today: isoDate('2026-06-15'),
     window: WINDOW,

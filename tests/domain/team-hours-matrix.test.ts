@@ -1,12 +1,19 @@
 import { describeFeature, loadFeature } from '@amiceli/vitest-cucumber'
 import { expect } from 'vitest'
-import { ANA, BRUNO, CAMILA, DIEGO, entry, member } from '~tests/support/gitlab-team-timelogs'
+import {
+  ANA,
+  BRUNO,
+  CAMILA,
+  DIEGO,
+  EIGHT_BY_FIVE,
+  entry,
+  member,
+} from '~tests/support/gitlab-team-timelogs'
 
 import {
   type GridCell,
   type MemberIdentity,
   type Person,
-  REFERENCE_SCHEDULE,
   type TeamGrid,
   teamGrid,
   type TeamTimelogEntry,
@@ -74,7 +81,7 @@ function gridOf(state: World): TeamGrid {
       member: member(slice.person),
     })),
     period: MAY,
-    reference: REFERENCE_SCHEDULE,
+    reference: EIGHT_BY_FIVE,
     timeZone: 'UTC',
     today: isoDate(state.today),
   })

@@ -27,9 +27,10 @@ month; hours split by project; and a sortable table of what took the time.
 
 **A team's month** (`/team`) — the people on one of your teams down the side,
 the days of that month across the top (or its weeks), and hours in the cells,
-each with a bar measured against a stated eight hours a day rather than against
-your own target. Everybody you put on the team keeps a row, including somebody
-who logged nothing: you chose them, so an empty row is the answer you came for.
+each with a bar measured against the working schedule you set in Settings; a
+weekday you expect no hours on is shaded. Everybody you put on the team keeps a
+row, including somebody who logged nothing: you chose them, so an empty row is
+the answer you came for.
 Left alone, the figures cover every hour GitLab will show you for those people
 wherever they logged it, personal projects included. A group filter — empty by
 default — narrows them to one group and its subgroups, and the caption and the

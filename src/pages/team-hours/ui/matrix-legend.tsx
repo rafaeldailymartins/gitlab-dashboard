@@ -1,12 +1,10 @@
 import type { ReactNode } from 'react'
 
-import { m, useActiveLocale } from '@/shared/i18n'
-import { formatHours } from '@/shared/lib/format'
+import { m } from '@/shared/i18n'
 
 import type { LegendShows } from '../lib/legend'
 
 interface MatrixLegendProps {
-  readonly reference: number
   /**
    * True when the figures are narrowed to a group.
    *
@@ -22,16 +20,15 @@ interface MatrixLegendProps {
 /**
  * What the marks mean, and what they are measured against.
  *
- * The reference is stated rather than assumed. The app has no way of knowing
- * anybody's working arrangement, so a bar drawn against an unstated one would be
- * the screen asserting something about a colleague's contract.
+ * The reference is stated rather than assumed. It is the reader's own working
+ * hours, which vary by weekday and so have no single number to name here; what
+ * the key says instead is that each bar is measured against that day's target —
+ * the reader's own daily target, the same words Settings and the dashboard use.
  *
  * Only the marks this report actually uses are listed. A key for something that
  * is nowhere in the table sends the reader looking for it. The reference is always listed: it explains every figure there is.
  */
-export function MatrixLegend({ reference, scoped, shows }: MatrixLegendProps) {
-  const { locale } = useActiveLocale()
-
+export function MatrixLegend({ scoped, shows }: MatrixLegendProps) {
   return (
     <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-[11px] text-muted-foreground">
       <Item>
@@ -41,7 +38,7 @@ export function MatrixLegend({ reference, scoped, shows }: MatrixLegendProps) {
           </span>
           <span className="w-2 border-l border-dashed border-chart-target" />
         </span>
-        {m.team_reference_legend({ hours: formatHours(reference, locale) })}
+        {m.team_reference_legend()}
       </Item>
       {shows.over ? (
         <Item>

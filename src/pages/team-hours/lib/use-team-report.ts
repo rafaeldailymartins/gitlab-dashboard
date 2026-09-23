@@ -8,7 +8,6 @@ import {
   groupQuery,
   type GroupRef,
   readerWindow,
-  REFERENCE_SCHEDULE,
   teamHoursQuery,
   type TeamReport,
   teamReportFrom,
@@ -61,6 +60,10 @@ interface Answer {
  * takes; the rounds then read every person's window under it. A second pass
  * puts withheld hours against the day they were logged on. Every step is pure
  * but the asking.
+ *
+ * The cells are measured against the reader's own working hours, applied here
+ * rather than asked for: a changed target redraws the month already read and
+ * refetches nothing, which is why it is in no query key.
  */
 export function useTeamReport(search: TeamSearch, team: null | Team): TeamHoursReport {
   const { preferences } = usePreferences()
@@ -85,12 +88,12 @@ export function useTeamReport(search: TeamSearch, team: null | Team): TeamHoursR
       teamReportFrom(pages.data?.pages ?? [], {
         granularity: search.by,
         members,
-        reference: REFERENCE_SCHEDULE,
+        reference: preferences.dailyTarget,
         timeZone: preferences.timeZone,
         today,
         window,
       }),
-    [pages.data, search.by, members, preferences.timeZone, today, window],
+    [pages.data, search.by, members, preferences.dailyTarget, preferences.timeZone, today, window],
   )
   const placed = useWithheldPlacement({ groupId, report, timeZone: preferences.timeZone })
 

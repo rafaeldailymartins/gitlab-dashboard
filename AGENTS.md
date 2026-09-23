@@ -302,14 +302,25 @@ one without reading the reason will reintroduce a bug that is already fixed.
   on everybody, because it is the one figure that is about the whole team.
   The frontier is the day _before_ the newest entry read, since the next round
   can still carry more of that same day.
-- **Bars on the team screen measure against a stated constant, not the reader's
-  own target.** Eight hours Monday to Friday, named in the legend. Using the
-  reader's `dailyTarget` would draw a part-time teammate's every day as visibly
-  short, which is an assertion about somebody else's working arrangement that
-  this app has no basis for. Over the reference is drawn as the bar crossing a
-  dashed rule rather than changing colour: `charts.css` records that brass
-  against brick collapses under deutan, which is exactly the pair a colour-coded
-  version would have used.
+- **Bars on the team screen measure against the reader's own working schedule,
+  and the legend says so.** The `dailyTarget` from Settings, per weekday, passed
+  by `useTeamReport` as the grid's `reference`. This reverses a constant — eight
+  hours Monday to Friday — chosen so the screen would not assert a part-time
+  teammate's every day as short on the strength of the reader's contract. The
+  argument assumed the reader's target describes the reader alone; the person
+  who opens this screen leads the team on it, and their schedule is the only
+  statement anywhere in the app of what a full day is where they work. The
+  constant replaced it with a schedule nobody chose, and a lead with a six-hour
+  Friday read every Friday as short one screen away from where they had said
+  otherwise. What survived is the honesty half: the reference is stated. The
+  legend names no number of hours, since a per-weekday schedule has none; it
+  says each bar is measured against the day's target. The reference is applied after
+  the entries are read and is in no query key, so editing it redraws the month
+  and refetches nothing. `REFERENCE_SCHEDULE` is now `EIGHT_BY_FIVE` in
+  `tests/support/`, the schedule the rules are exercised against. Over the
+  reference is drawn as the bar crossing a dashed rule rather than changing
+  colour: `charts.css` records that brass against brick collapses under deutan,
+  which is exactly the pair a colour-coded version would have used.
 - **Every person on the team keeps a row, including one who logged nothing.**
   This is the reverse of what the group report did, and the reason reversed with
   it. There, the rows came from a roster union — group membership plus whoever
@@ -438,9 +449,12 @@ one without reading the reason will reintroduce a bug that is already fixed.
   scroll lock changing the document's width and a month-wide fixed table with
   sticky cells re-measuring inside it. That is the dialog's price for locking the
   page, and it is paid once per open rather than per frame.
-- **A weekend column is drawn from `share`, not from the cell's kind, and it is
-  named like every other column.** A cell is only `non-working` once its column
-  has been read and nobody logged in it, so a weekend still loading — or one
+- **A column nothing is expected of is drawn from `share`, not from the cell's
+  kind, and it is named like every other column.** "Nothing expected" means the
+  reader's working schedule is zero for that weekday — not that it is a Saturday
+  or a Sunday: a Saturday with hours in Settings is a working column, and a
+  Wednesday without is tinted. A cell is only `non-working` once its column
+  has been read and nobody logged in it, so such a column still loading — or one
   later this month — would lose its tint and its narrow width, and the table
   would change shape as the pages landed. `share` is null exactly when the
   reference expects nothing, which is the fact the column is drawn from. The

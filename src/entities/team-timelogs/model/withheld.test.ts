@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ANA, entry, member } from '~tests/support/gitlab-team-timelogs'
+import { ANA, EIGHT_BY_FIVE, entry, member } from '~tests/support/gitlab-team-timelogs'
 
 import { isoDate } from '@/shared/lib/date'
 
@@ -8,7 +8,6 @@ import type { DeclaredTotals } from './ports'
 import type { WithheldDeclaration } from './withheld'
 
 import { teamGrid } from './grid'
-import { REFERENCE_SCHEDULE } from './types'
 import { unplacedOf, withWithheld } from './withheld'
 
 const NOTHING: DeclaredTotals = { entryCount: 0, seconds: 0 }
@@ -71,7 +70,7 @@ function request(...members: readonly MemberWindow[]): GridRequest {
     granularity: 'days',
     members,
     period: MAY,
-    reference: REFERENCE_SCHEDULE,
+    reference: EIGHT_BY_FIVE,
     timeZone: 'UTC',
     today: isoDate('2026-06-15'),
   }

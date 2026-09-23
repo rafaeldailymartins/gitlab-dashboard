@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { ANA, BRUNO, CAMILA, entry, member } from '~tests/support/gitlab-team-timelogs'
+import {
+  ANA,
+  BRUNO,
+  CAMILA,
+  EIGHT_BY_FIVE,
+  entry,
+  member,
+} from '~tests/support/gitlab-team-timelogs'
 
 import { isoDate } from '@/shared/lib/date'
 
@@ -7,7 +14,6 @@ import type { GridRequest, MemberWindow } from './grid'
 import type { Person } from './types'
 
 import { teamGrid } from './grid'
-import { REFERENCE_SCHEDULE } from './types'
 
 const MAY = { from: isoDate('2026-05-01'), to: isoDate('2026-05-31') }
 const UTC = 'UTC'
@@ -23,7 +29,7 @@ function request(overrides: Partial<GridRequest> = {}): GridRequest {
     granularity: 'days',
     members: [window(ANA)],
     period: MAY,
-    reference: REFERENCE_SCHEDULE,
+    reference: EIGHT_BY_FIVE,
     timeZone: UTC,
     today: isoDate('2026-06-15'),
     ...overrides,

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { ANA, entry, member } from '~tests/support/gitlab-team-timelogs'
+import { ANA, EIGHT_BY_FIVE, entry, member } from '~tests/support/gitlab-team-timelogs'
 
 import type { GridRequest, TeamGrid } from '@/entities/team-timelogs'
 
-import { REFERENCE_SCHEDULE, teamGrid } from '@/entities/team-timelogs'
+import { teamGrid } from '@/entities/team-timelogs'
 import { isoDate } from '@/shared/lib/date'
 
 import { legendShows } from './legend'
@@ -24,7 +24,7 @@ function gridOf(overrides: Partial<GridRequest> = {}): TeamGrid {
       },
     ],
     period: MAY,
-    reference: REFERENCE_SCHEDULE,
+    reference: EIGHT_BY_FIVE,
     timeZone: 'UTC',
     today: isoDate('2026-06-15'),
     ...overrides,

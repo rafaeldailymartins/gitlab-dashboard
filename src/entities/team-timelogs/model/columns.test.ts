@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
+import { EIGHT_BY_FIVE } from '~tests/support/gitlab-team-timelogs'
 
 import { isoDate } from '@/shared/lib/date'
 
 import { columnsOf, weekBandsOf } from './columns'
-import { REFERENCE_SCHEDULE } from './types'
 
 // May 2026 begins on a Friday, so its first ISO week is a three-day stub.
 const MAY = { from: isoDate('2026-05-01'), to: isoDate('2026-05-31') }
-const REFERENCE = REFERENCE_SCHEDULE
+const REFERENCE = EIGHT_BY_FIVE
 
 describe('columnsOf, by days', () => {
   const columns = columnsOf(MAY, 'days', REFERENCE)

@@ -2,7 +2,6 @@ import { lazy, type ReactNode, Suspense, useEffect, useMemo, useState } from 're
 
 import type { GroupRef } from '@/entities/team-timelogs'
 
-import { REFERENCE_SCHEDULE } from '@/entities/team-timelogs'
 import { m } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Skeleton } from '@/shared/ui/skeleton'
@@ -65,9 +64,6 @@ const IDLE_TIMEOUT_MS = 4000
 
 /** The sync control carries no caveats on this screen. See where it is used. */
 const NO_NOTICES: readonly string[] = []
-
-/** A working day of the stated reference, for the legend. Monday is one. */
-const REFERENCE_DAY = REFERENCE_SCHEDULE[1]
 
 interface BodyProps {
   readonly onManage: () => void
@@ -226,7 +222,7 @@ function Report({ report, search, teamName }: BodyProps) {
         teamName={teamName}
         today={report.today}
       />
-      <MatrixLegend reference={REFERENCE_DAY} scoped={narrowed(report.scope)} shows={shows} />
+      <MatrixLegend scoped={narrowed(report.scope)} shows={shows} />
     </>
   )
 }

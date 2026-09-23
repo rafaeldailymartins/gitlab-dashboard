@@ -1,6 +1,6 @@
 import { describeFeature, loadFeature } from '@amiceli/vitest-cucumber'
 import { expect } from 'vitest'
-import { ANA, entry, member } from '~tests/support/gitlab-team-timelogs'
+import { ANA, EIGHT_BY_FIVE, entry, member } from '~tests/support/gitlab-team-timelogs'
 
 import type {
   DeclaredTotals,
@@ -10,7 +10,7 @@ import type {
   WithheldDeclaration,
 } from '@/entities/team-timelogs'
 
-import { REFERENCE_SCHEDULE, teamGrid, unplacedOf, withWithheld } from '@/entities/team-timelogs'
+import { teamGrid, unplacedOf, withWithheld } from '@/entities/team-timelogs'
 import { isoDate } from '@/shared/lib/date'
 
 const feature = await loadFeature('features/domain/team-hours-placed.feature')
@@ -70,7 +70,7 @@ function placedGrid(state: State): TeamGrid {
       },
     ],
     period: MAY,
-    reference: REFERENCE_SCHEDULE,
+    reference: EIGHT_BY_FIVE,
     timeZone: 'UTC',
     today: isoDate('2026-06-15'),
   })
