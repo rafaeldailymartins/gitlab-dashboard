@@ -4,7 +4,7 @@ import type { DocumentStore } from './document-store.mjs'
 import type { Identity } from './identity.mjs'
 
 import { memoryDocumentStore } from './document-store.mjs'
-import { handleDocument } from './handle-document.mjs'
+import { ANY_VERSION, handleDocument, VERSION_HEADER } from './handle-document.mjs'
 import { MAX_BODY_BYTES, TEAMS_DOCUMENT } from './teams-document.mjs'
 
 const ADA = 'assertion-for-ada'
@@ -66,7 +66,7 @@ function put(token: string, body: unknown, preconditions: Record<string, string>
 }
 
 /** The first write a reader ever makes: nothing is stored to match against. */
-const FIRST = { 'if-none-match': '*' }
+const FIRST = { [VERSION_HEADER]: ANY_VERSION }
 
 describe('the credential', () => {
   it('refuses a request carrying none', async () => {
@@ -188,10 +188,10 @@ describe('writing', () => {
 
   it('refuses a write against a version that is no longer current', async () => {
     const first = await put(ADA, document('first'), FIRST)
-    await put(ADA, document('second'), { 'if-match': first.headers.get('etag') ?? '' })
+    await put(ADA, document('second'), { [VERSION_HEADER]: first.headers.get('etag') ?? '' })
 
     const stale = await put(ADA, document('third'), {
-      'if-match': first.headers.get('etag') ?? '',
+      [VERSION_HEADER]: first.headers.get('etag') ?? '',
     })
 
     expect(stale.status).toBe(409)
@@ -200,10 +200,10 @@ describe('writing', () => {
 
   it('hands a conflict the current document, so it can be resolved', async () => {
     const first = await put(ADA, document('first'), FIRST)
-    await put(ADA, document('second'), { 'if-match': first.headers.get('etag') ?? '' })
+    await put(ADA, document('second'), { [VERSION_HEADER]: first.headers.get('etag') ?? '' })
 
     const stale = await put(ADA, document('third'), {
-      'if-match': first.headers.get('etag') ?? '',
+      [VERSION_HEADER]: first.headers.get('etag') ?? '',
     })
 
     await expect(stale.json()).resolves.toMatchObject({ teams: [{ name: 'second' }] })
@@ -298,5 +298,51 @@ describe('when the store will not answer', () => {
     })
 
     expect(response.status).toBe(503)
+  })
+})
+
+/*
+ * The two sides of one header, held against each other.
+ *
+ * The browser and the endpoint are different layers in different runtimes, so
+ * `netlify/` cannot import the browser's copy at run time and the two declare
+ * it separately. That is exactly how this broke the first time: the spelling
+ * they shared was `If-Match` / `If-None-Match`, both sides agreed, every test
+ * passed, and Netlify's CDN consumed the headers before the function saw them —
+ * so every write on the deployed site was refused 428 while nothing local could
+ * tell. A test that only exercised the handler could not see it then and cannot
+ * see it now; what it *can* do is stop the two spellings drifting apart.
+ *
+ * The other half of that lesson is in `docs/qa/release-checklist.md`: the only
+ * instrument that sees a CDN is a deploy.
+ */
+describe('what the browser and the endpoint agree to call it', () => {
+  it('is one header and one wildcard, spelled the same on both sides', async () => {
+    const browser = await import('@/shared/api/document-version')
+
+    expect(browser.VERSION_HEADER).toBe(VERSION_HEADER)
+    expect(browser.ANY_VERSION).toBe(ANY_VERSION)
+  })
+
+  // The headers this began as. Reaching for either again reintroduces the bug,
+  // so the handler must not quietly accept one.
+  it('refuses a write that names its version the way a CDN will eat', async () => {
+    const request = new Request('https://app.example/.netlify/functions/teams', {
+      body: JSON.stringify(document('first')),
+      headers: {
+        authorization: `Bearer ${ADA}`,
+        'content-type': 'application/json',
+        'if-none-match': '*',
+      },
+      method: 'PUT',
+    })
+
+    const response = await handleDocument(request, {
+      document: TEAMS_DOCUMENT,
+      store,
+      verify,
+    })
+
+    expect(response.status).toBe(428)
   })
 })

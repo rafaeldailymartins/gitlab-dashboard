@@ -241,9 +241,11 @@ all — so naming somebody else's teams is not expressible rather than merely
 refused. The assertion itself is never stored: it
 lives in a closure beside the access token, and it is minted through the same
 single renewal a burst of requests already shares. A write must carry the
-version it was made against — `If-Match`, or `If-None-Match: *` for a first
-write — and one carrying neither is refused with `428`, because a `PUT` with no
-precondition is a client that never read.
+version it was made against, in `x-document-version` — the etag, or `*` for a
+first write — and one carrying neither is refused with `428`, because a `PUT`
+with no precondition is a client that never read. A header of this app's own
+rather than `If-Match`: the CDN in front of the function consumes the `If-*`
+headers for its own conditional requests, so those never arrived.
 
 What that does not do is keep those documents from the host. Netlify Blobs holds
 each one as it was written, unencrypted, so whoever can reach the site's blob

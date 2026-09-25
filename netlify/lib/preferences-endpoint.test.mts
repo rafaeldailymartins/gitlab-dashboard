@@ -5,7 +5,7 @@ import type { DocumentKind } from './handle-document.mjs'
 import type { Identity } from './identity.mjs'
 
 import { memoryDocumentStore } from './document-store.mjs'
-import { handleDocument } from './handle-document.mjs'
+import { ANY_VERSION, handleDocument, VERSION_HEADER } from './handle-document.mjs'
 import { PREFERENCES_DOCUMENT } from './preferences-document.mjs'
 import { TEAMS_DOCUMENT } from './teams-document.mjs'
 
@@ -13,7 +13,7 @@ const ADA = 'assertion-for-ada'
 const BRUNO = 'assertion-for-bruno'
 
 /** The first write a reader ever makes: nothing is stored to match against. */
-const FIRST = { 'if-none-match': '*' }
+const FIRST = { [VERSION_HEADER]: ANY_VERSION }
 
 /** A verifier that vouches for two people and nobody else. */
 function verify(token: string): Promise<Identity> {

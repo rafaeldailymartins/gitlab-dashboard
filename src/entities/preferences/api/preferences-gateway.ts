@@ -1,3 +1,5 @@
+import { ANY_VERSION, VERSION_HEADER } from '@/shared/api'
+
 import type { Identified, PreferencesDocument, PreferencesGateway } from '../model/ports'
 import type { StoredPreferences } from '../model/preferences'
 
@@ -121,7 +123,7 @@ async function documentOf(response: Response): Promise<PreferencesDocument> {
  * a client that never read from clobbering a device that did.
  */
 function precondition(etag: null | string | undefined): [string, string] {
-  return etag === null || etag === undefined ? ['if-none-match', '*'] : ['if-match', etag]
+  return [VERSION_HEADER, etag ?? ANY_VERSION]
 }
 
 /**

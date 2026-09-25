@@ -27,13 +27,13 @@ this pass.
 | Requirement traceability           | every requirement cited                      | 77 declared: 71 cited, 6 other | `bun run arch:trace`            | `verify`, CI             |
 | Type coverage                      | ≥ 99%                                        | 99.88% (51 911 of 51 969)      | `bun run types:coverage`        | `verify`, CI             |
 | Dependency vulnerabilities         | **0, at any severity**                       | 0, over 864 packages           | `bun run security:audit`        | pre-push, `verify`, CI   |
-| Test coverage, statements          | ≥ 90%                                        | 97.37%                         | `bun run test:coverage`         | CI                       |
-| Test coverage, branches            | ≥ 90%                                        | 93.66%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, statements          | ≥ 90%                                        | 97.36%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, branches            | ≥ 90%                                        | 93.64%                         | `bun run test:coverage`         | CI                       |
 | Test coverage, functions           | ≥ 90%                                        | 96.53%                         | `bun run test:coverage`         | CI                       |
 | Test coverage, lines               | ≥ 90%                                        | 97.43%                         | `bun run test:coverage`         | CI                       |
 | Test coverage, `model/`            | **100%**                                     | 100%                           | `bun run test:coverage`         | CI                       |
 | Mutation score, `model/`           | ≥ 85%                                        | 93.46%, 66 of 1039 survived    | `bun run test:mutation`         | scheduled CI             |
-| Initial bundle                     | ≤ 180 kB gzip                                | 175.85 kB                      | `bun run build && bun run size` | CI                       |
+| Initial bundle                     | ≤ 180 kB gzip                                | 176.73 kB                      | `bun run build && bun run size` | CI                       |
 | Accessibility (WCAG 2.1 AA)        | 0 axe violations, light and dark             | pass, 16 audits, chromium      | `bun run test:e2e`              | CI                       |
 | Cumulative layout shift            | < 0.1, cold and warm                         | pass, both, chromium           | `bun run test:e2e`              | CI                       |
 | No sideways scrolling at 375 px    | every screen                                 | pass, 7 screens, chromium      | `bun run test:e2e`              | CI                       |
@@ -64,7 +64,7 @@ rather than a table anybody can update by hand.
 
 ## Test projects
 
-`vitest.config.ts` defines three, and `bun run test` runs all of them: 1673 tests
+`vitest.config.ts` defines three, and `bun run test` runs all of them: 1675 tests
 across 119 files on this pass. Every count in this section moves with every test
 written, and on this branch that has been several times an hour —
 `bun run test` prints the totals, and the split below is `--project=<name>`
@@ -74,7 +74,7 @@ three times.
 | ----------- | ----------- | ------------------------------------------------------------------------------------------------ | ----: | ----: |
 | `domain`    | node        | `src/**/model/**`, `shared/lib/{duration,people}.ts`, and `tests/domain/` Gherkin                |    36 |   751 |
 | `ui`        | happy-dom   | components and hooks against a DOM, with GitLab's API mocked by MSW                              |    73 |   793 |
-| `functions` | node        | `netlify/**/*.test.mts` — both document endpoints, the handler they share, its identity verifier |    10 |   129 |
+| `functions` | node        | `netlify/**/*.test.mts` — both document endpoints, the handler they share, its identity verifier |    10 |   131 |
 
 **`functions` is not a third place to put tests; it is the only place the
 endpoint's rules can be proved.** The acceptance suite serves a static `dist/`
@@ -246,7 +246,7 @@ path to make a number go up is not an acceptable fix.
 ## Coverage is a floor, not a target
 
 The thresholds are 90% overall and 100% on `model/`. Measured coverage sits at
-97.37% of statements and 93.66% of branches, and that gap is worth naming:
+97.36% of statements and 93.64% of branches, and that gap is worth naming:
 nothing forced it, and chasing it is not free.
 
 100% on `model/` is right. That layer is pure functions with no I/O, and it is

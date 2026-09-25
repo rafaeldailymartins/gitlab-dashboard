@@ -89,7 +89,8 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
       app follows without a reload.
 - [ ] Change a weekday's target and watch the network panel. **One** `PUT` to
       `/.netlify/functions/preferences` a moment after you stop typing, not one
-      per keystroke — and it names the version it replaces in `If-Match`.
+      per keystroke — and it names the version it replaces in
+      `x-document-version`, coming back `200` rather than `428`.
 - [ ] Open the app on a second device signed in as the same reader. It reports
       and measures against the target you just set. Then change the target
       _there_ and come back to the first: it follows, without either device

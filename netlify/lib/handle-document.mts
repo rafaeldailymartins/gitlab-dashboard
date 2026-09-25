@@ -59,6 +59,17 @@ interface WriteTarget {
   readonly store: DocumentStore
 }
 
+/**
+ * The header a write names the version it replaces in.
+ *
+ * Exported so both gateways spell it the same way as the handler, rather than
+ * agreeing by coincidence across two layers and two runtimes.
+ */
+export const VERSION_HEADER = 'x-document-version'
+
+/** What that header carries to mean "only if nothing is stored yet". */
+export const ANY_VERSION = '*'
+
 export async function handleDocument(
   request: Request,
   dependencies: HandlerDependencies,
@@ -160,17 +171,32 @@ async function identify(
 /**
  * What the caller says it is replacing, or null when it says nothing.
  *
- * `If-None-Match: *` is "only if nothing is stored", which maps onto the store's
- * own null. Anything else is the version being replaced.
+ * `*` is "only if nothing is stored", which maps onto the store's own null.
+ * Anything else is the version being replaced.
+ *
+ * **Not `If-Match` and `If-None-Match`, which is what this used to be and what
+ * the semantics are borrowed from.** Those never reached this function in
+ * production: Netlify's CDN uses the `If-*` headers for its own conditional
+ * requests and consumes them on the way through, so every write arrived with no
+ * precondition and was refused `428` — correctly, and uselessly. The three
+ * places that exercise this are the `functions` Vitest project, which calls the
+ * handler directly, the acceptance suite, which route-stubs the endpoint, and
+ * `bun run dev`, which is a Vite middleware. None of them has a CDN in it, so
+ * nothing could see it. `docs/qa/release-checklist.md` carries the check that
+ * can.
+ *
+ * A header of our own is not touched by anything in the path. It costs no
+ * preflight, because the request is same-origin — and the endpoint still emits
+ * no CORS headers, so a cross-site caller could not set it at all.
  */
 function preconditionOf(request: Request): null | { expected: null | string } {
-  const ifMatch = request.headers.get('if-match')
+  const version = request.headers.get(VERSION_HEADER)
 
-  if (ifMatch !== null && ifMatch !== '') {
-    return { expected: ifMatch }
+  if (version === null || version === '') {
+    return null
   }
 
-  return request.headers.get('if-none-match') === '*' ? { expected: null } : null
+  return { expected: version === ANY_VERSION ? null : version }
 }
 
 /** What the stored text says, or an empty document for a reader with none. */

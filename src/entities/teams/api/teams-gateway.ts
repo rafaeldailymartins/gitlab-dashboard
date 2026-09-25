@@ -1,3 +1,5 @@
+import { ANY_VERSION, VERSION_HEADER } from '@/shared/api'
+
 import type { Identified, TeamsDocument, TeamsGateway } from '../model/ports'
 
 import { TeamsError } from '../model/ports'
@@ -110,13 +112,7 @@ function headersFor({ body, etag }: Attempt, token: string): Headers {
   // A write names the version it was made against, or asserts there is none.
   // The endpoint refuses one that names neither, because that is a caller which
   // never read — and accepting it is the silent clobber this prevents.
-  const version = etag ?? null
-
-  if (version === null) {
-    headers.set('if-none-match', '*')
-  } else {
-    headers.set('if-match', version)
-  }
+  headers.set(VERSION_HEADER, etag ?? ANY_VERSION)
 
   return headers
 }

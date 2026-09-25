@@ -2,6 +2,8 @@ import { http, HttpResponse, type JsonBodyType } from 'msw'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import { ANY_VERSION, VERSION_HEADER } from '@/shared/api'
+
 import type { Identified } from '../model/ports'
 import type { StoredPreferences } from '../model/preferences'
 
@@ -174,8 +176,8 @@ describe('writing', () => {
       settings: settings(LATER),
     })
 
-    expect(sent[0]?.headers.get('if-none-match')).toBe('*')
-    expect(sent[0]?.headers.get('if-match')).toBeNull()
+    expect(sent[0]?.headers.get(VERSION_HEADER)).toBe(ANY_VERSION)
+    expect(sent[0]?.headers.get('if-none-match')).toBeNull()
   })
 
   it('names the version it is replacing on every write after that', async () => {
@@ -186,7 +188,7 @@ describe('writing', () => {
       settings: settings(LATER),
     })
 
-    expect(sent[0]?.headers.get('if-match')).toBe('"1"')
+    expect(sent[0]?.headers.get(VERSION_HEADER)).toBe('"1"')
   })
 })
 
@@ -225,7 +227,7 @@ describe('a write that raced another device', () => {
     expect(document).toEqual({ etag: '"10"', settings: settings(LATER) })
     expect(sent).toHaveLength(2)
     // The second names what the first was told it was racing, not what it held.
-    expect(sent[1]?.headers.get('if-match')).toBe('"9"')
+    expect(sent[1]?.headers.get(VERSION_HEADER)).toBe('"9"')
   })
 
   /*
