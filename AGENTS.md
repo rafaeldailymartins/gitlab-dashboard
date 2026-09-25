@@ -732,10 +732,22 @@ one without reading the reason will reintroduce a bug that is already fixed.
   difference from checking an id against the caller is that there is no check to
   forget: naming another reader's teams is not a request this endpoint can
   refuse, because it is not a request it can represent. A write carries the
-  version it was made against (`If-Match`, or `If-None-Match: *` for a first
-  write) and one with neither is refused **428** rather than accepted, because a
-  `PUT` with no precondition is a client that never read, and the silent clobber
-  is the failure mode a last-write-wins store has. `DocumentStore` is a port for
+  version it was made against, in `x-document-version` — the etag, or `*` for a
+  first write — and one carrying neither is refused **428** rather than
+  accepted, because a `PUT` with no precondition is a client that never read,
+  and the silent clobber is the failure mode a last-write-wins store has.
+  **It is not `If-Match` and `If-None-Match`, which is what it was and where
+  the semantics come from.** Those never reached the function on a deployed
+  site: Netlify's CDN uses the `If-*` headers for its own conditional requests
+  and consumes them on the way through, so every write was refused 428 —
+  correctly, and uselessly. Nothing could see it, because the three places that
+  exercise a write have no CDN in them: the `functions` project calls the
+  handler directly, the acceptance suite route-stubs the endpoint, and
+  `bun run dev` is a Vite middleware. The header is declared on both sides,
+  since `netlify/` must not import from `src/` at run time, and
+  `handle-document.test.mts` holds the two spellings against each other. The
+  instrument that can see the path itself is a deploy, and
+  `docs/qa/release-checklist.md` now reads the request rather than the result. `DocumentStore` is a port for
   the same reason: those rules are the part worth testing, and the acceptance
   suite serves a static `dist/` with `vite preview`, which runs no function — so
   the `functions` Vitest project is the only place they are proved.

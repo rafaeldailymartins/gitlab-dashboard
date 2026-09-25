@@ -46,8 +46,8 @@ both document endpoints as well: `src/entities/teams/api/teams-gateway.test.ts`
 and `src/entities/preferences/api/preferences-gateway.test.ts` keep the request
 that went out and read it back, so what the browser half of each endpoint sends
 is asserted rather than assumed — the identity assertion and nothing else beside
-it, the version a write names, `If-None-Match: *` on a first write, and one
-renewal and retry after a refusal rather than a loop. Where the two differ is
+it, the version a write names in `x-document-version`, `*` on a first write,
+and one renewal and retry after a refusal rather than a loop. Where the two differ is
 the whole point of having both: a refused teams write is reported to the reader,
 and a refused settings write is resolved without them, in one bounded retry that
 compares the instants and stops. Screens are rendered
@@ -81,8 +81,8 @@ letting a request name either — so one reader addressing another's anything is
 not expressible rather than merely refused; that nothing
 touches the store until the credential is checked, which is what makes an
 unauthenticated request cost one verification against a warm key set and no
-store access at all; that a write carrying neither `If-Match` nor
-`If-None-Match: *` is refused 428 instead of replacing a document its sender
+store access at all; that a write carrying no `x-document-version` is refused
+428 instead of replacing a document its sender
 never read; and that a signature from a key the provider does not publish — or
 an assertion for another application, from another issuer, expired, or minted
 long ago under a generous expiry — is not an identity.

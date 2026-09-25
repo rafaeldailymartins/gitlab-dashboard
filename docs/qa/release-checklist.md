@@ -105,17 +105,40 @@ mean the same thing in two places.
       cannot cover this — it serves a static `dist/` with `vite preview`, which
       runs no function — so a preview is the first place the endpoint exists at
       all.
+- [ ] **With the network panel open, read the `PUT` that save sent.** It carries
+      `x-document-version`, and the answer is a `200` with an `ETag` — not a
+      `428`. A 428 means the header did not reach the function, which is a fact
+      about the path between the browser and it and not about this code. It
+      happened: the version used to travel as `If-Match` and `If-None-Match: *`,
+      Netlify's CDN consumes the `If-*` headers for its own conditional
+      requests, and every write on the deployed site was refused while all three
+      local instruments stayed green — the `functions` project calls the handler
+      directly, the acceptance suite route-stubs the endpoint, and `bun run dev`
+      is a Vite middleware. **Read the request, not only the outcome**: a save
+      that appears to work is not evidence, because a first write against an
+      empty store and a refused write look the same to a reader with no teams.
 - [ ] Change a weekday target in `/settings`. The same holds for
       `/.netlify/functions/preferences`, which is a second function and so a
       second thing that can fail to deploy. Clear this device's `preferences`
       key, reload, and confirm the value comes back — which is the whole of what
-      a second device is.
+      a second device is. Read its `PUT` too, for the same reason and with more
+      care: this one **fails quietly**. A refused settings write costs no dialog
+      and no error, only the one line saying the settings are not reaching your
+      other devices — which is easy to have never looked at.
 - [ ] Work the manual pass in `regression-checklist.md`.
 
-### The two checks no suite can make
+### The checks no suite can make
 
-Both need a real account and a deployed function, so both live here rather than
+Each needs a real account and a deployed function, so they live here rather than
 in a test file. `docs/qa/test-plan.md` delegates them here by name.
+
+- [ ] **The request arrives as it was sent.** Everything between the browser and
+      the function — the CDN, the edge, any redirect — is absent from every
+      suite this repository runs, and it is not a passive pipe: it reads headers
+      and it acts on some of them. So the two writes above are checked at the
+      request rather than at the result. Nothing local can stand in for this,
+      which is why it is written as a step and not as a test: the instruments
+      that could see it are a deploy and a network panel.
 
 - [ ] **A row total is the person's whole reach.** Pick one teammate and one
       month, leave the group filter empty, and check their row total against

@@ -2,6 +2,8 @@ import { http, HttpResponse, type JsonBodyType } from 'msw'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import { ANY_VERSION, VERSION_HEADER } from '@/shared/api'
+
 import type { Identified, TeamsDocument } from '../model/ports'
 
 import { TeamsError } from '../model/ports'
@@ -173,7 +175,7 @@ describe('write', () => {
 
     const written = await httpTeamsGateway(identified().caller).write(document)
 
-    expect(lastRequest?.headers.get('if-match')).toBe('"1"')
+    expect(lastRequest?.headers.get(VERSION_HEADER)).toBe('"1"')
     expect(lastRequest?.headers.get('content-type')).toContain('application/json')
     expect(written.etag).toBe('"2"')
   })
@@ -185,7 +187,11 @@ describe('write', () => {
 
     // The endpoint refuses a write that names neither, because that is a caller
     // which never read — and accepting it is the silent clobber this prevents.
-    expect(lastRequest?.headers.get('if-none-match')).toBe('*')
+    expect(lastRequest?.headers.get(VERSION_HEADER)).toBe(ANY_VERSION)
+    // Not the conditional headers this began as: Netlify's CDN consumes those
+    // before a function sees them, so every write was refused 428 in production
+    // while every gate stayed green.
+    expect(lastRequest?.headers.get('if-none-match')).toBeNull()
     expect(lastRequest?.headers.get('if-match')).toBeNull()
   })
 
