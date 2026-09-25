@@ -303,19 +303,24 @@ describe('edits that have not been saved', () => {
     )
   })
 
-  it('offers nothing to save or discard until something is edited', async () => {
+  /*
+   * Cancel is the way out of this surface as much as it is the way to undo, so
+   * it is never disabled: a reader who opened the dialog to look at something
+   * should not have to find a different control to leave by. Save has nothing
+   * to do until something has been edited.
+   */
+  it('offers nothing to save until something is edited, and always a way out', async () => {
     manager(fakeTeamsGateway([FISCAL]))
 
     expect(await screen.findByRole('button', { name: /^save$/iu })).toBeDisabled()
-    expect(screen.getByRole('button', { name: /^cancel$/iu })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /^cancel$/iu })).toBeEnabled()
   })
 
-  it('offers both once something is', async () => {
+  it('offers to save once something is', async () => {
     manager(fakeTeamsGateway([FISCAL]))
     await userEvent.click(await removeButton(ANA.name))
 
     expect(await screen.findByRole('button', { name: /^save$/iu })).toBeEnabled()
-    expect(screen.getByRole('button', { name: /^cancel$/iu })).toBeEnabled()
   })
 
   // The name used to commit on blur and on Enter, so a save pressed while the

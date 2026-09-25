@@ -99,22 +99,32 @@ When('I start a new team', async ({ page }) => {
  * Writes everything edited since the dialog was opened.
  *
  * Waits for the write to have resolved, not for it to have succeeded — three
- * scenarios press this precisely to be refused. What the save said is the next
- * step's to assert; what this needs is that it is no longer in flight, so a
- * reload after it is a reload after the store heard.
+ * scenarios press this precisely to be refused. A save that lands closes the
+ * dialog, and one that is refused leaves it open with something to say, so
+ * either outcome settles this; which of the two it was belongs to the step
+ * after it.
  */
 When('I save my teams', async ({ page }) => {
   await dialog(page)
     .getByRole('button', { name: /^save$|^salvar$/iu })
     .click()
-  await expect(page.getByRole('status')).not.toHaveText(/^saving|^salvando/iu)
+  await expect(async () => {
+    if ((await dialog(page).count()) > 0) {
+      await expect(page.getByRole('status')).not.toHaveText(/^saving|^salvando/iu)
+    }
+  }).toPass()
 })
 
-/** Throws them away. Nothing was stored, so there is nothing to undo. */
+/** Throws them away and leaves. Nothing was stored, so there is nothing to undo. */
 When('I discard my teams', async ({ page }) => {
   await dialog(page)
     .getByRole('button', { name: /^cancel$|^cancelar$/iu })
     .click()
+  await expect(dialog(page)).toHaveCount(0)
+})
+
+Then('my teams are no longer open', async ({ page }) => {
+  await expect(dialog(page)).toHaveCount(0)
 })
 
 When('I name it {string}', async ({ page }, name: string) => {

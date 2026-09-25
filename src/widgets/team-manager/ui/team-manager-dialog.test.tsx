@@ -42,12 +42,18 @@ describe('the teams dialog', () => {
   // Closing is the caller's to do: the report underneath keeps the state, so a
   // dialog that closed itself would leave the two disagreeing about whether it
   // is open.
+  /*
+   * It asks with its own statement rather than by passing Base UI's dismissal
+   * event through. Three of the four ways out of here — saving, cancelling and
+   * discarding at the question — have no event behind them, and a caller cannot
+   * tell them apart and has no reason to.
+   */
   it('asks to be closed rather than closing itself', async () => {
     const { onOpenChange } = dialog()
 
-    await userEvent.click(await screen.findByRole('button', { name: /close/iu }))
+    await userEvent.click(await screen.findByRole('button', { name: /^close$/iu }))
 
-    expect(onOpenChange).toHaveBeenCalledWith(false, expect.anything())
+    expect(onOpenChange).toHaveBeenCalledWith(false)
     expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 })

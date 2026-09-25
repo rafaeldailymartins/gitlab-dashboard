@@ -416,6 +416,19 @@ one without reading the reason will reintroduce a bug that is already fixed.
   resolve into whatever is being edited — it carries an era token now, so a read
   the reader discarded while it was in the air is dropped rather than rebuilding
   the draft they threw away.
+  **Saving and cancelling both close; only a dismissal asks.** Each of the two
+  buttons says what to do about the edits and there is nothing left to do here
+  afterwards, so keeping the surface open would be asking the reader to dismiss
+  it twice. Cancel is never disabled, because it is the way out as much as it is
+  the way to undo. A dismissal — Escape, the backdrop, the close control — says
+  only that the reader wants out and not what should become of what they typed,
+  so that is the one path that asks. A refused save does not close: there is
+  something left to read and something left to do.
+  One consequence worth knowing: `SaveNotice`'s "Saved." is now unreachable in a
+  browser, because the surface it lives on is gone by the time it would say so.
+  The closing is the confirmation. The component still renders it and is still
+  tested where it is mounted alone, and the acceptance step that read it was
+  deleted rather than left asserting something nothing can produce.
   The question about closing is an inline bar in the footer, not a nested
   dialog: a focus trap inside a focus trap is what the keyboard sweep would find.
   It is not a live region either — `SaveNotice` is this surface's only one, and

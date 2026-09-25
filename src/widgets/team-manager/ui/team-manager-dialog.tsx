@@ -1,4 +1,4 @@
-import { type ComponentProps, useState } from 'react'
+import { useState } from 'react'
 
 import type { Team } from '@/entities/teams'
 
@@ -19,14 +19,17 @@ interface LeaveQuestionProps {
   readonly onKeep: () => void
 }
 
-/**
- * Base UI's own signature, so the details it passes beside the flag survive the
- * guard below.
- */
-type OpenChange = NonNullable<ComponentProps<typeof Dialog>['onOpenChange']>
-
 interface TeamManagerDialogProps {
-  readonly onOpenChange: OpenChange
+  /**
+   * Asked to open or close.
+   *
+   * This surface's own statement rather than Base UI's event passed through:
+   * three of the four ways out of here are the dialog's own decision — saving,
+   * cancelling, and discarding at the question — and none of them has a
+   * dismissal event behind it. A caller cannot tell them apart and has no
+   * reason to.
+   */
+  readonly onOpenChange: (open: boolean) => void
   /** What was stored, once it has been. See `TeamManager`. */
   readonly onSaved?: ((teams: readonly Team[]) => void) | undefined
   readonly open: boolean
@@ -70,23 +73,24 @@ interface TeamManagerDialogProps {
  */
 export function TeamManagerDialog({ onOpenChange, onSaved, open }: TeamManagerDialogProps) {
   const [dirty, setDirty] = useState(false)
-  // The refused dismissal itself, held so that discarding **completes** it
-  // rather than inventing a second one. Base UI passes details beside the flag
-  // describing how the reader asked — Escape, the backdrop, the close control —
-  // and a caller should not see those change depending on whether there were
-  // edits in the way.
-  const [refused, setRefused] = useState<null | Parameters<OpenChange>>(null)
+  const [asking, setAsking] = useState(false)
+  const close = () => {
+    onOpenChange(false)
+  }
 
   return (
     <Dialog
-      onOpenChange={(next, ...rest) => {
+      onOpenChange={(next) => {
+        // Only a dismissal is ever in question. Saving and cancelling close by
+        // going through `close` directly, because both say what to do about the
+        // edits — asking again would be asking somebody to repeat themselves.
         if (!next && dirty) {
-          setRefused([next, ...rest])
+          setAsking(true)
 
           return
         }
 
-        onOpenChange(next, ...rest)
+        onOpenChange(next)
       }}
       open={open}
     >
@@ -95,17 +99,22 @@ export function TeamManagerDialog({ onOpenChange, onSaved, open }: TeamManagerDi
           <DialogTitle>{m.teams_heading()}</DialogTitle>
           <DialogDescription>{m.teams_description()}</DialogDescription>
         </DialogHeader>
-        <TeamManager onDirtyChange={setDirty} onSaved={onSaved} />
-        {refused === null ? null : (
+        <TeamManager
+          onCancel={close}
+          onDirtyChange={setDirty}
+          onSaved={(teams) => {
+            onSaved?.(teams)
+            close()
+          }}
+        />
+        {asking ? (
           <LeaveQuestion
-            onDiscard={() => {
-              onOpenChange(...refused)
-            }}
+            onDiscard={close}
             onKeep={() => {
-              setRefused(null)
+              setAsking(false)
             }}
           />
-        )}
+        ) : null}
       </DialogContent>
     </Dialog>
   )

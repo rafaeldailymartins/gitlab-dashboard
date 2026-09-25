@@ -104,3 +104,9 @@ Independent of the draft, and first because it is what the reader reported.
       rewritten to match rather than patched
 - [x] 8.2 The close question could not be located by its sentence: the footer's
       "Not saved yet" matches the same text. It is found by the choice it offers
+- [x] 8.3 Saving and cancelling close; only a dismissal asks. Cancel is never
+      disabled — it is the way out as much as the way to undo. A refused save
+      does not close, because there is something left to read and to retry.
+      `SaveNotice`'s "Saved." became unreachable in a browser and the acceptance
+      step that read it was deleted rather than left asserting nothing can
+      produce it

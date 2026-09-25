@@ -46,10 +46,22 @@ edited. A report that moved with an unsaved draft would have to be put back when
 the draft was discarded, which is a worse thing to do to a reader than making
 them press a button.
 
-Discarding SHALL be offered before anything is lost. Closing the surface with
-unsaved edits SHALL ask rather than discard, and every way out of it — including
-dismissing it — SHALL reach the same question. Editing is not the same act as
-closing, and a surface that treats them as one loses work on a keystroke.
+**Saving and discarding both SHALL close the surface.** Each of them says what
+to do about the edits, and there is nothing left to do here afterwards; leaving
+the reader in front of a list they have finished with is the interface asking
+them to dismiss it twice. Discarding SHALL be offered whether or not anything
+has been edited, because it is the way out as much as it is the way to undo —
+a reader who opened this to look at something should not have to find a
+different control to leave by.
+
+A save that was refused SHALL NOT close, because there is something left to do
+and something left to read.
+
+**Dismissing** with unsaved edits is the one way out that SHALL ask rather than
+act, and every form of it SHALL reach the same question. Dismissing says only
+that the reader wants out, not what should become of what they typed; saving and
+discarding say both, and asking them again would be asking them to repeat
+themselves.
 
 A team SHALL be creatable in one action. The reader names a GitLab group and the
 team is minted, named after it and filled with the people that group's hours
@@ -111,11 +123,21 @@ capability at a time.
 - **WHEN** the reader edits a team and discards the edits
 - **THEN** the team is as it was before they were made
 
-#### Scenario: Closing with edits that were not saved
+#### Scenario: Dismissing with edits that were not saved
 
-- **WHEN** the reader edits a team and tries to close the surface
+- **WHEN** the reader edits a team and tries to dismiss the surface
 - **THEN** they are asked what to do with the edits, and the surface is still
   open
+
+#### Scenario: Saving closes
+
+- **WHEN** the reader edits a team and saves
+- **THEN** the edits are stored and the surface is no longer open
+
+#### Scenario: Discarding closes
+
+- **WHEN** the reader discards what they edited
+- **THEN** the surface is no longer open, and nothing was stored
 
 #### Scenario: Several edits are one write
 

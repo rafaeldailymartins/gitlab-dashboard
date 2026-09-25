@@ -16,6 +16,14 @@ import { TeamRail } from './team-rail'
 
 interface TeamManagerProps {
   /**
+   * The reader asked to stop editing and throw the edits away.
+   *
+   * Optional, and absent when this is rendered without a dialog around it:
+   * there is nothing to close then, and discarding is the whole of what Cancel
+   * can do.
+   */
+  readonly onCancel?: (() => void) | undefined
+  /**
    * Whether anything has been edited and not yet stored.
    *
    * Reported upward because the thing that closes this surface is the dialog
@@ -42,7 +50,7 @@ interface TeamManagerProps {
  * no teams, and inviting somebody to build one they may already have is the
  * worst thing this surface can say.
  */
-export function TeamManager({ onDirtyChange, onSaved }: TeamManagerProps) {
+export function TeamManager({ onCancel, onDirtyChange, onSaved }: TeamManagerProps) {
   const edits = useTeamDraft(onSaved)
   const seeding = useGroupSeeding()
   const state = useManagerState(edits, seeding)
@@ -91,7 +99,20 @@ export function TeamManager({ onDirtyChange, onSaved }: TeamManagerProps) {
             reader typing is not something that needs announcing to them. */}
         {dirty ? <span className="text-xs text-muted-foreground">{m.teams_unsaved()}</span> : null}
         <div className="ms-auto flex items-center gap-2 py-1">
-          <Button disabled={!dirty} onClick={edits.discard} size="sm" type="button" variant="ghost">
+          {/* Never disabled. It is the way out of this surface as much as it is
+              the way to undo, and a reader who opened the dialog to look at
+              something should not have to find a different control to leave by
+              — nor work out why the obvious one is greyed. With nothing edited
+              it simply closes. */}
+          <Button
+            onClick={() => {
+              edits.discard()
+              onCancel?.()
+            }}
+            size="sm"
+            type="button"
+            variant="ghost"
+          >
             {m.teams_discard()}
           </Button>
           <Button disabled={!dirty} onClick={edits.save} size="sm" type="button">

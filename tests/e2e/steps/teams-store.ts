@@ -69,10 +69,13 @@ Given('my teams were changed on another device', async ({ page }) => {
   await stubTeamsStore(page, { writeFails: 'conflict' })
 })
 
-Then('the screen says the change was saved', async ({ page }) => {
-  await expect(page.getByRole('status')).toHaveText(/^saved\.$|^salvo\.$/iu)
-})
-
+/*
+ * There is no step for a save that worked, and that is the change rather than
+ * an omission. A save that lands closes the dialog and the notice goes with it,
+ * so the closing is the confirmation — `my teams are no longer open` asserts
+ * it. `SaveNotice` still renders "Saved." and is still tested where it is
+ * mounted on its own; nothing in a browser can reach that state any more.
+ */
 Then('the screen says the change was not saved', async ({ page }) => {
   await expect(page.getByRole('status')).toHaveText(
     /could not be saved|não foi possível salvar/iu,

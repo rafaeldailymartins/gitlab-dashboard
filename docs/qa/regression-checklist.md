@@ -149,9 +149,19 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
 - [ ] Make several changes — remove one person, add another, rename the team —
       and press Save once. All three are stored, and the name is stored even
       though you never left the field.
-- [ ] Edit something and press Escape. You are asked rather than closed. Answer
-      "Keep editing" and you are where you were; answer "Discard" and the dialog
-      closes with nothing written. The same for the X and for clicking outside.
+- [ ] Edit something and press Escape. You are **asked** rather than closed.
+      Answer "Keep editing" and you are where you were; answer "Discard" and the
+      dialog closes with nothing written. The same for the X and for clicking
+      outside — a dismissal says you want out, not what to do with your edits.
+- [ ] Press Save: the dialog closes, and that is the confirmation — there is no
+      "Saved." line to look for any more. Press Cancel instead and it closes
+      too, with nothing written. Neither asks, because both already said what to
+      do about the edits.
+- [ ] Open the dialog and change nothing. Cancel is still available and still
+      closes: it is the way out, not only the way to undo.
+- [ ] Block the endpoint and press Save. The dialog stays **open** with your
+      edits and says the change was not saved — closing there would take away
+      both the thing to read and the thing to retry.
 - [ ] Choose a group to build a team from and press Cancel while it is still
       reading. When the read lands, nothing appears: the click was taken back.
 - [ ] Block the teams endpoint, edit, and Save. It says the change was not

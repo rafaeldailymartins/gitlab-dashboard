@@ -10,6 +10,11 @@ Feature: Keeping a team
   and the ones that expect it not to are the point of the change: removing a
   colleague used to be final the moment it was clicked.
 
+  Saving closes, and so does cancelling — both say what to do about the edits,
+  and neither leaves the reader in front of a surface they have finished with.
+  So a scenario that reads the list after saving opens it again, which also
+  proves the list it reads came from the store.
+
   It is edited over the report rather than instead of it. A reader notices a team
   is wrong while reading its month, and that list has no address worth sending
   anybody, so leaving the figures to fix the list they are about buys nothing.
@@ -21,8 +26,9 @@ Feature: Keeping a team
     And I start a new team
     And I name it "Squad Tributário"
     And I save my teams
+    Then my teams are no longer open
+    When I open my teams again
     Then I keep the teams "Squad Fiscal" and "Squad Tributário"
-    And the screen says the change was saved
 
   # Spec: saved-teams / TEAM-1
   Scenario: Putting somebody on a team, and taking somebody off
@@ -33,6 +39,7 @@ Feature: Keeping a team
     Then the team lists "Diego Alves"
     When I take "Ana Carolina" off the team
     And I save my teams
+    And I open my teams again
     Then the team does not list "Ana Carolina"
 
   # Spec: saved-teams / TEAM-1
@@ -42,8 +49,8 @@ Feature: Keeping a team
     And I open my teams from the report
     And I take "Ana Carolina" off the team
     And I save my teams
-    And I close my teams
-    Then the table has no row heading for "Ana Carolina"
+    Then my teams are no longer open
+    And the table has no row heading for "Ana Carolina"
     And the month shown is May 2026
 
   # Spec: saved-teams / TEAM-1
@@ -51,10 +58,13 @@ Feature: Keeping a team
     Given I am signed in
     When I open my teams
     And I build a team from the group "squad-fiscal"
-    And I save my teams
     Then the team lists "Ana Carolina"
     And the team lists "Diego Alves"
-    And the screen says the change was saved
+    # Reopening would land on the first team in the rail rather than the one
+    # just built, so the claim about who the group put on it is made where it
+    # is made — and saving is asserted for what it does, which is close.
+    When I save my teams
+    Then my teams are no longer open
 
   # Spec: team-timelog-report / GROUP-15
   Scenario: The team is whoever logged time, not whoever has access
@@ -188,6 +198,8 @@ Feature: Keeping a team
     When I open my teams
     And I take "Ana Carolina" off the team
     And I discard my teams
+    Then my teams are no longer open
+    When I open my teams again
     Then the team lists "Ana Carolina"
     And nothing was written to the store
 
