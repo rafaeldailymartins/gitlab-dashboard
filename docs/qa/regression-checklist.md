@@ -147,6 +147,15 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
       search under the member list. A group cannot reach them and the search can;
       it is also the only cover for a window or a page cap that missed somebody,
       so confirm it is on screen without opening anything.
+- [ ] With the network panel open, type a whole name into that search in one go.
+      **One** request goes out, for the whole word — not one per letter — and it
+      leaves about a third of a second after you stop. The field itself never
+      lags the keyboard. Do the same in either group search; there the first
+      letter must not empty the list, because below two characters the term is
+      the unfiltered one the box opened on.
+- [ ] Type a name, then delete it back to nothing. The results go with it. A
+      list left under an empty box is the placeholder outliving the guard that
+      should have hidden it.
 - [ ] Watch one of those saves in the network panel: a `PUT` to
       `/.netlify/functions/teams` carrying an `Authorization: Bearer` header, no
       cookie, and no identifier anywhere in the address. The answer says

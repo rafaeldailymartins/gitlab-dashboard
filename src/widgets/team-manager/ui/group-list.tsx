@@ -6,6 +6,7 @@ import type { GroupRef } from '@/entities/team-timelogs'
 
 import { groupSearchQuery, useTeamTimelogGateway } from '@/entities/team-timelogs'
 import { m } from '@/shared/i18n'
+import { SEARCH_SETTLE_MS, useDebounced } from '@/shared/lib/use-debounced'
 import { SearchField } from '@/shared/ui/search-field'
 import { Skeleton } from '@/shared/ui/skeleton'
 
@@ -37,15 +38,23 @@ const ROW =
  * the reader is authorized in, which is broader than a page of memberships, and
  * it matches on the path as well as the name: a lead who types `taxplus` gets
  * the squads under it, whose own names contain no such word.
+ *
+ * **The provider is asked about what the reader stopped typing.** The field
+ * holds the raw value so it never lags the keyboard; the query reads the
+ * settled one. Undebounced, `taxplus` was six searches of every group this
+ * reader can open.
+ *
+ * Below two characters the term is `null` — the unfiltered list — rather than
+ * a disabled query. It is the same key as an empty box, so the two share one
+ * answer and one request, and a reader who has typed a single letter is shown
+ * every group instead of nothing. Disabling it there did the opposite: the list
+ * emptied on the first keystroke and filled again on the second.
  */
 export function GroupList({ busy, label, onChoose }: GroupListProps) {
   const gateway = useTeamTimelogGateway()
   const [typed, setTyped] = useState('')
-  const results = useQuery({
-    ...groupSearchQuery(gateway, typed === '' ? null : typed),
-    // One letter matches most of an instance; the reader is still typing.
-    enabled: typed.length !== 1,
-  })
+  const search = useDebounced(typed, SEARCH_SETTLE_MS)
+  const results = useQuery(groupSearchQuery(gateway, search.length < 2 ? null : search))
   const groups = results.data ?? []
 
   return (

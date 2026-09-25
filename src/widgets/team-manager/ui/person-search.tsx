@@ -6,6 +6,7 @@ import type { TeamMember } from '@/entities/teams'
 
 import { peopleSearchQuery, useTeamTimelogGateway } from '@/entities/team-timelogs'
 import { m } from '@/shared/i18n'
+import { SEARCH_SETTLE_MS, useDebounced } from '@/shared/lib/use-debounced'
 import { Button } from '@/shared/ui/button'
 import { SearchField } from '@/shared/ui/search-field'
 
@@ -28,17 +29,29 @@ interface PersonSearchProps {
  * over a labelled field, which is the same word twice; the region is what lets a
  * reader using a screen reader tell "somebody the search found" from "somebody
  * on the team", which are two different claims about the same name.
+ *
+ * **The provider is asked about what the reader stopped typing, not about every
+ * keystroke.** The field holds `typed` so it never lags the keyboard; the query
+ * reads the settled value. Undebounced, a ten-letter name was nine GraphQL
+ * requests — and the app's retry policy makes that up to twenty-seven on a
+ * connection that is dropping them. The two characters are a floor and not a
+ * substitute: they only stop the first request, and the reason the query is
+ * disabled below them is that `users(search: "")` is a page of strangers.
+ *
+ * `found` is emptied below that floor rather than read off `data`. The query
+ * keeps its previous answer as a placeholder so the list does not blink between
+ * terms, and a placeholder outlives the `enabled` guard — so trusting `data`
+ * would leave a list of people under a box the reader had just cleared.
  */
 export function PersonSearch({ already, onAdd }: PersonSearchProps) {
   const gateway = useTeamTimelogGateway()
   const headingId = useId()
   const [typed, setTyped] = useState('')
-  const results = useQuery({
-    ...peopleSearchQuery(gateway, typed),
-    // One letter matches most of an instance; the reader is still typing.
-    enabled: typed.trim().length > 1,
-  })
-  const found = (results.data ?? []).filter((person) => !already.has(person.id))
+  const search = useDebounced(typed, SEARCH_SETTLE_MS)
+  // One letter matches most of an instance; the reader is still typing.
+  const searching = search.trim().length > 1
+  const results = useQuery({ ...peopleSearchQuery(gateway, search), enabled: searching })
+  const found = searching ? (results.data ?? []).filter((person) => !already.has(person.id)) : []
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-2">

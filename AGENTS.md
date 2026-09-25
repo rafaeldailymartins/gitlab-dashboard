@@ -451,6 +451,41 @@ one without reading the reason will reintroduce a bug that is already fixed.
   scroll lock changing the document's width and a month-wide fixed table with
   sticky cells re-measuring inside it. That is the dialog's price for locking the
   page, and it is paid once per open rather than per frame.
+- **Every search box waits 300 ms; no field ever does.** `shared/lib/use-debounced.ts`,
+  read by all three provider-backed searches — the person search and the group
+  list in the teams dialog, and the group filter on the report. The field
+  renders what the reader typed, so it never lags the keyboard; only the query
+  reads the settled value. Debouncing the input itself would fight the browser
+  over the caret on every settle and make the box feel broken to fix a cost the
+  reader cannot see.
+  Measured before the fix: `rafael` in the person search was five GraphQL
+  requests, `taxplus` in a group search six, and `query-client.ts`'s retry
+  policy turns each of those into up to three on a connection that is dropping
+  them. TanStack Query does abort the superseded request — the `queryFn`
+  destructures `signal`, so losing its last observer cancels the retryer — but
+  the request had already been sent and the provider had already paid for it.
+  Cancellation bounds concurrency, not volume, and it is not a debounce.
+  **Two characters is a floor, not a substitute.** It only ever stopped the
+  first request; every keystroke after it still went. The floor stays for its
+  own reason — `users(search: "")` is a page of strangers offered as teammates
+  — but below it a _group_ search is now the unfiltered list rather than a
+  disabled query. That shares one key and one answer with an empty box, so a
+  reader who has typed one letter sees every group instead of the empty list
+  disabling it used to draw, and it costs no request.
+  The two searches carry `placeholderData: keepPreviousData`, so a list stops
+  emptying itself between one term and the next. That has a trap worth knowing:
+  **a placeholder outlives the `enabled` guard.** The person search therefore
+  draws nothing below its own floor rather than reading `data`, or a list of
+  people would sit under a box the reader had just cleared.
+  Two typed fields are deliberately **not** debounced, and adding one to either
+  would be a bug. The weekday targets already settle where it matters — the
+  network write waits 800 ms in `use-preferences-sync.ts`, and the per-keystroke
+  work left is a `localStorage` write the reader's own screen depends on. The
+  team name saves on blur or Enter, never on a keystroke, so there is nothing to
+  delay.
+  Nothing in the unit suite used to type into either search box, so this was
+  removable with every gate green. `team-manager.test.tsx` now counts what
+  reaches the provider, and both counts fail without the debounce.
 - **A column nothing is expected of is drawn from `share`, not from the cell's
   kind, and it is named like every other column.** "Nothing expected" means the
   reader's working schedule is zero for that weekday — not that it is a Saturday

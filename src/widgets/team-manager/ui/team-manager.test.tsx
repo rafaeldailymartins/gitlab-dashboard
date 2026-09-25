@@ -207,6 +207,92 @@ describe('a team built from a group', () => {
   })
 })
 
+function groupBox() {
+  return screen.findByRole('searchbox', { name: /search your gitlab groups/iu })
+}
+
+function personBox() {
+  return screen.findByRole('searchbox', { name: /search gitlab for a person/iu })
+}
+
+/** No delay between keystrokes, so a burst really is a burst. */
+function typist() {
+  return userEvent.setup({ delay: null })
+}
+
+/*
+ * What a keystroke costs the provider.
+ *
+ * Nothing in this suite used to type into either search box — the acceptance
+ * suite does, but it asserts what comes back, not how many times it was asked —
+ * so removing the debounce would have left every gate green while each letter
+ * became a GraphQL request, and the retry policy multiplied that by three on a
+ * connection that was dropping them.
+ */
+describe('what a search asks the provider', () => {
+  it('asks once for a name typed in one go, and asks for the whole of it', async () => {
+    const timelogs = fakeTeamGateway()
+
+    manager(fakeTeamsGateway([FISCAL]), timelogs)
+    await typist().type(await personBox(), 'diego')
+
+    await waitFor(() => {
+      expect(timelogs.people).toHaveBeenCalledWith('diego', expect.anything())
+    })
+    expect(timelogs.people).toHaveBeenCalledTimes(1)
+  })
+
+  // The floor is two characters because `users(search: "")` is a page of
+  // strangers. One character must therefore ask nothing at all.
+  it('asks nothing for a single letter', async () => {
+    const timelogs = fakeTeamGateway()
+
+    manager(fakeTeamsGateway([FISCAL]), timelogs)
+    await typist().type(await personBox(), 'd')
+    await waitFor(() => {
+      expect(screen.getByRole('searchbox', { name: /search gitlab for a person/iu })).toHaveValue(
+        'd',
+      )
+    })
+
+    expect(timelogs.people).not.toHaveBeenCalled()
+  })
+
+  it('asks once for a group typed in one go', async () => {
+    const timelogs = fakeTeamGateway()
+
+    manager(fakeTeamsGateway([]), timelogs)
+    await typist().type(await groupBox(), 'taxplus')
+
+    await waitFor(() => {
+      expect(timelogs.groups).toHaveBeenCalledWith('taxplus', expect.anything())
+    })
+    // The first is the unfiltered list this list opens on; the second is the
+    // whole word. Nothing in between reached the provider.
+    expect(timelogs.groups).toHaveBeenCalledTimes(2)
+    expect(timelogs.groups).not.toHaveBeenCalledWith('tax', expect.anything())
+  })
+
+  /*
+   * A single letter is the unfiltered list rather than a disabled query, so it
+   * shares the empty box's key and its answer. Asking again there would be a
+   * request for something already in hand, and disabling it — which is what
+   * this did before — emptied the list on the first keystroke and filled it
+   * again on the second.
+   */
+  it('shows every group for a single letter without asking again', async () => {
+    const timelogs = fakeTeamGateway()
+
+    manager(fakeTeamsGateway([]), timelogs)
+    await screen.findByRole('button', { name: new RegExp(SQUAD.name, 'iu') })
+    await typist().type(await groupBox(), 't')
+
+    expect(await groupRow()).toBeVisible()
+    expect(timelogs.groups).toHaveBeenCalledTimes(1)
+    expect(timelogs.groups).toHaveBeenCalledWith(null, expect.anything())
+  })
+})
+
 describe('topping a team up from a group', () => {
   it('adds whoever is missing and takes nobody off', async () => {
     const teams = fakeTeamsGateway([FISCAL])
