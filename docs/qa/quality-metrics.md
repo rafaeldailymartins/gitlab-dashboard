@@ -18,7 +18,7 @@ this pass.
 | Formatting                         | no deviation                                 | pass                           | `bun run format:check`          | pre-commit, `verify`, CI |
 | Lint (type-aware)                  | 0 errors, 0 warnings                         | pass                           | `bun run lint`                  | pre-commit, `verify`, CI |
 | Lint (ARIA and element ids)        | 0 errors                                     | pass, 121 files                | `bun run lint:a11y`             | `verify`, CI             |
-| Colour contrast                    | every pair above its floor, in both schemes  | pass, 80 pairs                 | `bun run a11y:contrast`         | `verify`, CI             |
+| Colour contrast                    | every pair above its floor, in both schemes  | pass, 96 pairs                 | `bun run a11y:contrast`         | `verify`, CI             |
 | TypeScript                         | 0 errors under full strictness               | pass                           | `bun run typecheck`             | pre-push, `verify`, CI   |
 | FSD conventions                    | 0 problems                                   | pass                           | `bun run arch:layers`           | pre-push, `verify`, CI   |
 | Dependency graph (cycles, orphans) | 0 violations                                 | pass, 250 modules, 849 edges   | `bun run arch:graph`            | pre-push, `verify`, CI   |

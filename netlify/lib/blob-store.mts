@@ -8,14 +8,33 @@ import type { DocumentStore } from './document-store.mjs'
 const STORE = 'teams'
 
 /**
- * Where the data is held, stated rather than defaulted.
+ * Where the data is held, stated rather than defaulted — and stated as the
+ * value every tool already assumes.
  *
  * A site-wide store does not take this from the environment the way a
- * deploy-scoped one does, so omitting it lets the API pick — and a store's data
- * does not move if this value changes later. That makes it a decision to take
- * once, now, rather than a default to discover.
+ * deploy-scoped one does, so omitting it lets the API pick, and a store's data
+ * does not move if the pick changes later. That is why it is pinned rather than
+ * left out.
+ *
+ * It was `us-east-1`, which was a defensible pin and an expensive one. Netlify's
+ * own tools all default to `us-east-2`: the Blobs browser in the dashboard shows
+ * nothing at all for a store held elsewhere — verified by writing a probe blob
+ * to `us-east-2` and watching it appear while the real store stayed invisible —
+ * and `netlify blobs:list` answers with an empty list rather than an error
+ * unless `--region` is passed. So the data was fine and unreachable by every
+ * instrument except this code, which is the worst way for storage to be
+ * correct.
+ *
+ * Pinned to the default rather than omitted, so the two arguments both hold:
+ * the location cannot drift if Netlify changes its mind, and every tool finds
+ * it with no flag.
+ *
+ * **Changing this again does not move anything.** The two documents that
+ * existed were copied across by hand before it changed; a future change needs
+ * the same, or it orphans data silently — a missing key is indistinguishable
+ * from a reader who has never saved.
  */
-const REGION = 'us-east-1'
+const REGION = 'us-east-2'
 
 /**
  * Teams at rest.

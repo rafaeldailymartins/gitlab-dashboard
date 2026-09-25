@@ -182,6 +182,24 @@ deploy-scoped one, precisely so a team does not die with the deploy that wrote
 it. A rollback leaves every reader's teams exactly where they are — which is the
 behaviour you want, and also the thing that makes the next paragraph matter.
 
+**The region is part of the address, and it does not follow the code.**
+`blob-store.mts` pins `us-east-2`, and a site-wide store held anywhere else is
+invisible to every tool that does not name it: the dashboard's Blobs browser
+shows nothing, and `netlify blobs:list` answers an empty list rather than an
+error. It was `us-east-1` once and cost an afternoon of looking at an empty
+dashboard while the data was fine. **Changing that constant moves nothing** — a
+deploy would simply start reading an empty region, and a missing key is
+indistinguishable from a reader who has never saved, so nothing would report it.
+Any change to it needs the documents copied first:
+
+```bash
+netlify blobs:get teams "v1/<sub>" --region <old> -O teams.json
+netlify blobs:set teams "v1/<sub>" --input teams.json --region <new>
+```
+
+and the same for `v1/<sub>/preferences`. Compare the etags across the two
+regions afterwards: equal etags mean equal bytes.
+
 **The stored documents' shapes do migrate, and a rollback loses what it cannot
 read.** `netlify/lib/teams-document.mts` and `netlify/lib/preferences-document.mts`
 each pin `version` to a literal, so a document written by a later shape is

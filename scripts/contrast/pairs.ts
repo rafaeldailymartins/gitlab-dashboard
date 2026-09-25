@@ -54,12 +54,31 @@ const INTERFACE: readonly Row[] = [
   ['input', 'card', 3, 'a field boundary on a card'],
   ['input', 'background', 3, 'a field boundary on the ground'],
   ['seal', 'card', 4.5, 'a met target on a card'],
+  // The panel every dropdown and every dialog is painted on, held to what a
+  // card is held to. It was held to nothing at all until a WebKit run reported
+  // the teams dialog's secondary text at 3.58:1 — measured mid-animation, so
+  // the figure was an artefact and the surface was fine at 5.96:1. What was not
+  // fine is that nothing here would have said so either way: `--popover` was
+  // the one surface in this interface no pair named, and it carries the teams
+  // dialog, the team picker and the group filter.
+  ['popover-foreground', 'popover', 4.5, 'body text on a panel'],
+  ['muted-foreground', 'popover', 4.5, 'secondary text on a panel'],
+  ['destructive', 'popover', 4.5, 'error text on a panel'],
+  ['input', 'popover', 3, 'a field boundary on a panel'],
+  ['accent', 'popover', 1.15, 'a hovered quiet control against a panel'],
+  // 3.02:1 in the dark scheme, which clears the floor by two hundredths. It is
+  // recorded rather than rounded off: the Save button really is that close to
+  // the panel it sits on, and the next person to retune either token should
+  // find that out from this gate and not from a screen.
+  ['primary', 'popover', 3, 'a solid button against a panel'],
+  ['primary-hover', 'popover', 3, 'a solid button hovered, against a panel'],
 ]
 
 /** The focus ring is painted at half opacity, which is what caps it. */
 const RINGS: readonly Row[] = [
   ['ring', 'background', 3, 'the focus ring on the ground'],
   ['ring', 'card', 3, 'the focus ring on a card'],
+  ['ring', 'popover', 3, 'the focus ring inside a panel'],
 ]
 
 const CHARTS: readonly Row[] = [

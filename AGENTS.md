@@ -846,6 +846,37 @@ one without reading the reason will reintroduce a bug that is already fixed.
   under one store for the same reason the deployed ones share one — a suffix that
   was not distinct would have the two documents overwriting each other, and each
   would look perfectly well-formed on its own.
+- **The accessibility sweep waits for the page to stop moving, and the contrast
+  gate names the panel every dialog is painted on.** Two halves of one failure.
+  `toBeVisible()` is satisfied by a box on screen and says nothing about
+  opacity, so the sweep audited the teams dialog part of the way through its own
+  100 ms fade: on WebKit, axe reported one list's two rows at 3.58:1 against
+  `#0f1413` and 3.62:1 against `#101614` — the same surface, measured twice,
+  against two different backgrounds, because the opacity was still climbing
+  between the reads. Settled, that pair is 5.96:1. `settle()` in
+  `tests/e2e/steps/dashboard.ts` awaits every finite animation before analysing;
+  infinite ones are skipped, because `animate-pulse` on a skeleton never
+  finishes and awaiting it would hang the audit rather than settle it. This is
+  the same lesson as the wait already recorded one step out — `goto` resolves
+  before a client-rendered app has painted — and both were found the same way,
+  by WebKit.
+  It reached `main` green. Playwright retries once in CI and a recovered test
+  makes the job pass, so the run that merged the dialog says `2 flaky` and
+  nothing else; the branch after it failed only because the retry failed too.
+  **A flake on this sweep is worth reading, not re-running.**
+  The second half is what the first half hid. `--popover` was the one surface in
+  this interface that no pair in `scripts/contrast/pairs.ts` named, while
+  carrying the teams dialog, the team picker and the group filter. It was fine —
+  every pair now measured clears its floor — but nothing was holding it there,
+  and the pair CI was complaining about was the pair the gate did not check. It
+  is held to what a card is held to now, eight pairs in both schemes. One of
+  them, the solid button against the panel in the dark scheme, clears 3:1 by two
+  hundredths; it is recorded rather than rounded off, so the next person to
+  retune either token learns it from the gate.
+  The sweep's own message changed with them: a violation used to read
+  `color-contrast (4 nodes)` and name none of them, which is unreadable from a
+  CI log by somebody who cannot open the page. It carries each failing
+  element's selector and the two colours axe compared.
 - **Two linters.** ESLint carries the type-aware, React and testing-library
   rules; Biome carries the ARIA rules and the unique-id rule. Replacing ESLint
   with Biome was measured twice and rejected — `docs/qa/quality-metrics.md` has
