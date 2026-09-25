@@ -35,3 +35,6 @@ project.inlang/cache/
 project.inlang/.meta.json
 .type-coverage/
 .tanstack/
+
+# Local Netlify folder
+.netlify
