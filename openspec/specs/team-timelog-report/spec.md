@@ -543,10 +543,18 @@ somebody opened a month of hours to find out.
 
 ### Requirement: GROUP-11 — Hours are measured against a reference the screen states
 
-A cell's hours SHALL be presented against a reference schedule, and the screen
-SHALL state what that reference is. The app has no knowledge of any person's
-working arrangement, so an unstated reference would make the report assert
-something about a colleague's contract that it cannot know.
+A cell's hours SHALL be presented against the reader's own daily target — the
+hours per weekday they set as their working hours — and the screen SHALL state
+that this is what the marks are measured against. The app has no knowledge of
+any colleague's working arrangement; the reader does, and has already written it
+down one screen away. A table that measured against anything else would disagree
+with the schedule the same reader configured, and an unstated reference would
+make the report assert something about a colleague's contract nobody chose.
+
+A column SHALL be presented as expecting nothing exactly when the reader's target
+across it is zero: a day whose weekday has no target, or a week none of whose
+days has one. The weekend is not special. A Saturday the reader expects hours on
+is a working column, and a weekday they expect none on is not.
 
 The comparison SHALL be carried by the length of a mark against a visible
 reference point, and SHALL NOT depend on hue. Hours above the reference SHALL be
@@ -556,6 +564,13 @@ distinguishable from hours that exactly meet it.
 
 - **WHEN** a report is shown
 - **THEN** the screen states the reference the marks are measured against
+
+#### Scenario: The reference is the reader's working hours
+
+- **GIVEN** the reader's target is four hours on Saturday and none on Wednesday
+- **WHEN** a report is shown
+- **THEN** Saturday's columns are measured against four hours
+- **AND** Wednesday's columns are presented as expecting nothing
 
 The key SHALL list only the marks the table in front of the reader actually
 uses. A key for something that is nowhere on screen sends them looking for it,
@@ -660,14 +675,32 @@ changes every figure on the screen and changes nothing about how the screen
 looks, so a link that dropped it would send a report that is not the one being
 looked at, and the recipient would have no way to tell.
 
-An address naming no team SHALL ask the reader to choose one rather than failing,
-and SHALL invite them to make one where they have none. An address naming a team
-that is not this reader's SHALL say there is no such team of theirs and show no
-figures — not an error about permission, which would confirm that somebody else's
-team exists. An address naming a group the reader cannot read SHALL fall back to
-the unscoped report and say that it did, rather than showing an empty one: an
-empty scoped report and an unreadable scope are different facts. An address whose
-month cannot be read SHALL be recovered from rather than crashing the screen.
+An address naming no team SHALL be completed with a team the reader has, and
+SHALL invite them to make one where they have none. This is stated as completion
+rather than as asking them to choose, because asking is not what the screen does:
+a reader with teams and a bare address is shown their first one. The two readings
+disagreed in the one case that matters — the visit right after a first team is
+made — and the screen was right.
+
+An address naming a team that is not this reader's SHALL say there is no such
+team of theirs and show no figures — not an error about permission, which would
+confirm that somebody else's team exists.
+
+**That claim SHALL NOT be made about a team the reader has just deleted
+themselves.** A save that leaves the addressed team no longer in the reader's
+list SHALL move the address to one that is. "This is not one of your teams" is
+a fact about an address that arrived naming somebody else's; said back to a
+reader about the team they removed a moment ago, it reports their own action to
+them as a mistake, and it leaves the control that names the team showing nothing
+at all. The team the address moves to SHALL be read from what was stored, never
+from what the surface was about to store: an edit that the rules refuse — a list
+already at its ceiling, an identifier already used — leaves the save successful
+and the team absent, and an address pointed at it would name nothing.
+
+An address naming a group the reader cannot read SHALL fall back to the unscoped
+report and say that it did, rather than showing an empty one: an empty scoped
+report and an unreadable scope are different facts. An address whose month cannot
+be read SHALL be recovered from rather than crashing the screen.
 
 #### Scenario: Opening a shared address
 
@@ -688,7 +721,7 @@ month cannot be read SHALL be recovered from rather than crashing the screen.
 #### Scenario: An address that names no group
 
 - **WHEN** the reader opens the report's address with no team named
-- **THEN** the screen asks them to choose a team, and reports no error
+- **THEN** the screen shows a team they have, and reports no error
 
 #### Scenario: A reader with no teams at all
 
@@ -700,10 +733,23 @@ month cannot be read SHALL be recovered from rather than crashing the screen.
 - **WHEN** the reader opens an address naming a team that is not one of theirs
 - **THEN** the screen says there is no such team of theirs, and shows no figures
 
+#### Scenario: Deleting the team the address names
+
+- **WHEN** the reader deletes the team the report is about and saves
+- **THEN** the report is about a team they still have, and the control naming it
+  says which
+
+#### Scenario: A first team made from an address that named another
+
+- **WHEN** a reader whose address names a team they no longer have makes a team
+  and saves
+- **THEN** the report is about the team they made, and the control naming it says
+  which
+
 #### Scenario: An address naming a group the reader cannot read
 
 - **WHEN** the reader opens an address scoped to a group they cannot read
-- **THEN** the report is shown unscoped, and the screen says the scope was
+- **THEN** the unscoped report is shown, and the screen says the scope was
   dropped
 
 #### Scenario: An address that cannot be read
