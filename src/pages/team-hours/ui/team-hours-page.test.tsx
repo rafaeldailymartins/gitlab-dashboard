@@ -21,6 +21,9 @@ const FISCAL: Team = {
 }
 
 const MAY: TeamSearch = { by: 'days', group: '', month: '2026-05', team: FISCAL.id }
+
+/** A team identifier this reader does not have — a link, or their own memory. */
+const GONE = '018f3b2c-7a41-7c9e-9f2d-000000000000'
 const HOUR = 3600
 
 /** One of Bruno's cells. He logged nothing, so each says what the day expected. */
@@ -65,7 +68,7 @@ function page(
   timelogs = loggedGateway(),
   teams = fakeTeamsGateway([FISCAL]),
 ) {
-  const onChange = vi.fn()
+  const onChange = vi.fn<(next: Partial<TeamSearch>) => void>()
   // Routed, because the screen links to the teams screen — and a link is what
   // this app's answer to "you have no teams yet" is made of.
   const view = renderRoutedReport(
@@ -199,6 +202,42 @@ describe('choosing what to look at', () => {
     expect(offered[0]).toHaveTextContent(/no teams yet/i)
     expect(offered[0]).toHaveAttribute('aria-disabled', 'true')
   }, 15_000)
+
+  /*
+   * The reported bug, end to end. The address names a team this reader does not
+   * have — from an earlier visit, through the remembered identifier — and they
+   * make their first team. Before the save was followed, the address kept
+   * naming the dead one: the screen said the team was not theirs and the
+   * picker's trigger drew with no text in it, beside a list containing the team
+   * they had just made.
+   */
+  it('follows the save when the address named a team that is gone', async () => {
+    const { onChange } = page({ team: GONE }, loggedGateway(), fakeTeamsGateway([]))
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: /^manage teams$/iu }, { timeout: 8000 }),
+    )
+    await userEvent.click(
+      await screen.findByRole('button', { name: /start an empty team/iu }, { timeout: 8000 }),
+    )
+    // Edits are collected now, so the address follows the save rather than the
+    // click that made the team.
+    await userEvent.click(await screen.findByRole('button', { name: /^save$/iu }))
+
+    await waitFor(
+      () => {
+        expect(onChange).toHaveBeenCalled()
+      },
+      { timeout: 8000 },
+    )
+
+    const [moved] = onChange.mock.calls.at(-1) ?? []
+
+    // Some team, and neither the one that is gone nor none at all.
+    expect(moved?.team).not.toBe(GONE)
+    expect(moved?.team).not.toBe('')
+    expect(moved?.team).toBeTruthy()
+  }, 20_000)
 
   it('says so when the address names a team this reader does not have', async () => {
     page({ team: '018f3b2c-7a41-7c9e-9f2d-000000000000' })

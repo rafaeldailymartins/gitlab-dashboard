@@ -87,17 +87,41 @@ When('I open my teams from the report', async ({ page }) => {
 When('I start a new team', async ({ page }) => {
   await page.getByRole('button', { name: /^new team$|^nova equipe$/iu }).click()
   await page.getByRole('button', { name: /start an empty team|começar uma equipe vazia/iu }).click()
-  // Waited on, because nothing here is applied optimistically: until the store
-  // answers, the new team is not in the list and the dialog is still showing the
-  // one before it. Typing a name before this lands renames that team instead.
+  // Still waited on, for a different reason than before. It used to be that
+  // nothing was optimistic and the team was not in the list until the store
+  // answered; edits are collected now, so the wait is on the pane following the
+  // new team rather than on a round trip. Typing a name before it lands still
+  // renames the team that was showing.
   await expect(nameField(page)).toHaveValue(/^new team$|^nova equipe$/iu)
 })
 
+/**
+ * Writes everything edited since the dialog was opened.
+ *
+ * Waits for the write to have resolved, not for it to have succeeded — three
+ * scenarios press this precisely to be refused. What the save said is the next
+ * step's to assert; what this needs is that it is no longer in flight, so a
+ * reload after it is a reload after the store heard.
+ */
+When('I save my teams', async ({ page }) => {
+  await dialog(page)
+    .getByRole('button', { name: /^save$|^salvar$/iu })
+    .click()
+  await expect(page.getByRole('status')).not.toHaveText(/^saving|^salvando/iu)
+})
+
+/** Throws them away. Nothing was stored, so there is nothing to undo. */
+When('I discard my teams', async ({ page }) => {
+  await dialog(page)
+    .getByRole('button', { name: /^cancel$|^cancelar$/iu })
+    .click()
+})
+
 When('I name it {string}', async ({ page }, name: string) => {
-  // Enter, because the field commits on Enter or on leaving it — a name is typed
-  // a letter at a time and this is the one control that is not saved per stroke.
+  // No Enter any more. The field used to commit on Enter or on leaving it,
+  // because a save per letter was a write per letter; every letter goes into
+  // what is being edited now, and only saving reaches the store.
   await nameField(page).fill(name)
-  await nameField(page).press('Enter')
 })
 
 /**
@@ -143,8 +167,33 @@ When('I take {string} off the team', async ({ page }, name: string) => {
 })
 
 When('I close my teams', async ({ page }) => {
-  await page.getByRole('button', { name: /^close$|^fechar$/iu }).click()
+  await dialog(page)
+    .getByRole('button', { name: /^close$|^fechar$/iu })
+    .click()
   await expect(dialog(page)).toHaveCount(0)
+})
+
+/** Tries to close, which is refused while anything is unsaved. */
+When('I try to close my teams', async ({ page }) => {
+  await dialog(page)
+    .getByRole('button', { name: /^close$|^fechar$/iu })
+    .click()
+})
+
+/**
+ * Located by the choice it offers, not by its sentence.
+ *
+ * The footer says "Not saved yet" while anything is unsaved, and the question
+ * says the changes are not saved — one regex over the dialog's text matches
+ * both, which is a strict-mode violation rather than a useful assertion. The
+ * way out of the question is unambiguous, and it is also the thing being
+ * claimed: the reader was given one.
+ */
+Then('I am asked about the changes I did not save', async ({ page }) => {
+  await expect(dialog(page)).toHaveCount(1)
+  await expect(
+    dialog(page).getByRole('button', { name: /keep editing|continuar editando/iu }),
+  ).toBeVisible()
 })
 
 /**

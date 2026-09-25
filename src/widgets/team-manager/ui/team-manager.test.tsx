@@ -54,6 +54,18 @@ function removeButton(name: string) {
   return screen.findByRole('button', { name: new RegExp(`remove ${name}`, 'iu') })
 }
 
+/**
+ * Presses Save.
+ *
+ * Edits are collected and written once, so a test that edits and then asserts
+ * against the store has to say when. That is the change, not an accident of the
+ * harness: the assertion that used to prove a click reached the store now
+ * proves a click and a save did.
+ */
+async function save() {
+  await userEvent.click(await screen.findByRole('button', { name: /^save$/iu }))
+}
+
 describe('the teams a reader keeps', () => {
   it('opens on a team, listing who is on it', async () => {
     manager()
@@ -83,6 +95,7 @@ describe('the teams a reader keeps', () => {
 
     manager(teams)
     await userEvent.click(await removeButton(ANA.name))
+    await save()
 
     expect(teams.write).toHaveBeenCalledWith(
       expect.objectContaining({ teams: [expect.objectContaining({ members: [member(BRUNO)] })] }),
@@ -98,6 +111,7 @@ describe('the teams a reader keeps', () => {
     manager(teams)
     await userEvent.click(await screen.findByRole('button', { name: new RegExp(GUILD.name, 'u') }))
     await userEvent.click(screen.getByRole('button', { name: /delete this team/iu }))
+    await save()
 
     expect(teams.write).toHaveBeenCalledWith(expect.objectContaining({ teams: [FISCAL] }))
     expect(await screen.findByDisplayValue(FISCAL.name)).toBeInTheDocument()
@@ -124,6 +138,7 @@ describe('a team built from a group', () => {
 
     manager(teams, groupOf([suggestedMember(ANA), suggestedMember(DIEGO)]))
     await userEvent.click(await groupRow())
+    await save()
 
     await waitFor(() => {
       expect(teams.write).toHaveBeenCalledTimes(1)
@@ -142,6 +157,7 @@ describe('a team built from a group', () => {
 
     manager(teams, groupOf([suggestedMember(ANA), suggestedMember(DIEGO, { bot: true })]))
     await userEvent.click(await groupRow())
+    await save()
 
     await waitFor(() => {
       expect(teams.write).toHaveBeenCalledWith(
@@ -159,6 +175,7 @@ describe('a team built from a group', () => {
 
     manager(teams, groupOf([suggestedMember(DIEGO, { active: false })]))
     await userEvent.click(await groupRow())
+    await save()
 
     await waitFor(() => {
       expect(teams.write).toHaveBeenCalledWith(
@@ -182,6 +199,7 @@ describe('a team built from a group', () => {
 
     manager(teams, short)
     await userEvent.click(await groupRow())
+    await save()
 
     await waitFor(() => {
       expect(teams.write).toHaveBeenCalledWith(
@@ -198,6 +216,7 @@ describe('a team built from a group', () => {
 
     manager(teams)
     await userEvent.click(await screen.findByRole('button', { name: /start an empty team/iu }))
+    await save()
 
     expect(teams.write).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -229,6 +248,115 @@ function typist() {
  * became a GraphQL request, and the retry policy multiplied that by three on a
  * connection that was dropping them.
  */
+/*
+ * What "saved on purpose" buys, and what it costs.
+ *
+ * None of this was expressible before: every edit was its own write, so there
+ * was no state in which something had been changed and not stored, and nothing
+ * to discard.
+ */
+describe('edits that have not been saved', () => {
+  it('does not store an edit until it is saved', async () => {
+    const teams = fakeTeamsGateway([FISCAL])
+
+    manager(teams)
+    await userEvent.click(await removeButton(ANA.name))
+
+    // On screen, because that is what the reader is editing.
+    await waitFor(() => {
+      expect(screen.queryByText(`@${ANA.username}`)).not.toBeInTheDocument()
+    })
+    expect(teams.write).not.toHaveBeenCalled()
+  })
+
+  it('puts back what was discarded, and stores nothing', async () => {
+    const teams = fakeTeamsGateway([FISCAL])
+
+    manager(teams)
+    await userEvent.click(await removeButton(ANA.name))
+    await userEvent.click(await screen.findByRole('button', { name: /^cancel$/iu }))
+
+    expect(await screen.findByText(`@${ANA.username}`)).toBeInTheDocument()
+    expect(teams.write).not.toHaveBeenCalled()
+  })
+
+  /*
+   * The defect save-on-edit had, and the reason this is not only a matter of
+   * taste. Two removals each built their write from the list as it was last
+   * read and carried the version read with it, so the second was built on the
+   * team before the first — reverting it, or being refused with the reader's
+   * own two clicks reported as somebody else's change.
+   */
+  it('writes two removals once, and keeps both', async () => {
+    const teams = fakeTeamsGateway([FISCAL])
+
+    manager(teams)
+    await userEvent.click(await removeButton(ANA.name))
+    await userEvent.click(await removeButton(BRUNO.name))
+    await save()
+
+    await waitFor(() => {
+      expect(teams.write).toHaveBeenCalledTimes(1)
+    })
+    expect(teams.write).toHaveBeenCalledWith(
+      expect.objectContaining({ teams: [expect.objectContaining({ members: [] })] }),
+    )
+  })
+
+  it('offers nothing to save or discard until something is edited', async () => {
+    manager(fakeTeamsGateway([FISCAL]))
+
+    expect(await screen.findByRole('button', { name: /^save$/iu })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /^cancel$/iu })).toBeDisabled()
+  })
+
+  it('offers both once something is', async () => {
+    manager(fakeTeamsGateway([FISCAL]))
+    await userEvent.click(await removeButton(ANA.name))
+
+    expect(await screen.findByRole('button', { name: /^save$/iu })).toBeEnabled()
+    expect(screen.getByRole('button', { name: /^cancel$/iu })).toBeEnabled()
+  })
+
+  // The name used to commit on blur and on Enter, so a save pressed while the
+  // field still held text dropped the rename without saying anything.
+  it('saves a name the reader typed but did not leave', async () => {
+    const teams = fakeTeamsGateway([FISCAL])
+
+    manager(teams)
+
+    const field = await screen.findByDisplayValue(FISCAL.name)
+
+    await userEvent.clear(field)
+    await userEvent.type(field, 'Squad Fiscal e Tributário')
+    await save()
+
+    await waitFor(() => {
+      expect(teams.write).toHaveBeenCalledWith(
+        expect.objectContaining({
+          teams: [expect.objectContaining({ name: 'Squad Fiscal e Tributário' })],
+        }),
+      )
+    })
+  })
+
+  // Discarding reverts the team, and the field has to follow it — it is seeded
+  // once and remounted only when another team is chosen, so without the
+  // render-time follow it would sit there showing a rename that no longer
+  // exists.
+  it('puts the name back when the edits are discarded', async () => {
+    manager(fakeTeamsGateway([FISCAL]))
+
+    const field = await screen.findByDisplayValue(FISCAL.name)
+
+    await userEvent.clear(field)
+    await userEvent.type(field, 'Something else')
+    await userEvent.click(screen.getByRole('button', { name: /^cancel$/iu }))
+
+    expect(await screen.findByDisplayValue(FISCAL.name)).toBeInTheDocument()
+  })
+})
+
 describe('what a search asks the provider', () => {
   it('asks once for a name typed in one go, and asks for the whole of it', async () => {
     const timelogs = fakeTeamGateway()
@@ -305,6 +433,7 @@ describe('topping a team up from a group', () => {
     )
     await userEvent.click(await screen.findByRole('button', { name: /add from a group/iu }))
     await userEvent.click(await groupRow())
+    await save()
 
     await waitFor(() => {
       expect(teams.write).toHaveBeenCalledWith(

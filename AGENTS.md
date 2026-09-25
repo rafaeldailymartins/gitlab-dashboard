@@ -382,6 +382,64 @@ one without reading the reason will reintroduce a bug that is already fixed.
   carries it all the same, because it is what makes "an inactive account is not
   dropped" a claim a test can fail on rather than a rule that holds until
   somebody writes the filter.
+- **The teams dialog is saved on purpose, and the report follows what was
+  saved.** `lib/use-team-draft.ts` collects every edit and writes once; the
+  footer offers Save and Cancel, and dismissing with anything unsaved asks
+  first. This reverses `use-team-edits.ts`'s own argument — that clicks
+  collected into a draft are clicks lost to a closed tab, and that "unsaved" is
+  an awkward thing to explain on a surface whose whole job is a list — and that
+  argument is still true. What outweighed it is that save-on-edit made every
+  click final: removing a colleague had no way back but finding them again by
+  name.
+  It also removed a defect that was nothing to do with taste. `apply` built each
+  write from the list as it was last read and closed over the etag read with it,
+  with no mutation scope, so two quick edits were both built on the list before
+  either. Measured against a store that holds writes open: two removals from a
+  team of three sent `etags = ["1","1"]` and `sizes = [2,2]` — the second
+  reverting the first, and against the real endpoint refused 409 with the notice
+  blaming the reader's own two clicks on somebody else. One write from one
+  snapshot cannot do that.
+  **A refusal is two different things and they owe the reader opposite answers.** A
+  store that could not be reached changed nothing, so the edits stay on screen
+  to try again. A conflict did change something — the list moved underneath —
+  and TEAM-5 is that the reader sees whose it is now, so that is the one refusal
+  allowed to take the edits away.
+  The draft is state and nothing else. Not the query cache, which the report
+  behind reads — a draft there would repaint the month under the reader and make
+  Cancel a problem of putting it back. And not the device: TEAM-2 forbids a
+  roster reaching storage, and the acceptance suite reads `localStorage`,
+  `sessionStorage` and every IndexedDB store by content looking for exactly that.
+  Two things had to change with it. The name field committed on blur and on
+  Enter, so a Save while it held text dropped the rename silently; every letter
+  goes into the draft now, and it follows the team during render so discarding
+  puts the name back. And a group read is up to four sequential pages that
+  resolve into whatever is being edited — it carries an era token now, so a read
+  the reader discarded while it was in the air is dropped rather than rebuilding
+  the draft they threw away.
+  The question about closing is an inline bar in the footer, not a nested
+  dialog: a focus trap inside a focus trap is what the keyboard sweep would find.
+  It is not a live region either — `SaveNotice` is this surface's only one, and
+  the acceptance suite reads it with an unscoped status locator that resolves to
+  a single element only because the dialog hides the report's own.
+- **The report's address follows the save, and there were two ways it went
+  blank.** `pages/team-hours/lib/address-after-save.ts`. The picker's trigger drew
+  with no text at all whenever the address named a team the reader did not have:
+  `chosenTeam` answers `unknown`, `teamOf` gives null, and the select is handed
+  a value matching no item. Two ways in, and only one is what it looks like. A
+  remembered identifier that names nothing — `rememberTeam` is called from one
+  place, inside a navigation, so deleting a team never forgot it and the next
+  visit was redirected into a dead address; **GROUP-20 already forbade this** and
+  nothing implemented it, which `arch:trace` never noticed because it matches
+  requirement ids and GROUP-20 is cited by two other scenarios. And deleting the
+  addressed team inside the visit, which touches nothing remembered at all.
+  Neither is fixed by falling back to the first team, which GROUP-14 forbids: an
+  address naming a team that was never yours has to say so. The save is the
+  event instead — it is the only moment the list is known to have changed and to
+  have been accepted — and the team it moves to is read from the **written
+  document**, never from what the dialog minted. `withTeam` returns the list
+  unchanged at `MAX_TEAMS` and on a duplicate id while the write still succeeds
+  and still says "Saved.", so a minted identifier would name a team nothing
+  created.
 - **The teams a reader keeps are edited in a dialog over the report, and `/teams`
   is gone.** This reverses the decision the surface shipped with, and that
   decision was sound about the wrong thing: the accessibility and 375 px sweeps
@@ -406,7 +464,10 @@ one without reading the reason will reintroduce a bug that is already fixed.
   value already says. The way into the teams dialog is an icon button **inside
   the team control's own border**: a control that acts on the thing beside it
   belongs attached to it, and at the end of a row of unrelated controls it read
-  as a fifth filter.
+  as a fifth filter. (This paragraph described it as an icon button inside the
+  team control's own border for a while after it had stopped being one; it is a
+  labelled button at the far end of the row, and `report-toolbar.tsx` argues
+  that case itself.)
 - **Every dropdown in the app opens the same panel, out of
   `shared/ui/popup.ts`.** There are two of them and they answer different
   questions: a **combobox** for a list that comes from the provider a page at a

@@ -175,15 +175,22 @@ behind it is part of what is being tested.
     a name. The error should be announced without moving focus, the field should
     read as invalid, and what was typed should still be there — the draft is kept
     whether or not the store would take it.
+28. Edit something and press Escape. The question about unsaved changes should
+    be reachable by Tab **within the same trap** — it is a bar in this dialog's
+    own footer, not a second dialog — and nothing should have been focused for
+    you. Confirm the save region still announces only what the save did, and
+    that "Not saved yet" beside the buttons is read as ordinary text rather than
+    announced as a status: there is one live region on this surface and the
+    reader typing is not news to them.
 
 ### Settings
 
-28. Each weekday input should announce its own weekday and its current value.
-29. Enter 30 in one. The error should be announced without moving focus, and the
+29. Each weekday input should announce its own weekday and its current value.
+30. Enter 30 in one. The error should be announced without moving focus, and the
     field should read as invalid.
-30. Change the language. Everything should be re-announced in the new language,
+31. Change the language. Everything should be re-announced in the new language,
     including the error still on screen.
-31. Block `/.netlify/functions/preferences` and change a target. The line saying
+32. Block `/.netlify/functions/preferences` and change a target. The line saying
     the settings are not reaching your other devices should be announced once,
     politely, without moving focus — it is a `role="status"`, and it is the only
     live region on this screen. Nothing should be announced on an ordinary

@@ -142,6 +142,18 @@ Then('nothing was written to the store a second time', ({ page }) => {
 })
 
 /**
+ * Nothing left the browser at all.
+ *
+ * The claim edits-are-collected makes that save-on-edit could not: that a
+ * change on screen has not been stored. Counted at the request for the same
+ * reason as above — a stub that answers every request the same way cannot tell
+ * the difference between no write and a write it accepted.
+ */
+Then('nothing was written to the store', ({ page }) => {
+  expect(writes.get(page)?.count ?? 0).toBe(0)
+})
+
+/**
  * A roster is a list of colleagues' names, and a shared machine must not keep
  * one — the identifier as much as the name, since that is what the document
  * stores a member by.

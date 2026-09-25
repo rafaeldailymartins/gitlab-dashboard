@@ -25,7 +25,31 @@ export interface TeamEdits {
 }
 
 /** A change to the reader's whole list of teams. */
-type TeamsChange = (teams: readonly Team[]) => readonly Team[]
+export type TeamsChange = (teams: readonly Team[]) => readonly Team[]
+
+interface Told {
+  /**
+   * Somebody else wrote first, and what is on screen is now theirs.
+   *
+   * Separate from a write that simply did not arrive, because the two owe the
+   * reader opposite things. A store that could not be reached changed nothing,
+   * so what they edited is still the truth and keeping it costs nothing. A
+   * conflict means the list moved under them, and TEAM-5 is that they have to
+   * see whose it is now before deciding anything — so this is the one refusal
+   * that is allowed to take their edits away.
+   */
+  readonly onConflict?: () => void
+  /**
+   * What was stored, once it has been.
+   *
+   * The document rather than the change that produced it: an edit the model
+   * refuses — a list already at its ceiling, an identifier already used —
+   * leaves the write successful and the team absent, so a caller acting on what
+   * it asked for would be acting on something that does not exist. Only the
+   * answer is true.
+   */
+  readonly onSaved?: (teams: readonly Team[]) => void
+}
 
 const NOTHING: TeamsDocument = { etag: null, teams: [] }
 
@@ -46,7 +70,7 @@ const NOTHING: TeamsDocument = { etag: null, teams: [] }
  * happen, and queueing one for replay would reintroduce exactly the clobber the
  * version prevents.
  */
-export function useTeamEdits(): TeamEdits {
+export function useTeamEdits({ onConflict, onSaved }: Told = {}): TeamEdits {
   const gateway = useTeamsGateway()
   const client = useQueryClient()
   const { data, error, isPending } = useQuery(teamsQuery(gateway))
@@ -58,10 +82,12 @@ export function useTeamEdits(): TeamEdits {
 
       if (current) {
         client.setQueryData(TEAMS_KEY, current)
+        onConflict?.()
       }
     },
     onSuccess: (written) => {
       client.setQueryData(TEAMS_KEY, written)
+      onSaved?.(written.teams)
     },
   })
 

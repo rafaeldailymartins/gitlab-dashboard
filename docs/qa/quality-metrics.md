@@ -21,24 +21,24 @@ this pass.
 | Colour contrast                    | every pair above its floor, in both schemes  | pass, 80 pairs                 | `bun run a11y:contrast`         | `verify`, CI             |
 | TypeScript                         | 0 errors under full strictness               | pass                           | `bun run typecheck`             | pre-push, `verify`, CI   |
 | FSD conventions                    | 0 problems                                   | pass                           | `bun run arch:layers`           | pre-push, `verify`, CI   |
-| Dependency graph (cycles, orphans) | 0 violations                                 | pass, 248 modules, 837 edges   | `bun run arch:graph`            | pre-push, `verify`, CI   |
+| Dependency graph (cycles, orphans) | 0 violations                                 | pass, 250 modules, 849 edges   | `bun run arch:graph`            | pre-push, `verify`, CI   |
 | Dead code (files, exports, deps)   | 0 findings                                   | pass                           | `bun run deadcode`              | pre-push, `verify`, CI   |
-| Translations                       | every key in every language, and none unused | 171 messages, complete in 2    | `bun run i18n:check`            | `verify`, CI             |
+| Translations                       | every key in every language, and none unused | 177 messages, complete in 2    | `bun run i18n:check`            | `verify`, CI             |
 | Requirement traceability           | every requirement cited                      | 77 declared: 71 cited, 6 other | `bun run arch:trace`            | `verify`, CI             |
-| Type coverage                      | ≥ 99%                                        | 99.88% (51 284 of 51 342)      | `bun run types:coverage`        | `verify`, CI             |
+| Type coverage                      | ≥ 99%                                        | 99.88% (51 911 of 51 969)      | `bun run types:coverage`        | `verify`, CI             |
 | Dependency vulnerabilities         | **0, at any severity**                       | 0, over 864 packages           | `bun run security:audit`        | pre-push, `verify`, CI   |
-| Test coverage, statements          | ≥ 90%                                        | 96.81%                         | `bun run test:coverage`         | CI                       |
-| Test coverage, branches            | ≥ 90%                                        | 93.38%                         | `bun run test:coverage`         | CI                       |
-| Test coverage, functions           | ≥ 90%                                        | 95.33%                         | `bun run test:coverage`         | CI                       |
-| Test coverage, lines               | ≥ 90%                                        | 97.00%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, statements          | ≥ 90%                                        | 97.32%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, branches            | ≥ 90%                                        | 93.67%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, functions           | ≥ 90%                                        | 96.42%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, lines               | ≥ 90%                                        | 97.38%                         | `bun run test:coverage`         | CI                       |
 | Test coverage, `model/`            | **100%**                                     | 100%                           | `bun run test:coverage`         | CI                       |
 | Mutation score, `model/`           | ≥ 85%                                        | 93.46%, 66 of 1039 survived    | `bun run test:mutation`         | scheduled CI             |
-| Initial bundle                     | ≤ 180 kB gzip                                | 175.80 kB                      | `bun run build && bun run size` | CI                       |
+| Initial bundle                     | ≤ 180 kB gzip                                | 175.85 kB                      | `bun run build && bun run size` | CI                       |
 | Accessibility (WCAG 2.1 AA)        | 0 axe violations, light and dark             | pass, 16 audits, chromium      | `bun run test:e2e`              | CI                       |
 | Cumulative layout shift            | < 0.1, cold and warm                         | pass, both, chromium           | `bun run test:e2e`              | CI                       |
 | No sideways scrolling at 375 px    | every screen                                 | pass, 7 screens, chromium      | `bun run test:e2e`              | CI                       |
 
-The last three rows are read off one local run, chromium alone over the 108
+The last three rows are read off one local run, chromium alone over the 111
 scenarios `bddgen` expanded on this pass; the matrix is CI's job.
 
 **The traceability row is two numbers, not one.** `bun run arch:trace` prints
@@ -64,8 +64,8 @@ rather than a table anybody can update by hand.
 
 ## Test projects
 
-`vitest.config.ts` defines three, and `bun run test` runs all of them: 1660 tests
-across 118 files on this pass. Every count in this section moves with every test
+`vitest.config.ts` defines three, and `bun run test` runs all of them: 1673 tests
+across 119 files on this pass. Every count in this section moves with every test
 written, and on this branch that has been several times an hour —
 `bun run test` prints the totals, and the split below is `--project=<name>`
 three times.
@@ -73,7 +73,7 @@ three times.
 | Project     | Environment | What it runs                                                                                     | Files | Tests |
 | ----------- | ----------- | ------------------------------------------------------------------------------------------------ | ----: | ----: |
 | `domain`    | node        | `src/**/model/**`, `shared/lib/{duration,people}.ts`, and `tests/domain/` Gherkin                |    36 |   751 |
-| `ui`        | happy-dom   | components and hooks against a DOM, with GitLab's API mocked by MSW                              |    72 |   780 |
+| `ui`        | happy-dom   | components and hooks against a DOM, with GitLab's API mocked by MSW                              |    73 |   793 |
 | `functions` | node        | `netlify/**/*.test.mts` — both document endpoints, the handler they share, its identity verifier |    10 |   129 |
 
 **`functions` is not a third place to put tests; it is the only place the
@@ -98,8 +98,8 @@ gets back, and neither of them is where the two shapes meet.
 
 Above those, `bddgen` expands `features/acceptance/*.feature` into one Playwright
 spec per scenario, and `bun --bun bddgen && playwright test --list` is what
-counts them. On this pass that was 108 locally, which is chromium alone; CI runs
-three engines — chromium, webkit and a Pixel 7 viewport — for 324.
+counts them. On this pass that was 111 locally, which is chromium alone; CI runs
+three engines — chromium, webkit and a Pixel 7 viewport — for 333.
 
 ## Two linters, on purpose
 
@@ -246,7 +246,7 @@ path to make a number go up is not an acceptable fix.
 ## Coverage is a floor, not a target
 
 The thresholds are 90% overall and 100% on `model/`. Measured coverage sits at
-96.81% of statements and 93.38% of branches, and that gap is worth naming:
+97.32% of statements and 93.67% of branches, and that gap is worth naming:
 nothing forced it, and chasing it is not free.
 
 100% on `model/` is right. That layer is pure functions with no I/O, and it is

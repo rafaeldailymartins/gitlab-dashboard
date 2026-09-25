@@ -9,6 +9,7 @@ import { SyncControl } from '@/widgets/hours-report'
 
 import type { TeamSearch } from '../lib/search-params'
 
+import { addressAfterSave } from '../lib/address-after-save'
 import { chosenTeam, teamOf } from '../lib/chosen-team'
 import { legendShows } from '../lib/legend'
 import { type ScreenState, screenStateOf } from '../lib/state'
@@ -144,7 +145,17 @@ export function TeamHoursPage({ onChange, search }: TeamHoursPageProps) {
 
       {managing ? (
         <Suspense fallback={null}>
-          <TeamManagerDialog onOpenChange={setManaging} open />
+          <TeamManagerDialog
+            onOpenChange={setManaging}
+            onSaved={(teams) => {
+              const moved = addressAfterSave(teams, search.team)
+
+              if (moved !== null) {
+                onChange({ team: moved })
+              }
+            }}
+            open
+          />
         </Suspense>
       ) : null}
     </main>

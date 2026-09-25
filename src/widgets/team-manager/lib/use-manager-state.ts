@@ -7,7 +7,7 @@ import { newTeam, withMembers, withTeam, withUpdated } from '@/entities/teams'
 import { m } from '@/shared/i18n'
 
 import type { Seeding } from './use-group-seeding'
-import type { TeamEdits } from './use-team-edits'
+import type { TeamDraft } from './use-team-draft'
 
 import { nowInstant } from './team-actions'
 
@@ -25,7 +25,7 @@ export interface ManagerState {
 }
 
 interface MergeInput {
-  readonly edits: TeamEdits
+  readonly edits: TeamDraft
   readonly group: GroupRef
   /** The team to top up, or null to build a new one named after the group. */
   readonly into: null | Team
@@ -56,7 +56,7 @@ type Pane =
  * on its own — which would leave a team on the reader's list carrying the
  * group's name and none of its people.
  */
-export function useManagerState(edits: TeamEdits, seeding: Seeding): ManagerState {
+export function useManagerState(edits: TeamDraft, seeding: Seeding): ManagerState {
   const [chosenId, setChosenId] = useState<null | string>(null)
   const [pane, setPane] = useState<Pane>('editing')
   const chosen = chosenOf(edits.teams, chosenId)
@@ -80,9 +80,16 @@ export function useManagerState(edits: TeamEdits, seeding: Seeding): ManagerStat
     show: setPane,
     useGroup: (group) => {
       const into = pane === 'adding' ? chosen : null
+      // Taken before the read, checked after it. A group is read a page at a
+      // time, and a reader who discards while it is in the air has taken the
+      // click back — folding its people in afterwards would rebuild the draft
+      // they just threw away.
+      const started = edits.started()
 
       void seeding.read(group.fullPath).then((members) => {
-        merge({ edits, group, into, members }, adopt)
+        if (edits.wanted(started)) {
+          merge({ edits, group, into, members }, adopt)
+        }
       })
     },
     useNothing: () => {

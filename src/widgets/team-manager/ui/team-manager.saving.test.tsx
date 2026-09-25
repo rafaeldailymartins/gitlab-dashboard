@@ -69,12 +69,18 @@ function removeButton(name: string) {
   return screen.findByRole('button', { name: new RegExp(`remove ${name}`, 'iu') })
 }
 
+/** Presses Save. Edits are collected now, so the store is reached on purpose. */
+async function save() {
+  await userEvent.click(await screen.findByRole('button', { name: /^save$/iu }))
+}
+
 describe('what a save says', () => {
   it('says it is saving, and then that it saved', async () => {
     const { finish, gateway } = deferredTeams([FISCAL])
 
     manager(gateway)
     await userEvent.click(await removeButton(ANA.name))
+    await save()
 
     expect(screen.getByRole('status')).toHaveTextContent(/saving/iu)
 
@@ -89,13 +95,18 @@ describe('what a save says', () => {
     const { finish, gateway } = deferredTeams([FISCAL])
 
     manager(gateway)
-    const remove = await removeButton(ANA.name)
-    await userEvent.click(remove)
+    await userEvent.click(await removeButton(ANA.name))
+
+    const saving = await screen.findByRole('button', { name: /^save$/iu })
+
+    await userEvent.click(saving)
 
     // A reader clicking ten names should not be interrupted ten times, which is
-    // what an assertive region — or one that took the cursor — would do.
+    // what an assertive region — or one that took the cursor — would do. The
+    // cursor is on Save because that is where they left it; the point is that
+    // announcing does not move it.
     expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite')
-    expect(remove).toHaveFocus()
+    expect(saving).toHaveFocus()
 
     finish()
 
@@ -112,6 +123,7 @@ describe('what a save says', () => {
 
     manager(contestedTeams(theirs))
     await userEvent.click(await removeButton(ANA.name))
+    await save()
 
     expect(await screen.findByText(/changed somewhere else/iu)).toBeInTheDocument()
     // Camila is theirs, and Ana is back: the removal the reader asked for never

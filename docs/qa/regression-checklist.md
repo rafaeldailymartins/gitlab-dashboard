@@ -143,6 +143,23 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
 - [ ] Press "Add from a group" on a team that already has people, and choose a
       group. Whoever is missing joins; nobody is taken off, including somebody
       you added by hand who never logged in that group.
+- [ ] Take somebody off a team and watch the network panel: **nothing** goes out
+      until you press Save, and then exactly one `PUT` carries the whole list.
+      Press Cancel instead and the person comes back with nothing written.
+- [ ] Make several changes — remove one person, add another, rename the team —
+      and press Save once. All three are stored, and the name is stored even
+      though you never left the field.
+- [ ] Edit something and press Escape. You are asked rather than closed. Answer
+      "Keep editing" and you are where you were; answer "Discard" and the dialog
+      closes with nothing written. The same for the X and for clicking outside.
+- [ ] Choose a group to build a team from and press Cancel while it is still
+      reading. When the read lands, nothing appears: the click was taken back.
+- [ ] Block the teams endpoint, edit, and Save. It says the change was not
+      saved and **your edits are still on screen** — trying again must not mean
+      doing it again. Unblock and Save: it lands.
+- [ ] Delete the team the report is about, then Save. The report moves to a team
+      you still have and the picker names it — never a blank control beside
+      "this is not one of your teams".
 - [ ] Add somebody who has logged nothing anywhere — a new joiner — through the
       search under the member list. A group cannot reach them and the search can;
       it is also the only cover for a window or a page cap that missed somebody,
