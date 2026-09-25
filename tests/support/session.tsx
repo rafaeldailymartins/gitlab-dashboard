@@ -19,6 +19,7 @@ export function fakeSessionManager(overrides: Partial<SessionManager> = {}) {
     accessToken: vi.fn(() => Promise.resolve('access-1')),
     completeSignIn: vi.fn(() => Promise.resolve('/')),
     hasSession: vi.fn(() => false),
+    identityToken: vi.fn(() => Promise.resolve('identity-1')),
     refresh: vi.fn(() => Promise.resolve('access-1')),
     signOut: vi.fn(() => Promise.resolve()),
     startSignIn: vi.fn(() => Promise.resolve('https://gitlab.example/oauth/authorize')),

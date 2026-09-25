@@ -198,6 +198,26 @@ export default defineConfig(
     },
   },
   {
+    /**
+     * The serverless function.
+     *
+     * It runs on Node, which is why it lives outside `src/` — and why the
+     * browser-only rule above does not reach it. That rule is applied by a
+     * `src/**` glob rather than by an exclusion here; widening the glob to
+     * `**\/*.ts` would forbid `node:*` in the one place it belongs.
+     *
+     * FSD does not describe this directory, so the layer rule has nothing to
+     * say about it. The default export is the platform's calling convention
+     * rather than a style choice.
+     */
+    files: ['netlify/**/*.mts'],
+    languageOptions: { globals: globals.node },
+    rules: {
+      'boundaries/dependencies': 'off',
+      'no-restricted-exports': 'off',
+    },
+  },
+  {
     files: ['**/*.cjs'],
     languageOptions: { globals: globals.node, sourceType: 'commonjs' },
   },

@@ -4,8 +4,21 @@ import type { AuthGateway, AuthorizationChallenge, Session } from '../model/port
 
 import { AuthError } from '../model/auth-error'
 
-/** Read-only. The dashboard has no write path, so it asks for no write access. */
-const SCOPE = 'read_api'
+/**
+ * Read-only on GitLab's data, plus the reader's identity.
+ *
+ * The dashboard has no write path, so it asks for no write access. `openid`
+ * grants no authority over anything: it asks GitLab to say who the reader is, in
+ * a token this app can hand to its own teams store and that store can check
+ * against GitLab's published keys. Without it the store would have to be handed
+ * a credential that reads all of GitLab in order to learn a user id.
+ *
+ * This string must be a subset of what the OAuth application is registered for.
+ * GitLab validates the request against the application's own scopes, so a bundle
+ * asking for `openid` before it is ticked there fails every sign-in with
+ * `invalid_scope` — the application is updated first, then this is deployed.
+ */
+const SCOPE = 'read_api openid'
 
 /** GitLab rejects a credential it no longer accepts with this error code. */
 const INVALID_GRANT = 'invalid_grant'
@@ -20,6 +33,15 @@ const REVOKE_TIMEOUT_MS = 3000
 interface TokenResponse {
   readonly access_token: string
   readonly expires_in: number
+  /**
+   * Present only when the granted scopes include `openid`.
+   *
+   * Optional rather than required, because a refresh token issued before this
+   * app asked for `openid` carries the old scope set forward and renews without
+   * one. Demanding it here would sign those readers out of a session that still
+   * works for everything but their teams.
+   */
+  readonly id_token?: string
   readonly refresh_token: string
 }
 
@@ -149,6 +171,9 @@ function sessionFrom(payload: unknown): Session {
   return {
     accessToken: payload.access_token,
     expiresInSeconds: payload.expires_in,
+    // Null rather than absent when GitLab granted no `openid` — which is exactly
+    // what a refresh token issued before this app asked for it produces.
+    idToken: typeof payload.id_token === 'string' ? payload.id_token : null,
     refreshToken: payload.refresh_token,
   }
 }

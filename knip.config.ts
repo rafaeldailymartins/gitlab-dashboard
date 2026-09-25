@@ -7,7 +7,14 @@ import type { KnipConfig } from 'knip'
  * application entry points are listed here.
  */
 export default {
-  entry: ['src/app/routes/**/*.tsx', 'steiger.config.ts', 'tests/**/*.ts', 'tests/**/*.tsx'],
+  entry: [
+    'src/app/routes/**/*.tsx',
+    // The serverless function: an entry point nothing imports, reached by URL.
+    'netlify/functions/**/*.mts',
+    'steiger.config.ts',
+    'tests/**/*.ts',
+    'tests/**/*.tsx',
+  ],
   ignore: ['src/app/routeTree.gen.ts'],
   ignoreDependencies: [
     // Pulled in by `@import` inside styles.css, which knip does not follow.
@@ -16,5 +23,5 @@ export default {
     // Command-line tools, invoked from npm scripts rather than imported.
     '@fission-ai/openspec',
   ],
-  project: ['src/**/*.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
+  project: ['src/**/*.{ts,tsx}', 'netlify/**/*.mts', 'tests/**/*.{ts,tsx}'],
 } satisfies KnipConfig

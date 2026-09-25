@@ -57,12 +57,13 @@ describe('PreferencesProvider', () => {
   it('starts from settings saved on a previous visit', () => {
     stubSystemDarkMode(false)
     const storage = memoryStorage()
-    preferencesStore(storage).writePreferences(
-      withTimeZone(
+    preferencesStore(storage).writeStored({
+      preferences: withTimeZone(
         { dailyTarget: { 1: 6, 2: 8, 3: 8, 4: 8, 5: 8, 6: 0, 7: 0 }, timeZone: 'UTC' },
         'Europe/Lisbon',
       ),
-    )
+      updatedAt: '2026-09-23T10:00:00.000Z',
+    })
 
     renderWithProviders(<Probe />, { storage })
 

@@ -11,6 +11,8 @@ import { sessionStore } from './session-store'
 
 const NOW = Date.UTC(2026, 7, 21, 12, 0, 0)
 const HOUR = 3_600_000
+/** GitLab's own default for how long an identity assertion is accepted. */
+const IDENTITY_TTL = 120_000
 
 const PENDING_KEY = 'gitlab.pendingAuthorization'
 const REFRESH_KEY = 'gitlab.refreshToken'
@@ -32,9 +34,11 @@ function gatewayMock() {
       (_challenge: AuthorizationChallenge) => 'https://gitlab.example/oauth/authorize?state=s',
     ),
     exchangeCode: vi.fn((_code: string, _verifier: string) =>
-      Promise.resolve(session('access-1', 'refresh-1')),
+      Promise.resolve(identified('access-1', 'refresh-1', NOW + IDENTITY_TTL)),
     ),
-    renew: vi.fn((_refreshToken: string) => Promise.resolve(session('access-2', 'refresh-2'))),
+    renew: vi.fn((_refreshToken: string) =>
+      Promise.resolve(identified('access-2', 'refresh-2', NOW + HOUR)),
+    ),
     revoke: vi.fn((_token: string) => Promise.resolve()),
   }
 }
@@ -62,6 +66,19 @@ function harness(): Harness {
   }
 }
 
+/** The same, carrying an identity assertion that stops being accepted at `until`. */
+function identified(accessToken: string, refreshToken: string, until: number): Session {
+  return { ...session(accessToken, refreshToken), idToken: idToken(until) }
+}
+
+/** A token shaped like GitLab's: only its `exp` is ever read here. */
+function idToken(expiresAt: number): string {
+  const claims = JSON.stringify({ exp: Math.floor(expiresAt / 1000), sub: '42' })
+  const payload = btoa(claims).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
+
+  return `header.${payload}.signature`
+}
+
 /** The anti-forgery value the manager just stored, as GitLab would return it. */
 function pendingStateOf(storage: KeyValueStorage): string {
   const parsed: unknown = JSON.parse(storage.read(PENDING_KEY) ?? '{}')
@@ -74,7 +91,7 @@ function pendingStateOf(storage: KeyValueStorage): string {
 }
 
 function session(accessToken: string, refreshToken: string): Session {
-  return { accessToken, expiresInSeconds: 7200, refreshToken }
+  return { accessToken, expiresInSeconds: 7200, idToken: null, refreshToken }
 }
 
 /** A harness that has completed a sign-in, which most behaviour starts from. */
@@ -289,5 +306,68 @@ describe('signOut', () => {
     await instance.manager.signOut()
 
     expect(instance.gateway.revoke).not.toHaveBeenCalled()
+  })
+})
+
+describe('identityToken', () => {
+  it('reuses an assertion that is still accepted', async () => {
+    const instance = await signedIn()
+
+    await expect(instance.manager.identityToken()).resolves.toContain('header.')
+    await expect(instance.manager.identityToken()).resolves.toContain('header.')
+    expect(instance.gateway.renew).not.toHaveBeenCalled()
+  })
+
+  it('renews once the assertion is due', async () => {
+    const instance = await signedIn()
+
+    // The assertion lives two minutes and the margin is twenty seconds, so it
+    // is due well before the access token is.
+    instance.setNow(NOW + IDENTITY_TTL)
+
+    await instance.manager.identityToken()
+
+    expect(instance.gateway.renew).toHaveBeenCalledTimes(1)
+  })
+
+  it('costs one renewal for a burst, because GitLab rotates the refresh token', async () => {
+    const instance = await signedIn()
+    instance.setNow(NOW + IDENTITY_TTL)
+
+    await Promise.all([
+      instance.manager.identityToken(),
+      instance.manager.identityToken(),
+      instance.manager.accessToken(),
+    ])
+
+    expect(instance.gateway.renew).toHaveBeenCalledTimes(1)
+  })
+
+  it('reports a grant that carries no identity, rather than inventing one', async () => {
+    const instance = harness()
+    instance.gateway.exchangeCode.mockResolvedValueOnce(session('access-1', 'refresh-1'))
+    instance.gateway.renew.mockResolvedValueOnce(session('access-2', 'refresh-2'))
+
+    await instance.manager.startSignIn('/')
+    await instance.manager.completeSignIn('the-code', pendingStateOf(instance.storage))
+
+    await expect(instance.manager.identityToken()).rejects.toMatchObject({
+      failure: { kind: 'identity-unavailable' },
+    })
+  })
+
+  it('leaves the session working when there is no identity to be had', async () => {
+    const instance = harness()
+    instance.gateway.exchangeCode.mockResolvedValueOnce(session('access-1', 'refresh-1'))
+    instance.gateway.renew.mockResolvedValue(session('access-2', 'refresh-2'))
+
+    await instance.manager.startSignIn('/')
+    await instance.manager.completeSignIn('the-code', pendingStateOf(instance.storage))
+    await expect(instance.manager.identityToken()).rejects.toBeInstanceOf(AuthError)
+
+    // The reader's hours are not this screen's problem. Signing them out over a
+    // scope a secondary screen wants would lose their place for nothing.
+    expect(instance.manager.hasSession()).toBe(true)
+    await expect(instance.manager.accessToken()).resolves.toBe('access-2')
   })
 })

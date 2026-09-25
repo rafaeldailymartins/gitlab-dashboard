@@ -17,13 +17,30 @@ interface WeekdayTargetInputProps {
  * The typed text is held locally so a reader can clear the field on the way to
  * a new value; only a value the domain accepts is committed, and anything else
  * shows the allowed range instead of being silently dropped.
+ *
+ * That draft has to follow a target that changed from outside, and until the
+ * settings began following the reader between devices it never could: the only
+ * thing that moved `hours` was this field. Now the store can, and a field seeded
+ * once on mount would sit there showing the number this device used to have
+ * while every other screen measured against the one it now has.
+ *
+ * Adjusted during render rather than from an effect, which is React's own answer
+ * for a value derived from a prop and is what `react-hooks` permits. Typing is
+ * unaffected in the case that matters — an empty field commits nothing, so
+ * `hours` does not move and the draft is left exactly as the reader left it.
  */
 export function WeekdayTargetInput({ hours, label, onCommit }: WeekdayTargetInputProps) {
   const id = useId()
   const errorId = `${id}-error`
   const [draft, setDraft] = useState(String(hours))
+  const [committed, setCommitted] = useState(hours)
   const parsed = Number(draft)
   const isValid = draft.trim() !== '' && isValidTargetHours(parsed)
+
+  if (hours !== committed) {
+    setCommitted(hours)
+    setDraft(String(hours))
+  }
 
   return (
     <div className="grid gap-1.5">

@@ -2,8 +2,10 @@ import { expect, type Page } from '@playwright/test'
 import { createBdd } from 'playwright-bdd'
 
 import { failTimelogs, stubEmptyTimelogs, stubTimelogs } from '../support/gitlab-api'
-import { stubGroupHours } from '../support/gitlab-groups'
+import { stubTeamHours } from '../support/gitlab-teams'
 import { ACCEPTANCE_ORIGIN } from '../support/origin'
+import { stubPreferencesStore } from '../support/preferences-api'
+import { stubTeamsStore } from '../support/teams-api'
 
 const { Given, Then, When } = createBdd()
 
@@ -13,17 +15,51 @@ const REVOKE = '**/oauth/revoke'
 
 interface AuthorizationOptions {
   readonly expiresInSeconds?: number
+  /**
+   * False issues a grant with no identity assertion in it.
+   *
+   * What a session granted before this application asked for one looks like:
+   * everything it authorises still works, and the teams surface is the only
+   * place that notices. Renewing carries the original scopes forward, so it
+   * never repairs itself — only authorising again does.
+   */
+  readonly identifies?: boolean
   readonly outcome: 'granted' | 'refused'
 }
 
+/** How long the provider says an identity assertion lives. Two minutes, verified. */
+const IDENTITY_SECONDS = 120
+
+const MILLISECONDS_PER_SECOND = 1000
+
 /** What the authorize endpoint was asked for, and how often a token was issued. */
 const attempts = new WeakMap<Page, { authorizeUrl: string; tokenCalls: number }>()
+
+/**
+ * An identity assertion the browser can read the expiry out of.
+ *
+ * Unsigned on purpose, and that is not a shortcut: the browser deliberately
+ * does not check the signature (`model/id-token.ts` says why — the token
+ * arrived over TLS in the answer to this browser's own request, and the check
+ * that matters happens on the store that spends it). What the browser needs
+ * from it is `exp`, and nothing else in it is read here.
+ */
+function identityAssertion(): string {
+  const expiry = Math.floor(Date.now() / MILLISECONDS_PER_SECOND) + IDENTITY_SECONDS
+
+  return `${segment({ alg: 'RS256', typ: 'JWT' })}.${segment({ exp: expiry, sub: '2318742' })}.stub`
+}
 
 function record(page: Page): { authorizeUrl: string; tokenCalls: number } {
   const existing = attempts.get(page) ?? { authorizeUrl: '', tokenCalls: 0 }
   attempts.set(page, existing)
 
   return existing
+}
+
+/** One base64url segment of a token, as the provider encodes them. */
+function segment(value: unknown): string {
+  return Buffer.from(JSON.stringify(value)).toString('base64url').replaceAll('=', '')
 }
 
 /**
@@ -36,7 +72,7 @@ function record(page: Page): { authorizeUrl: string; tokenCalls: number } {
  */
 async function stubAuthorization(
   page: Page,
-  { expiresInSeconds = 7200, outcome }: AuthorizationOptions,
+  { expiresInSeconds = 7200, identifies = true, outcome }: AuthorizationOptions,
 ): Promise<void> {
   const seen = record(page)
 
@@ -65,6 +101,7 @@ async function stubAuthorization(
         access_token: `test-access-${String(seen.tokenCalls)}`,
         expires_in: expiresInSeconds,
         refresh_token: `test-refresh-${String(seen.tokenCalls)}`,
+        ...(identifies ? { id_token: identityAssertion() } : {}),
       },
     })
   })
@@ -76,6 +113,16 @@ async function stubAuthorization(
 
 Given('GitLab will authorise this application', async ({ page }) => {
   await stubAuthorization(page, { outcome: 'granted' })
+})
+
+Given('my session predates the permission to identify me', async ({ page }) => {
+  await stubAuthorization(page, { identifies: false, outcome: 'granted' })
+  await stubTimelogs(page)
+  await stubTeamHours(page)
+  await page.goto('/')
+  await page.getByRole('button', { name: /continue with gitlab/i }).click()
+  await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible()
+  await expect(page.getByRole('status')).toBeVisible()
 })
 
 Given(
@@ -102,9 +149,14 @@ Given('GitLab cannot be reached', async ({ page }) => {
 Given('I am signed in', async ({ page }) => {
   await stubAuthorization(page, { outcome: 'granted' })
   await stubTimelogs(page)
-  // The group endpoint too: it is the same endpoint, and the screen sweep opens
+  // The team endpoint too: it is the same endpoint, and the screen sweep opens
   // the team report like any other screen.
-  await stubGroupHours(page)
+  await stubTeamHours(page)
+  // And the store the teams live in, which is not GitLab at all. Without it the
+  // report has no team to be about, and the sweep would measure a note.
+  await stubTeamsStore(page)
+  // And the one the reader's own settings live in, under the same rules.
+  await stubPreferencesStore(page)
   await page.goto('/')
   await page.getByRole('button', { name: /continue with gitlab/i }).click()
   await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible()
@@ -167,13 +219,16 @@ Then('no credential remains on the device', async ({ page }) => {
   expect(stored).toBeNull()
 })
 
-Then('GitLab was asked for the read_api scope and no other', async ({ page }) => {
+Then('GitLab is asked to read and to identify, and for nothing else', async ({ page }) => {
   // The click that reaches GitLab has not necessarily landed yet.
   await expect.poll(() => attempts.get(page)?.authorizeUrl ?? '').not.toBe('')
 
   const asked = new URL(attempts.get(page)?.authorizeUrl ?? 'https://example.invalid')
 
-  expect(asked.searchParams.get('scope')).toBe('read_api')
+  // `read_api` reads the hours; `openid` is what lets the teams store be told
+  // who is calling without this application vouching for the reader itself.
+  // Neither grants a write, and no third scope is asked for.
+  expect(asked.searchParams.get('scope')).toBe('read_api openid')
   expect(asked.searchParams.get('response_type')).toBe('code')
   expect(asked.searchParams.get('code_challenge_method')).toBe('S256')
   // A public client has no secret to send, and sending one would mean it does.
@@ -189,7 +244,11 @@ Then('no access token is anywhere on this device', async ({ page }) => {
   )
 
   expect(stored).not.toContain('test-access')
-  // The refresh token is stored on purpose; only the access token is not.
+  // The identity assertion is held the same way and for the same reason: it is
+  // spendable on the teams store by whoever holds it, so it lives two minutes in
+  // a closure and is minted again when it is next needed.
+  expect(stored).not.toContain('eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9')
+  // The refresh token is stored on purpose; only the spendable ones are not.
   expect(stored).toContain('test-refresh')
 })
 

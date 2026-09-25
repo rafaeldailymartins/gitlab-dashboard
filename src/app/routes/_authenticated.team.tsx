@@ -1,11 +1,12 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useMemo } from 'react'
 
-import { apiClient } from '@/app/lib/runtime'
-import { gitLabGroupTimelogGateway, GroupTimelogGatewayProvider } from '@/entities/group-timelogs'
+import { apiClient, sessionManager } from '@/app/lib/runtime'
+import { gitLabTeamTimelogGateway, TeamTimelogGatewayProvider } from '@/entities/team-timelogs'
+import { httpTeamsGateway, TeamsGatewayProvider } from '@/entities/teams'
 import {
-  rememberedGroup,
-  rememberGroup,
+  rememberedTeam,
+  rememberTeam,
   TeamHoursPage,
   type TeamSearch,
   teamSearchFrom,
@@ -22,12 +23,16 @@ import { persistentStorage } from '@/shared/lib/storage'
  * month is resolved in UTC — which only decides which month the screen opens on,
  * never how an entry is counted.
  *
- * An address naming no group is completed from the last one this reader chose,
+ * An address naming no team is completed from the last one this reader chose,
  * by **redirecting** rather than by quietly filling it in. Filling it in would
  * leave the address disagreeing with the screen, and this screen's whole claim
  * is that what you are looking at is what you can send somebody else. A link
- * that does name a group is never overridden: somebody else's link outranks this
+ * that does name a team is never overridden: somebody else's link outranks this
  * reader's habit.
+ *
+ * The group filter is deliberately not completed this way — see
+ * `pages/team-hours/lib/remembered.ts` for why an empty filter is the only
+ * honest default.
  *
  * The gateway is built here rather than in the runtime the root imports. This
  * route is code-split; the runtime is not, so a gateway constructed there would
@@ -36,13 +41,13 @@ import { persistentStorage } from '@/shared/lib/storage'
  */
 export const Route = createFileRoute('/_authenticated/team')({
   beforeLoad: ({ search }) => {
-    const remembered = rememberedGroup(persistentStorage())
+    const remembered = rememberedTeam(persistentStorage())
 
-    if (search.group === '' && remembered !== '') {
+    if (search.team === '' && remembered !== '') {
       // TanStack Router signals a redirect by throwing its own marker object,
       // which is not an Error. That is the documented API, not a mistake.
       // eslint-disable-next-line @typescript-eslint/only-throw-error
-      throw redirect({ search: { ...search, group: remembered }, to: '/team' })
+      throw redirect({ search: { ...search, team: remembered }, to: '/team' })
     }
   },
   component: TeamRoute,
@@ -53,27 +58,32 @@ export const Route = createFileRoute('/_authenticated/team')({
 function TeamRoute() {
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
-  const gateway = useMemo(() => gitLabGroupTimelogGateway(apiClient()), [])
+  const gateway = useMemo(() => gitLabTeamTimelogGateway(apiClient()), [])
+  // The session is the identity: the teams store asks GitLab who is calling
+  // rather than being handed a credential that reads GitLab.
+  const teams = useMemo(() => httpTeamsGateway(sessionManager()), [])
 
   return (
-    <GroupTimelogGatewayProvider gateway={gateway}>
-      <TeamHoursPage
-        onChange={(next) => {
-          void navigate({
-            search: (current) => {
-              const moved = { ...current, ...next }
+    <TeamsGatewayProvider gateway={teams}>
+      <TeamTimelogGatewayProvider gateway={gateway}>
+        <TeamHoursPage
+          onChange={(next) => {
+            void navigate({
+              search: (current) => {
+                const moved = { ...current, ...next }
 
-              // Remembered from the address rather than from the change, so a
-              // reader who only switched the month still confirms the group, and
-              // one who arrived by somebody else's link adopts it.
-              rememberGroup(persistentStorage(), moved.group)
+                // Remembered from the address rather than from the change, so a
+                // reader who only switched the month still confirms the team, and
+                // one who arrived by somebody else's link adopts it.
+                rememberTeam(persistentStorage(), moved.team)
 
-              return moved
-            },
-          })
-        }}
-        search={search}
-      />
-    </GroupTimelogGatewayProvider>
+                return moved
+              },
+            })
+          }}
+          search={search}
+        />
+      </TeamTimelogGatewayProvider>
+    </TeamsGatewayProvider>
   )
 }

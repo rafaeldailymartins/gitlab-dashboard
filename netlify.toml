@@ -14,8 +14,19 @@
   # installs with the same two flags, for the same reason.
   BUN_FLAGS = "--frozen-lockfile --ignore-scripts"
 
+# The part of this app that does not run in the browser: two endpoints over one
+# handler, holding the teams a reader defines and the working schedule they set.
+# Both are on this origin so the bundle's own `connect-src 'self'` already
+# reaches them, which is why `scripts/write-csp.ts` needs no second origin and
+# why there is no CORS preflight to answer.
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
 # Single-page app. Without this every deep link — and `/auth/callback`, which the
 # OAuth redirect lands on — would return 404 from the CDN instead of the app.
+# Functions are matched before redirects, so `/.netlify/functions/*` is not
+# swallowed by it.
 [[redirects]]
   from = "/*"
   to = "/index.html"

@@ -3,10 +3,11 @@ import { CheckIcon, ChevronDownIcon } from 'lucide-react'
 
 import { cn } from '@/shared/lib/utils'
 import { Input } from '@/shared/ui/input'
+import { POPUP_ITEM, POPUP_LIST, POPUP_SURFACE } from '@/shared/ui/popup'
 
 /*
- * Three deviations from what `shadcn add combobox` writes, all to be kept if
- * this component is ever regenerated.
+ * Four deviations from what `shadcn add combobox` writes, all to be kept if this
+ * component is ever regenerated.
  *
  * - The field is our own `Input` with a chevron laid over it, rather than the
  *   generated `InputGroup` wrapper. That wrapper arrived with two components
@@ -16,6 +17,9 @@ import { Input } from '@/shared/ui/input'
  *   (`openOnInputClick` defaults to true), so the chevron is an affordance, not
  *   a control: it is `aria-hidden` and takes no pointer events, and the click
  *   lands on the input underneath it.
+ * - The surface, the rows and the list come from `popup.ts` rather than being
+ *   written out here. The select beside this one in the report's toolbar reads
+ *   the same constants, which is the only thing keeping the two from drifting.
  * - The parts this app does not use — chips, groups, collections, separators —
  *   are not carried. `knip` fails on an export nothing imports, and a
  *   200-line ceiling holds every file here.
@@ -24,14 +28,10 @@ import { Input } from '@/shared/ui/input'
 
 export const Combobox = ComboboxPrimitive.Root
 
-const CONTENT =
-  'group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) overflow-hidden rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95'
-
-const ITEM =
-  "relative flex w-full cursor-default items-center gap-2 rounded-md py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-
-const LIST =
-  'max-h-[min(--spacing(72),var(--available-height))] scroll-py-1 overflow-y-auto overscroll-contain p-1 data-empty:p-0'
+const CONTENT = cn(
+  POPUP_SURFACE,
+  'group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))]',
+)
 
 export function ComboboxContent({
   align = 'start',
@@ -96,7 +96,11 @@ export function ComboboxItem({
   ...props
 }: Readonly<ComboboxPrimitive.Item.Props>) {
   return (
-    <ComboboxPrimitive.Item className={cn(ITEM, className)} data-slot="combobox-item" {...props}>
+    <ComboboxPrimitive.Item
+      className={cn(POPUP_ITEM, className)}
+      data-slot="combobox-item"
+      {...props}
+    >
       {children}
       <ComboboxPrimitive.ItemIndicator
         render={
@@ -111,6 +115,10 @@ export function ComboboxItem({
 
 export function ComboboxList({ className, ...props }: Readonly<ComboboxPrimitive.List.Props>) {
   return (
-    <ComboboxPrimitive.List className={cn(LIST, className)} data-slot="combobox-list" {...props} />
+    <ComboboxPrimitive.List
+      className={cn(POPUP_LIST, className)}
+      data-slot="combobox-list"
+      {...props}
+    />
   )
 }

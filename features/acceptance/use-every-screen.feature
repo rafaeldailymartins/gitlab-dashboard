@@ -22,6 +22,8 @@ Feature: Using every screen
       | a day     | dark   |
       | team      | light  |
       | team      | dark   |
+      | teams     | light  |
+      | teams     | dark   |
 
   # Spec: dashboard-ui / UI-11
   Scenario Outline: No screen scrolls sideways on a phone
@@ -37,7 +39,13 @@ Feature: Using every screen
       | settings  |
       | a day     |
       | team      |
+      | teams     |
 
+  # "teams" is missing from the table below on purpose, and adding it is a
+  # failure rather than a fix: the teams a reader keeps are edited in a dialog
+  # over the report, reached from a control there and a card on settings. It is
+  # not a screen the navigation goes to, so it has no link to be marked as
+  # current.
   # Spec: dashboard-ui / UI-16
   Scenario Outline: The navigation says which screen I am on
     Given I am signed in

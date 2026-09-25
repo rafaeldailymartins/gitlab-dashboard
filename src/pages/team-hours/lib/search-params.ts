@@ -1,14 +1,23 @@
-import type { Granularity } from '@/entities/group-timelogs'
+import type { Granularity } from '@/entities/team-timelogs'
 
 import { endOfMonth, isoDate, type IsoDate, startOfMonth } from '@/shared/lib/date'
 
-/** The report's address: which group, which month, and which column axis. */
+/** The report's address: which team, which month, which axis, how narrowed. */
 export interface TeamSearch {
   readonly by: Granularity
-  /** Empty when the reader has not chosen a group yet. */
+  /**
+   * The group the figures are narrowed to, as a path. Empty is the default.
+   *
+   * A path rather than the provider's identifier because an address is meant to
+   * be read and sent; the identifier it resolves to is looked up once. Empty
+   * means the reader's whole reach, personal projects included, which is what
+   * the screen says when nothing narrows it.
+   */
   readonly group: string
   /** Always the first of a month. */
   readonly month: string
+  /** This app's own identifier for a team. Empty falls back to the reader's first. */
+  readonly team: string
 }
 
 const MONTH_PATTERN = /^(\d{4})-(\d{2})$/
@@ -40,6 +49,7 @@ export function teamSearchFrom(search: Record<string, unknown>, today: IsoDate):
     by: search['by'] === 'weeks' ? 'weeks' : 'days',
     group: typeof search['group'] === 'string' ? search['group'] : '',
     month: monthFrom(search['month'], today),
+    team: typeof search['team'] === 'string' ? search['team'] : '',
   }
 }
 

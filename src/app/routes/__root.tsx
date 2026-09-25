@@ -4,7 +4,11 @@ import { createRootRoute, Outlet } from '@tanstack/react-router'
 
 import { appCachePersister, appQueryClient } from '@/app/lib/query'
 import { appRuntime, callbackUri, navigateAway } from '@/app/lib/runtime'
-import { PreferencesProvider, preferencesStore } from '@/entities/preferences'
+import {
+  httpPreferencesGateway,
+  PreferencesProvider,
+  preferencesStore,
+} from '@/entities/preferences'
 import { SessionProvider } from '@/entities/sessions'
 import { TimelogGatewayProvider } from '@/entities/timelogs'
 import { ViewerGatewayProvider } from '@/entities/viewers'
@@ -34,6 +38,16 @@ function shouldDehydrateQuery(query: Query): boolean {
 const store = preferencesStore(persistentStorage())
 
 /**
+ * What carries the daily target and the time zone to the reader's other
+ * devices, or null when there is no session to prove anybody with.
+ *
+ * Built here beside the store rather than inside the provider, because the
+ * provider is the one piece of this app that must work with neither — the
+ * unconfigured screen renders under it, and so does every component test.
+ */
+const preferences = appRuntime.kind === 'ready' ? httpPreferencesGateway(appRuntime.manager) : null
+
+/**
  * Preferences sit outside the locale provider because switching language
  * remounts everything below it, and the reader's settings must survive that.
  *
@@ -57,7 +71,7 @@ function RootLayout() {
       client={appQueryClient}
       persistOptions={{ dehydrateOptions: { shouldDehydrateQuery }, persister: appCachePersister }}
     >
-      <PreferencesProvider store={store}>
+      <PreferencesProvider gateway={preferences} store={store}>
         <LocaleProvider>
           <SessionProvider manager={appRuntime.manager} navigateAway={navigateAway}>
             <TimelogGatewayProvider gateway={appRuntime.timelogs}>

@@ -2,6 +2,7 @@ import { expect } from '@playwright/test'
 import { createBdd } from 'playwright-bdd'
 
 import { stubTimelogs } from '../support/gitlab-api'
+import { storeHolds } from '../support/preferences-api'
 
 const { Given, Then, When } = createBdd()
 
@@ -97,4 +98,45 @@ Then('the week strip is regrouped for Tokyo', async ({ page }) => {
   // stays put, so what changes is which day "today" is when the zones differ.
   await expect(page.locator('button[aria-current="date"]')).toBeVisible()
   await expect(page.getByRole('region', { name: /this week|esta semana/i })).toBeVisible()
+})
+
+/**
+ * A second machine belonging to the same reader.
+ *
+ * Only what belongs to the *device* is forgotten — the settings document and the
+ * theme — and not the whole of storage, which is also where the session lives: a
+ * device with no session is a sign-in screen, not another device.
+ *
+ * What paints after the reload therefore came from the store or from a default,
+ * and the scenario is about telling those two apart.
+ */
+When('I open the application on another device', async ({ page }) => {
+  await page.evaluate(() => {
+    localStorage.removeItem('preferences')
+    localStorage.removeItem('theme')
+  })
+  await page.goto('/settings')
+})
+
+Then('my {word} target is {int} hours', async ({ page }, weekday: string, hours: number) => {
+  await expect(page.getByLabel(weekday.slice(0, 3), { exact: false })).toHaveValue(String(hours), {
+    timeout: 10_000,
+  })
+})
+
+/** Monday is 1, in the ISO numbering every weekday in this app uses. */
+const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+
+/**
+ * Half of the rule, asserted on its way past.
+ *
+ * It is also what makes the scenario deterministic: a change settles before it
+ * is sent — the weekday fields are spinbuttons and a write per keystroke would
+ * be several requests to say one thing — so a scenario that navigated straight
+ * after setting one would race the write it is about. Waiting on a request
+ * would not have been enough: the first one a device makes is the push of what
+ * it already had, before the reader touched anything.
+ */
+Then('the store holds {word} at {int} hours', async ({ page }, weekday: string, hours: number) => {
+  await storeHolds(page, WEEKDAYS.indexOf(weekday.toLowerCase()) + 1, hours)
 })

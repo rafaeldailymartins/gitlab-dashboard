@@ -23,6 +23,10 @@ export default defineConfig({
         'src/shared/ui/label.tsx',
       ],
       include: [
+        // The function is authored here and carries logic, so it is measured.
+        // It is not `model/`, so it is held to the global floor rather than the
+        // hundred-percent one: its handler is I/O wiring.
+        'netlify/**/*.mts',
         'src/entities/**/*.{ts,tsx}',
         'src/features/**/*.{ts,tsx}',
         'src/widgets/**/*.{ts,tsx}',
@@ -58,6 +62,18 @@ export default defineConfig({
           lines: 100,
           statements: 100,
         },
+        /**
+         * Model code outside a `model/` directory for the same reason: the
+         * report orders the rows it drew and the team editor orders the list
+         * the reader is building, and FSD forbids one slice reaching into the
+         * other. Deterministic row order is a spec requirement, not a nicety.
+         */
+        'src/shared/lib/people.ts': {
+          branches: 100,
+          functions: 100,
+          lines: 100,
+          statements: 100,
+        },
         statements: 90,
       },
     },
@@ -81,9 +97,34 @@ export default defineConfig({
           include: [
             'src/**/model/**/*.test.ts',
             'src/shared/lib/duration.test.ts',
+            'src/shared/lib/people.test.ts',
             'tests/domain/**/*.test.ts',
           ],
           name: 'domain',
+        },
+      },
+      {
+        /**
+         * The serverless function: Node, no DOM, no React — and no Netlify.
+         *
+         * The blob store and the identity verifier are ports, so these tests
+         * inject an in-memory store and a locally minted key pair rather than
+         * reaching for `getStore`, which throws outside a Netlify environment.
+         * That is also what makes the credential rules testable at all: the
+         * acceptance suite serves a static build and has no function in it.
+         *
+         * The alias is shared with the other two projects for the contract
+         * tests: `{teams,preferences}-contract.test.mts` import the browser's
+         * lenient codec and run it beside the endpoint's strict validator, which
+         * is the only way the two halves of one stored shape can be held against
+         * each other. They live in different layers and different runtimes, so
+         * nothing else makes them meet.
+         */
+        resolve: { alias },
+        test: {
+          environment: 'node',
+          include: ['netlify/**/*.test.mts'],
+          name: 'functions',
         },
       },
       {
@@ -92,7 +133,11 @@ export default defineConfig({
         resolve: { alias },
         test: {
           environment: 'happy-dom',
-          exclude: ['src/**/model/**', 'src/shared/lib/duration.test.ts'],
+          exclude: [
+            'src/**/model/**',
+            'src/shared/lib/duration.test.ts',
+            'src/shared/lib/people.test.ts',
+          ],
           include: ['src/**/*.test.tsx', 'src/**/*.test.ts', 'tests/ui/**/*.test.tsx'],
           /**
            * One environment per worker rather than one per file.

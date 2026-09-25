@@ -25,6 +25,29 @@ export const DEFAULT_PREFERENCES: Preferences = {
 }
 
 /**
+ * Settings with the instant they were last changed at.
+ *
+ * The instant is on the envelope rather than on `Preferences` itself: every
+ * screen that reads settings is reading the reader's own numbers, and none of
+ * them has any business with when those were last touched. It exists so two
+ * devices holding the same settings can tell which of them wrote last — see
+ * `reconcile.ts`.
+ *
+ * It is **null when this device has never recorded one**, and that is a third
+ * state rather than an old date. It was the epoch at first, and two devices that
+ * had both never synced then carried the same instant while holding different
+ * settings: `reconcile` called that agreement, so neither ever adopted and the
+ * two drifted apart in silence. Null says what is true — nothing here is known
+ * to be from any particular moment — and lets the rule answer by provenance
+ * instead of by an ordering that does not exist.
+ */
+export interface StoredPreferences {
+  readonly preferences: Preferences
+  /** An ISO instant, or null when this device has never recorded one. */
+  readonly updatedAt: null | string
+}
+
+/**
  * Reads preferences back from storage.
  *
  * Anything unusable falls back to its default, field by field, so one damaged
@@ -40,8 +63,29 @@ export function decodePreferences(stored: null | string): Preferences {
   }
 }
 
+/**
+ * Reads the envelope back, from the device or from the store.
+ *
+ * The settings inside it go through `decodePreferences`, so one damaged field
+ * still costs the reader only that field. An absent or unusable instant is null
+ * rather than a date nobody wrote.
+ */
+export function decodeStoredPreferences(stored: null | string): StoredPreferences {
+  const source = parseObject(stored)
+  const updatedAt = source['updatedAt']
+
+  return {
+    preferences: decodePreferences(stored),
+    updatedAt: usableInstant(updatedAt) ? updatedAt : null,
+  }
+}
+
 export function encodePreferences(preferences: Preferences): string {
   return JSON.stringify(preferences)
+}
+
+export function encodeStoredPreferences(stored: StoredPreferences): string {
+  return JSON.stringify({ ...stored.preferences, updatedAt: stored.updatedAt })
 }
 
 /** A copy of `preferences` with the daily target replaced. */
@@ -75,4 +119,9 @@ function parseObject(stored: null | string): Record<string, unknown> {
 
 function timeZoneFrom(source: unknown): string {
   return typeof source === 'string' && isValidTimeZone(source) ? source : DEFAULT_TIME_ZONE
+}
+
+/** An instant something could have been written at, rather than a string. */
+function usableInstant(value: unknown): value is string {
+  return typeof value === 'string' && !Number.isNaN(Date.parse(value)) && value.includes('T')
 }

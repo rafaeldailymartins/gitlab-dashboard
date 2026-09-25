@@ -1,7 +1,7 @@
 import {
+  sessionManager as buildSessionManager,
   gitLabAuthGateway,
   pendingAuthorizationStore,
-  sessionManager,
   type SessionManager,
   sessionStore,
 } from '@/entities/sessions'
@@ -75,6 +75,24 @@ export function navigateAway(url: string): void {
   globalThis.location.assign(url)
 }
 
+/**
+ * The session, for whatever needs to prove who the reader is.
+ *
+ * The teams store asks for an identity assertion rather than a token that reads
+ * GitLab, and the manager is what mints one. Handed out the same way the data
+ * client is, and guarded the same way: every caller sits behind the session
+ * guard already.
+ *
+ * @throws Error when the build has no application id.
+ */
+export function sessionManager(): SessionManager {
+  if (appRuntime.kind !== 'ready') {
+    throw new Error('sessionManager was called before GitLab was configured')
+  }
+
+  return appRuntime.manager
+}
+
 function createRuntime(): AppRuntime {
   const result = gitLabConfig()
 
@@ -100,7 +118,7 @@ function createRuntime(): AppRuntime {
 function createSessionManager(config: GitLabConfig): SessionManager {
   const storage = persistentStorage()
 
-  return sessionManager({
+  return buildSessionManager({
     gateway: gitLabAuthGateway(config, callbackUri()),
     now: () => Date.now(),
     pending: pendingAuthorizationStore(storage),

@@ -1,47 +1,76 @@
-import { lazy, type ReactNode, Suspense, useMemo } from 'react'
+import { lazy, type ReactNode, Suspense, useEffect, useMemo, useState } from 'react'
 
-import type { GroupRef } from '@/entities/group-timelogs'
+import type { GroupRef } from '@/entities/team-timelogs'
 
-import { REFERENCE_SCHEDULE } from '@/entities/group-timelogs'
 import { m } from '@/shared/i18n'
+import { Button } from '@/shared/ui/button'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { SyncControl } from '@/widgets/hours-report'
 
 import type { TeamSearch } from '../lib/search-params'
 
+import { addressAfterSave } from '../lib/address-after-save'
+import { chosenTeam, teamOf } from '../lib/chosen-team'
 import { legendShows } from '../lib/legend'
 import { type ScreenState, screenStateOf } from '../lib/state'
-import { useTeamReport } from '../lib/use-team-report'
+import { useSavedTeams } from '../lib/use-saved-teams'
+import { type TeamHoursReport, useTeamReport } from '../lib/use-team-report'
 import { MatrixLegend } from './matrix-legend'
-import { ReportControls } from './report-controls'
+import { loadTeamManager, ReportToolbar } from './report-toolbar'
 import { TeamMatrix } from './team-matrix'
 
 /**
- * The picker arrives on its own.
+ * The teams dialog arrives on its own, and is not in the bundle every reader
+ * downloads: it carries a whole editing surface, a group list and a person
+ * search, none of which a reader reading a month has asked for.
  *
- * It is the only thing in this app that opens a floating popup, and the
- * positioning machinery behind one is forty kilobytes — a sixth of the whole
- * initial load, for a control on a screen most readers never open. Loaded here
- * it lands in a chunk of its own, fetched as this screen mounts, which is the
- * same reasoning `app/lib/runtime.ts` gives for handing out the client instead
- * of this screen's gateway.
+ * It is fetched before it is asked for, though — see `loadTeamManager`, which
+ * the toolbar's button warms on hover and which this screen warms once the
+ * browser has nothing else to do. A chunk requested by the click is a click that
+ * waits for the network.
  *
  * Mapped to `default` rather than exported as one: `no-restricted-exports`
  * holds every module here, and a default export would be the one exception.
  */
-const GroupPicker = lazy(async () =>
-  import('./group-picker').then((module) => ({ default: module.GroupPicker })),
+const TeamManagerDialog = lazy(async () =>
+  loadTeamManager().then((module) => ({ default: module.TeamManagerDialog })),
 )
+
+/**
+ * Warms that chunk while the browser is idle, and gives up where there is no
+ * idle callback to ask for: the hover and focus on the button cover that case,
+ * and a timer racing the month's own requests would be worse than nothing.
+ */
+function useWarmTeamManager(): void {
+  useEffect(() => {
+    if (typeof requestIdleCallback !== 'function') {
+      return
+    }
+
+    const id = requestIdleCallback(
+      () => {
+        void loadTeamManager()
+      },
+      { timeout: IDLE_TIMEOUT_MS },
+    )
+
+    return () => {
+      cancelIdleCallback(id)
+    }
+  }, [])
+}
+
+/** Long enough that the month's own requests go first, short enough to be there. */
+const IDLE_TIMEOUT_MS = 4000
 
 /** The sync control carries no caveats on this screen. See where it is used. */
 const NO_NOTICES: readonly string[] = []
 
-/** A working day of the stated reference, for the legend. Monday is one. */
-const REFERENCE_DAY = REFERENCE_SCHEDULE[1]
-
 interface BodyProps {
-  readonly report: ReturnType<typeof useTeamReport>
+  readonly onManage: () => void
+  readonly report: TeamHoursReport
   readonly search: TeamSearch
+  readonly teamName: string
 }
 
 interface TeamHoursPageProps {
@@ -50,26 +79,41 @@ interface TeamHoursPageProps {
 }
 
 /**
- * A group's month, per person and per day.
+ * A team's month, per person and per day.
  *
  * Wider than the other screens on purpose: a month of day columns is over a
  * thousand pixels, and it scrolls inside its own bounds rather than taking the
  * page sideways with it.
+ *
+ * The teams the figures are about are edited over this screen rather than
+ * somewhere else. A reader notices a team is wrong while reading its month, and
+ * that list has no address worth sending anybody, so leaving here to fix it cost
+ * a page load and bought nothing. The dialog is mounted only once it has been
+ * asked for, so a reader who never opens it never downloads it.
  */
 export function TeamHoursPage({ onChange, search }: TeamHoursPageProps) {
-  const report = useTeamReport(search)
-  const state = screenStateOf({ group: search.group, report })
+  const saved = useSavedTeams()
+
+  useWarmTeamManager()
+
+  const [managing, setManaging] = useState(false)
+  const choice = useMemo(() => chosenTeam(saved.teams, search.team), [saved.teams, search.team])
+  const report = useTeamReport(search, teamOf(choice))
+  const state = screenStateOf({ choice, report, saved })
+  const manage = () => {
+    setManaging(true)
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-[100rem] flex-col gap-4 px-4 py-8">
       <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
         <div className="flex flex-col gap-1">
-          {/* The screen is named, not the group. The group is named twice
-              below — in the picker that chose it and in the table's caption —
-              and a heading that changed with the choice made the one fixed
-              landmark on the page move under a reader navigating by headings. */}
+          {/* The screen is named, not the team. The team is named twice below —
+              in the picker that chose it and in the table's caption — and a
+              heading that changed with the choice made the one fixed landmark
+              on the page move under a reader navigating by headings. */}
           <h1 className="text-2xl font-semibold tracking-tight">{m.team_heading()}</h1>
-          <p className="text-sm text-muted-foreground">{m.team_scope()}</p>
+          <p className="text-sm text-muted-foreground">{scopeSentence(report.scope)}</p>
         </div>
         {/* No notices. This control says when the hours arrived, whether they
             are arriving now, and whether asking failed — nothing about what the
@@ -78,65 +122,135 @@ export function TeamHoursPage({ onChange, search }: TeamHoursPageProps) {
         <SyncControl notices={NO_NOTICES} status={report} />
       </header>
 
-      {/* One row, so the table starts as high on the page as it can: this screen
-          is read by scanning down a group, and every line above the first row is
-          a person the reader has to scroll to find. */}
-      <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
-        <Suspense fallback={<Skeleton className="h-14 w-full max-w-sm" />}>
-          <GroupPicker
-            chosen={groupRef(report.group, search.group)}
-            onChoose={(group) => {
-              onChange({ group })
+      <ReportToolbar
+        filter={filterRef(report.scope, search.group)}
+        onChange={onChange}
+        onManage={manage}
+        search={search}
+        team={teamOf(choice)?.id ?? ''}
+        teams={saved.teams}
+      />
+
+      {/* Above the body rather than instead of it: the figures below are the
+          reader's whole reach, which is a real report, and the notice says only
+          that the narrowing their link asked for was dropped. */}
+      {report.scope === 'unreadable' ? <Note>{m.team_unreadable_group()}</Note> : null}
+
+      {BODY[state.kind]({
+        onManage: manage,
+        report,
+        search,
+        teamName: teamOf(choice)?.name ?? '',
+      })}
+
+      {managing ? (
+        <Suspense fallback={null}>
+          <TeamManagerDialog
+            onOpenChange={setManaging}
+            onSaved={(teams) => {
+              const moved = addressAfterSave(teams, search.team)
+
+              if (moved !== null) {
+                onChange({ team: moved })
+              }
             }}
+            open
           />
         </Suspense>
-        <ReportControls onChange={onChange} search={search} />
-      </div>
-
-      {BODY[state.kind]({ report, search })}
+      ) : null}
     </main>
   )
 }
 
 const BODY: Record<ScreenState['kind'], (props: BodyProps) => ReactNode> = {
-  'choose-group': () => <Note>{m.team_choose_group()}</Note>,
-  empty: () => <Note>{m.team_empty_group()}</Note>,
+  'empty-team': (props) => <Note action={props.onManage}>{m.team_empty_team()}</Note>,
   loading: () => <Skeleton className="h-96 w-full" />,
-  report: ({ report, search }) => <Report report={report} search={search} />,
-  'unreadable-group': () => <Note>{m.team_unreadable_group()}</Note>,
+  'no-teams': (props) => <Note action={props.onManage}>{m.team_none_yet()}</Note>,
+  reconnect: () => <Note>{m.team_reconnect()}</Note>,
+  report: (props) => <Report {...props} />,
+  'teams-unavailable': () => <Note>{m.team_store_unavailable()}</Note>,
+  'unknown-team': (props) => <Note action={props.onManage}>{m.team_unknown_team()}</Note>,
 }
 
-/** The chosen group as a picker shows it, falling back to the path it was given. */
-function groupRef(group: GroupRef | null, fullPath: string): GroupRef | null {
+/**
+ * The filter as the picker shows it.
+ *
+ * A group the provider would not resolve still shows the path the address named,
+ * so the reader can see what their link asked for rather than a control that
+ * silently reset itself.
+ */
+function filterRef(scope: TeamHoursReport['scope'], fullPath: string): GroupRef | null {
   if (fullPath === '') {
     return null
   }
 
-  return group ?? { fullPath, name: fullPath }
+  return scope === 'unreadable' || scope === null ? { fullPath, id: '', name: fullPath } : scope
 }
 
-function Note({ children }: { readonly children: ReactNode }) {
+/** A group that resolved is the only narrowing there is. */
+function narrowed(scope: TeamHoursReport['scope']): boolean {
+  return scope !== null && scope !== 'unreadable'
+}
+
+/**
+ * A sentence in place of the table, and the way out of it when there is one.
+ *
+ * Three of these are about the reader's teams — none kept, one empty, one the
+ * address names and they do not have — and every one of them is fixed in the
+ * same dialog. A note that states a problem the reader can solve and does not
+ * offer the control that solves it makes them go looking for it.
+ */
+function Note({
+  action,
+  children,
+}: {
+  readonly action?: () => void
+  readonly children: ReactNode
+}) {
   return (
-    <p className="rounded-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
-      {children}
-    </p>
+    <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-card px-4 py-10 text-center">
+      <p className="max-w-prose text-sm text-muted-foreground">{children}</p>
+      {action === undefined ? null : (
+        <Button onClick={action} size="lg" type="button">
+          {m.team_manage_link()}
+        </Button>
+      )}
+    </div>
   )
 }
 
 /** The table and the key to it, which is read off the table rather than fixed. */
-function Report({ report, search }: BodyProps) {
+function Report({ report, search, teamName }: BodyProps) {
   const shows = useMemo(() => legendShows(report.grid), [report.grid])
 
   return (
     <>
       <TeamMatrix
         granularity={search.by}
-        groupName={report.group?.name ?? search.group}
         month={report.month}
         report={report}
+        scope={report.scope}
+        teamName={teamName}
         today={report.today}
       />
-      <MatrixLegend reference={REFERENCE_DAY} shows={shows} />
+      <MatrixLegend scoped={narrowed(report.scope)} shows={shows} />
     </>
   )
+}
+
+/**
+ * What the figures cover, in two states rather than one with a blank in it.
+ *
+ * Unnarrowed, every hour the provider will show this reader is in the answer,
+ * personal projects included — the strongest claim this screen has ever made.
+ * Narrowed, it covers one group and its descendants and nothing else. Two
+ * sentences rather than one with a parameter, because an empty parameter renders
+ * as a sentence with a hole in it.
+ */
+function scopeSentence(scope: TeamHoursReport['scope']): string {
+  if (scope === null || scope === 'unreadable') {
+    return m.team_scope_everywhere()
+  }
+
+  return m.team_scope_group({ group: scope.name })
 }

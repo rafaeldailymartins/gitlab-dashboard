@@ -11,36 +11,43 @@ import {
 import { render } from '@testing-library/react'
 import { vi } from 'vitest'
 
+import { PreferencesProvider, preferencesStore } from '@/entities/preferences'
 import {
   type ColumnProbeAnswer,
   type ColumnProbeQuery,
-  type GroupHoursPage,
-  type GroupProbe,
   type GroupRef,
-  type GroupTimelogGateway,
-  GroupTimelogGatewayProvider,
-  type RosterAnswer,
-} from '@/entities/group-timelogs'
-import { PreferencesProvider, preferencesStore } from '@/entities/preferences'
+  type SuggestionAnswer,
+  type TeamHoursPage,
+  type TeamTimelogGateway,
+  TeamTimelogGatewayProvider,
+} from '@/entities/team-timelogs'
+import {
+  type Team,
+  type TeamsDocument,
+  type TeamsGateway,
+  TeamsGatewayProvider,
+} from '@/entities/teams'
 import { type TimelogGateway, TimelogGatewayProvider, type TimelogPage } from '@/entities/timelogs'
 import { type ViewerGateway, ViewerGatewayProvider } from '@/entities/viewers'
 import { LocaleProvider } from '@/shared/i18n'
 import { type KeyValueStorage, memoryStorage } from '@/shared/lib/storage'
 
-interface GroupAnswers {
-  /** What the provider declares per column, by username. */
-  readonly columns?: ReadonlyMap<string, ColumnProbeAnswer>
-  readonly groups?: readonly GroupRef[]
-  readonly pages?: readonly GroupHoursPage[]
-  readonly probe?: GroupProbe
-  readonly roster?: RosterAnswer
-}
-
 interface ReportRenderOptions {
   readonly gateway?: TimelogGateway
-  readonly groups?: GroupTimelogGateway
   readonly storage?: KeyValueStorage
+  readonly teams?: TeamsGateway
+  readonly timelogs?: TeamTimelogGateway
   readonly viewer?: ViewerGateway
+}
+
+interface TeamAnswers {
+  /** What the provider declares per column, by the member's identifier. */
+  readonly columns?: ReadonlyMap<string, ColumnProbeAnswer>
+  /** What one path resolves to. Undefined answers with the squad fixture. */
+  readonly group?: GroupRef | null
+  readonly groups?: readonly GroupRef[]
+  readonly pages?: readonly TeamHoursPage[]
+  readonly suggestions?: SuggestionAnswer
 }
 
 /** A gateway that always fails, for the paths where GitLab does not answer. */
@@ -63,50 +70,69 @@ export function fakeGateway(pages: TimelogPage[]) {
 }
 
 /**
- * A group gateway that answers with what it is given.
+ * A team-hours gateway that answers with what it is given.
  *
- * The pages are handed out in order and the last one repeats, so a test that
- * says nothing about paging gets one page that ends the window.
+ * The rounds are handed out in order and the last one repeats, so a test that
+ * says nothing about continuation gets one round that ends the window.
  */
-export function fakeGroupGateway(answers: GroupAnswers = {}) {
-  const pages = answers.pages ?? [{ entries: [], group: SQUAD, nextCursor: null }]
+export function fakeTeamGateway(answers: TeamAnswers = {}) {
+  const pages = answers.pages ?? [{ members: [] }]
   let call = 0
 
   return {
     columns: vi.fn((query: ColumnProbeQuery) =>
       Promise.resolve(
-        answers.columns?.get(query.username) ?? {
+        answers.columns?.get(query.memberId) ?? {
           byColumn: new Map(),
           period: { entryCount: 0, seconds: 0 },
         },
       ),
     ),
+    following: vi.fn((): Promise<TeamHoursPage> => Promise.resolve({ members: [] })),
+    group: vi.fn(() => Promise.resolve(answers.group === undefined ? SQUAD : answers.group)),
     groups: vi.fn(() => Promise.resolve(answers.groups ?? [SQUAD])),
-    probe: vi.fn(() =>
-      Promise.resolve(
-        answers.probe ?? {
-          access: null,
-          declared: { entryCount: 0, seconds: 0 },
-          group: SQUAD,
-          perPerson: new Map(),
-        },
-      ),
+    people: vi.fn(() => Promise.resolve([])),
+    suggestions: vi.fn(() =>
+      Promise.resolve(answers.suggestions ?? { partial: false, people: [] }),
     ),
-    roster: vi.fn(() =>
-      Promise.resolve(answers.roster ?? { access: null, group: SQUAD, members: [] }),
-    ),
-    timelogs: vi.fn(() => {
+    timelogs: vi.fn((): Promise<TeamHoursPage> => {
       const page = pages[Math.min(call, pages.length - 1)]
 
       call += 1
 
-      return Promise.resolve(page ?? { entries: [], group: SQUAD, nextCursor: null })
+      return Promise.resolve(page ?? { members: [] })
     }),
-  } satisfies GroupTimelogGateway
+  } satisfies TeamTimelogGateway
+}
+
+/**
+ * A teams store that answers from memory.
+ *
+ * The version is a counter rather than a hash: what the screen does with it is
+ * hand it back on the next write, and a counter makes a stale one obvious in a
+ * failure message.
+ */
+export function fakeTeamsGateway(initial: readonly Team[] = []) {
+  let document: TeamsDocument = { etag: '"1"', teams: initial }
+  let version = 1
+
+  return {
+    read: vi.fn(() => Promise.resolve(document)),
+    write: vi.fn((next: TeamsDocument) => {
+      version += 1
+      document = { etag: `"${String(version)}"`, teams: next.teams }
+
+      return Promise.resolve(document)
+    }),
+  } satisfies TeamsGateway
 }
 
 /** The group every group fixture is about, unless a test says otherwise. */
-export const SQUAD: GroupRef = { fullPath: 'acme/squad-fiscal', name: 'squad-fiscal' }
+export const SQUAD: GroupRef = {
+  fullPath: 'acme/squad-fiscal',
+  id: 'gid://gitlab/Group/64237110',
+  name: 'squad-fiscal',
+}
 
 /** Whoever the screen greets. Named so an assertion on the greeting is obvious. */
 export function fakeViewerGateway(name: null | string = 'Ada Lovelace') {
@@ -126,16 +152,19 @@ export function renderReport(ui: ReactNode, options: ReportRenderOptions = {}) {
   const gateway = options.gateway ?? fakeGateway([{ entries: [], nextCursor: null }])
   const store = preferencesStore(options.storage ?? memoryStorage())
   const viewer = options.viewer ?? fakeViewerGateway()
-  const groups = options.groups ?? fakeGroupGateway()
+  const timelogs = options.timelogs ?? fakeTeamGateway()
+  const teams = options.teams ?? fakeTeamsGateway()
 
   const inProviders = (screen: ReactNode) => (
     <QueryClientProvider client={client}>
       <PreferencesProvider store={store}>
         <LocaleProvider>
           <TimelogGatewayProvider gateway={gateway}>
-            <GroupTimelogGatewayProvider gateway={groups}>
-              <ViewerGatewayProvider gateway={viewer}>{screen}</ViewerGatewayProvider>
-            </GroupTimelogGatewayProvider>
+            <TeamsGatewayProvider gateway={teams}>
+              <TeamTimelogGatewayProvider gateway={timelogs}>
+                <ViewerGatewayProvider gateway={viewer}>{screen}</ViewerGatewayProvider>
+              </TeamTimelogGatewayProvider>
+            </TeamsGatewayProvider>
           </TimelogGatewayProvider>
         </LocaleProvider>
       </PreferencesProvider>
@@ -148,11 +177,12 @@ export function renderReport(ui: ReactNode, options: ReportRenderOptions = {}) {
     ...view,
     client,
     gateway,
-    groups,
     // Overrides the one from Testing Library, which would drop the providers.
     rerender: (next: ReactNode) => {
       view.rerender(inProviders(next))
     },
+    teams,
+    timelogs,
     viewer,
   }
 }
@@ -178,10 +208,15 @@ export function renderRoutedReport(ui: ReactNode, options: ReportRenderOptions =
     getParentRoute: () => rootRoute,
     path: '/days/$date',
   })
+  const teamsRoute = createRoute({
+    component: () => <p>Teams screen</p>,
+    getParentRoute: () => rootRoute,
+    path: '/teams',
+  })
 
   const router = createRouter({
     history: createMemoryHistory({ initialEntries: ['/'] }),
-    routeTree: rootRoute.addChildren([indexRoute, dayRoute]),
+    routeTree: rootRoute.addChildren([indexRoute, dayRoute, teamsRoute]),
   })
 
   return { router, ...renderReport(<RouterProvider router={router} />, options) }

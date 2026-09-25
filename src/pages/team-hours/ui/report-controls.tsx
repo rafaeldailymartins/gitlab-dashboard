@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-import type { Granularity } from '@/entities/group-timelogs'
+import type { Granularity } from '@/entities/team-timelogs'
 
 import { m, useActiveLocale } from '@/shared/i18n'
 import { formatMonth } from '@/shared/lib/format'
@@ -24,13 +24,18 @@ interface ReportControlsProps {
  * Both live in the address rather than in state, so the view a reader is looking
  * at is the view they can send somebody else — which is the whole reason this
  * screen is addressable.
+ *
+ * Two fragments rather than a row of its own. Every control on this screen is
+ * one `h-9` strip bordered the same way, and a wrapper here would make these two
+ * a group inside that row — which is a grouping the reader cannot see and the
+ * layout has to work around.
  */
 export function ReportControls({ onChange, search }: ReportControlsProps) {
   const { locale } = useActiveLocale()
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <div className="flex items-center gap-1 rounded-lg border border-input px-1 py-0.5">
+    <>
+      <div className="flex h-9 items-center gap-1 rounded-lg border border-input px-1">
         <Button
           aria-label={m.team_month_previous()}
           onClick={() => {
@@ -60,7 +65,7 @@ export function ReportControls({ onChange, search }: ReportControlsProps) {
 
       <div
         aria-label={m.team_granularity_label()}
-        className="flex items-center gap-0.5 rounded-lg border border-input p-0.5"
+        className="flex h-9 items-center gap-0.5 rounded-lg border border-input p-0.5"
         role="group"
       >
         <GranularityButton
@@ -76,7 +81,7 @@ export function ReportControls({ onChange, search }: ReportControlsProps) {
           search={search}
         />
       </div>
-    </div>
+    </>
   )
 }
 

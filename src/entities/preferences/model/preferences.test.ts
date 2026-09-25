@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_DAILY_TARGET, withWeekdayTarget } from './daily-target'
 import {
   decodePreferences,
+  decodeStoredPreferences,
   DEFAULT_PREFERENCES,
   DEFAULT_TIME_ZONE,
   encodePreferences,
+  encodeStoredPreferences,
   withDailyTarget,
   withTimeZone,
 } from './preferences'
@@ -110,5 +112,59 @@ describe('withDailyTarget', () => {
     const target = withWeekdayTarget(DEFAULT_DAILY_TARGET, 3, 4)
 
     expect(withDailyTarget(DEFAULT_PREFERENCES, target).timeZone).toBe(DEFAULT_TIME_ZONE)
+  })
+})
+
+/*
+ * The envelope, which is the half `reconcile` runs on.
+ *
+ * Its whole job is to tell an instant somebody recorded from one nobody did,
+ * and the two answers are not interchangeable: a device holding null adopts
+ * rather than competes, while one holding a date wins or loses by it. A decoder
+ * that read every instant as null would leave every device adopting forever,
+ * and one that read any value as an instant would have `Date.parse` deciding
+ * an ordering out of `NaN`.
+ */
+describe('decodeStoredPreferences', () => {
+  const INSTANT = '2026-09-23T10:00:00.000Z'
+
+  it('reads back the instant it wrote, beside the settings', () => {
+    const stored = {
+      preferences: withTimeZone(DEFAULT_PREFERENCES, 'Asia/Tokyo'),
+      updatedAt: INSTANT,
+    }
+
+    expect(decodeStoredPreferences(encodeStoredPreferences(stored))).toEqual(stored)
+  })
+
+  it('has no instant for a device that has never recorded one', () => {
+    expect(decodeStoredPreferences(encodePreferences(DEFAULT_PREFERENCES)).updatedAt).toBeNull()
+  })
+
+  it.each([
+    ['a number', 1_764_000_000_000],
+    ['a date with no time in it', '2026-09-23'],
+    ['a sentence', 'yesterday afternoon'],
+    ['nothing at all', null],
+  ])('has no instant when what is stored is %s', (_name, updatedAt) => {
+    const stored = JSON.stringify({ ...DEFAULT_PREFERENCES, updatedAt })
+
+    expect(decodeStoredPreferences(stored).updatedAt).toBeNull()
+  })
+
+  it('keeps the settings when only the instant is unusable', () => {
+    const stored = JSON.stringify({
+      ...withTimeZone(DEFAULT_PREFERENCES, 'Asia/Tokyo'),
+      updatedAt: 7,
+    })
+
+    expect(decodeStoredPreferences(stored).preferences.timeZone).toBe('Asia/Tokyo')
+  })
+
+  it('uses the defaults, undated, for something that is not a document', () => {
+    expect(decodeStoredPreferences('not json')).toEqual({
+      preferences: DEFAULT_PREFERENCES,
+      updatedAt: null,
+    })
   })
 })

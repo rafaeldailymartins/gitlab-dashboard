@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import type { CellKind, GridCell } from '@/entities/group-timelogs'
+import type { CellKind, GridCell } from '@/entities/team-timelogs'
 
 import { m } from '@/shared/i18n'
 import { HourFigure } from '@/shared/ui/hour-figure'
@@ -34,21 +34,29 @@ interface DayCellProps {
   readonly last: boolean
   readonly marks: ColumnMarks
   /**
+   * True when the figures are narrowed to a group, which weakens what an empty
+   * day may claim.
+   *
+   * Unnarrowed, an empty day means this person logged nothing the provider will
+   * show this reader, anywhere — the strongest claim this screen has ever been
+   * able to make. Narrowed, it means only that there is nothing in that group,
+   * and the cell must say **that** and no more: an hour logged in a sibling
+   * group is not missing from the answer, it was never asked for.
+   */
+  readonly scoped: boolean
+  /**
    * True when the provider counted entries for this person in this window and
    * handed none of them over for this cell's row.
    *
-   * An empty working day means one of three things and the screen cannot tell
-   * which: nobody logged, somebody logged here and the reader may not read it,
-   * or somebody logged somewhere else entirely — every figure here is scoped to
-   * one group. So no cell claims a person logged nothing; the most any of them
-   * says is that there is nothing **in this group**, and this flag picks the
-   * one case where even that is known to be understated.
+   * An empty working day then means one thing the screen can rule out: the
+   * reader is being shown less than the provider counted, so even "nothing
+   * here" is known to be understated.
    */
   readonly unreadable: boolean
 }
 
-/** The five kinds the model reports, plus the one this file resolves itself. */
-type DrawnKind = 'unreadable' | CellKind
+/** The kinds the model reports, plus the three this file resolves itself. */
+type DrawnKind = 'unlogged-anywhere' | 'unreadable' | 'unreadable-anywhere' | CellKind
 
 /**
  * One person on one column.
@@ -65,12 +73,12 @@ type DrawnKind = 'unreadable' | CellKind
  * to the width of the month, which is the one thing UI-11 forbids. Positioning
  * the cell puts the containing block back inside the scroller.
  */
-export function DayCell({ cell, last, marks, unreadable }: DayCellProps) {
+export function DayCell({ cell, last, marks, scoped, unreadable }: DayCellProps) {
   return (
     <td
       className={`${CELL} ${expectsNothing(cell) ? TINTED : ''} ${dividerFor(cell.key, marks, last)}`}
     >
-      {BODY[drawn(cell, unreadable)](cell)}
+      {BODY[drawn(cell, scoped, unreadable)](cell)}
     </td>
   )
 }
@@ -78,24 +86,35 @@ export function DayCell({ cell, last, marks, unreadable }: DayCellProps) {
 /**
  * Which of the cases the cell is drawn as.
  *
- * One of them is not a kind the model knows about: an empty working day in a
- * row whose entries were not all handed over says something different from one
- * in a row where they were, and only the interface holds both facts.
+ * Three of them are not kinds the model knows about, and all three are about
+ * what an empty working day may be said to mean. The reach decides how strong
+ * the claim may be; whether the row was shown everything the provider counted
+ * decides whether it may be made at all. Both facts are the interface's, and
+ * they compose — which is why there are four sentences rather than two, and why
+ * getting it wrong in one corner was possible.
  *
- * Withheld hours are not a case here at all. They are added into the figure by
+ * Withheld hours are not a case here. They are added into the figure by
  * `model/withheld.ts`, so a cell that holds them is simply a cell that holds
  * hours — which is the point of adding them.
  */
-function drawn(cell: GridCell, unreadable: boolean): DrawnKind {
-  return cell.kind === 'unlogged' && unreadable ? 'unreadable' : cell.kind
+function drawn(cell: GridCell, scoped: boolean, unreadable: boolean): DrawnKind {
+  if (cell.kind !== 'unlogged') {
+    return cell.kind
+  }
+
+  if (unreadable) {
+    return scoped ? 'unreadable' : 'unreadable-anywhere'
+  }
+
+  return scoped ? 'unlogged' : 'unlogged-anywhere'
 }
 
 /**
  * What each kind of cell draws, as a lookup rather than a chain of conditions.
  *
- * Six cases is far more than a readable ternary chain, and `sonarjs` forbids
- * nesting them; a `switch` over six would sit on the complexity ceiling. A
- * table stays flat and takes a seventh without touching any of the six.
+ * Nine cases is far more than a readable ternary chain, and `sonarjs` forbids
+ * nesting them; a `switch` over nine would sit on the complexity ceiling. A
+ * table stays flat and takes a tenth without touching any of the nine.
  */
 const BODY: Record<DrawnKind, (cell: GridCell) => ReactNode> = {
   future: () => null,
@@ -107,8 +126,14 @@ const BODY: Record<DrawnKind, (cell: GridCell) => ReactNode> = {
   // cell keeps its height either way, so an entry logged on a Saturday still
   // arrives without moving anything.
   pending: (cell) => (expectsNothing(cell) ? null : <Pending />),
-  unlogged: () => <Unlogged />,
-  unreadable: () => <Unreadable />,
+  // Nothing at all is known about this person: the provider would not resolve
+  // the identifier the team stores. A figure here would be invented, and a dash
+  // would read as a day they did not work.
+  unknown: () => <Unknown />,
+  unlogged: () => <Unlogged spoken={m.team_cell_unlogged_in_group()} />,
+  'unlogged-anywhere': () => <Unlogged spoken={m.team_cell_unlogged_anywhere()} />,
+  unreadable: () => <Unlogged spoken={m.team_cell_unreadable_in_group()} />,
+  'unreadable-anywhere': () => <Unlogged spoken={m.team_cell_unreadable_anywhere()} />,
 }
 
 /**
@@ -181,39 +206,36 @@ function Pending() {
 }
 
 /**
- * A day somebody was expected to log and did not.
+ * A day in a row about somebody the provider would not resolve.
  *
- * The glyph is hidden and the sentence is not: a dash read aloud is noise, and
- * the fact is worth hearing.
+ * Drawn as nothing at all rather than as an absence: an absence is a claim, and
+ * this row has no answer behind it to make one from.
  */
-function Unlogged() {
+function Unknown() {
   return (
     <span className="flex items-center justify-center">
-      <span
-        aria-hidden
-        className="inline-block h-2 w-3.5 border-b border-dashed border-chart-target opacity-70"
-      />
-      <span className="sr-only">{m.team_cell_unlogged()}</span>
+      <span aria-hidden className="inline-block size-1 rounded-full bg-muted-foreground/40" />
+      <span className="sr-only">{m.team_cell_unknown()}</span>
     </span>
   )
 }
 
 /**
- * A day that looks empty in a row whose entries were not all handed over.
+ * A day somebody was expected to log and did not.
  *
- * Drawn exactly like an unlogged day, because visually it is the same absence.
- * What changes is what it says: "nothing logged" is an assertion about a
- * colleague's month, and in this row it is one the screen has been given
- * evidence against.
+ * The glyph is hidden and the sentence is not: a dash read aloud is noise, and
+ * the fact is worth hearing. Every case draws the same absence, because visually
+ * it is the same absence — what differs is what may be claimed about it, and
+ * that is spoken rather than drawn.
  */
-function Unreadable() {
+function Unlogged({ spoken }: { readonly spoken: string }) {
   return (
     <span className="flex items-center justify-center">
       <span
         aria-hidden
         className="inline-block h-2 w-3.5 border-b border-dashed border-chart-target opacity-70"
       />
-      <span className="sr-only">{m.team_cell_unlogged_unreadable()}</span>
+      <span className="sr-only">{spoken}</span>
     </span>
   )
 }

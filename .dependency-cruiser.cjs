@@ -40,11 +40,18 @@ module.exports = {
     },
     {
       comment:
-        'Application code must not import a devDependency; it would be missing from a production install.',
-      from: { path: '^src/', pathNot: ['[.]test[.]tsx?$'] },
+        'Application code must not import a devDependency; it would be missing from a production install. The serverless function counts as application code: Netlify bundles it from the same node_modules, and CI never bundles it at all — so a dependency in the wrong section fails the deploy rather than the pipeline, which is exactly the failure this rule exists to move earlier.',
+      from: { path: '^(src|netlify)/', pathNot: ['[.]test[.](mts|tsx?)$'] },
       name: 'not-to-dev-dep',
       severity: 'error',
-      to: { dependencyTypes: ['npm-dev'], pathNot: ['^src/'] },
+      to: {
+        dependencyTypes: ['npm-dev'],
+        // A type-only import is erased before anything runs, so it cannot be
+        // missing from a production install. The function's platform types are
+        // exactly that, and they belong in devDependencies for the same reason.
+        dependencyTypesNot: ['type-only'],
+        pathNot: ['^src/', '^netlify/'],
+      },
     },
     {
       comment: 'Depending on a deprecated npm package is a maintenance trap.',

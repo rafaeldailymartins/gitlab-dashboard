@@ -1,4 +1,4 @@
-import type { TeamGrid } from '@/entities/group-timelogs'
+import type { TeamGrid } from '@/entities/team-timelogs'
 
 /** Which marks this particular report actually uses. */
 export interface LegendShows {
