@@ -75,7 +75,14 @@ async function save() {
 }
 
 describe('what a save says', () => {
-  it('says it is saving, and then that it saved', async () => {
+  /*
+   * And then says nothing. A save that lands closes the dialog, so there is
+   * nobody left to tell — the closing is the confirmation, and a "Saved." that
+   * no browser could reach was a branch every reader of `SaveState` had to
+   * rule out for themselves. This renders `TeamManager` without a dialog
+   * around it, which is the only way the after is observable at all.
+   */
+  it('says it is saving, and then has nothing to say', async () => {
     const { finish, gateway } = deferredTeams([FISCAL])
 
     manager(gateway)
@@ -87,7 +94,7 @@ describe('what a save says', () => {
     finish()
 
     await waitFor(() => {
-      expect(screen.getByRole('status')).toHaveTextContent(/^saved/iu)
+      expect(screen.getByRole('status')).toBeEmptyDOMElement()
     })
   })
 
@@ -111,8 +118,9 @@ describe('what a save says', () => {
     finish()
 
     await waitFor(() => {
-      expect(screen.getByRole('status')).toHaveTextContent(/^saved/iu)
+      expect(screen.getByRole('status')).toBeEmptyDOMElement()
     })
+    expect(saving).toHaveFocus()
   })
 
   it('shows the version somebody else wrote, rather than the change that lost', async () => {

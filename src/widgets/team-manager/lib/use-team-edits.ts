@@ -4,14 +4,21 @@ import type { Team, TeamsDocument, TeamsFailure } from '@/entities/teams'
 
 import { TEAMS_KEY, TeamsError, teamsQuery, useTeamsGateway } from '@/entities/teams'
 
-/** What the last save did, which is the one thing this screen has to announce. */
+/**
+ * What the last save did, which is the one thing this surface has to announce.
+ *
+ * There is no `saved` arm, and its absence is the point: a save that lands
+ * closes the dialog, so the surface that would have said so is gone before it
+ * could. Closing is the confirmation. The arm existed for one commit after that
+ * became true and said "Saved." to nobody — a state a browser cannot reach is a
+ * branch every reader of this file has to rule out for themselves.
+ */
 export type SaveState =
   /** Somebody else changed the document; what is on screen is now theirs. */
   | { readonly failure: TeamsFailure; readonly kind: 'failed' }
   | { readonly kind: 'changed-elsewhere' }
-  /** Nothing has been changed yet in this visit. */
+  /** Nothing to say: nothing edited yet, or the last thing edited is gone. */
   | { readonly kind: 'idle' }
-  | { readonly kind: 'saved' }
   | { readonly kind: 'saving' }
 
 export interface TeamEdits {
@@ -97,7 +104,7 @@ export function useTeamEdits({ onConflict, onSaved }: Told = {}): TeamEdits {
     },
     failure: error === null ? null : failureOf(error),
     loading: isPending,
-    state: stateOf(save.error, save.isPending, save.isSuccess),
+    state: stateOf(save.error, save.isPending),
     teams: data?.teams ?? NOTHING.teams,
   }
 }
@@ -122,8 +129,10 @@ function failureOf(error: Error): TeamsFailure {
  * reason is that the list in front of them is now somebody else's newer one —
  * which they need to see before deciding what to do, and which the query cache
  * already holds by the time this is read.
+ *
+ * Success says nothing, because by then there is nobody to say it to.
  */
-function stateOf(error: Error | null, saving: boolean, saved: boolean): SaveState {
+function stateOf(error: Error | null, saving: boolean): SaveState {
   if (saving) {
     return { kind: 'saving' }
   }
@@ -134,5 +143,5 @@ function stateOf(error: Error | null, saving: boolean, saved: boolean): SaveStat
       : { failure: failureOf(error), kind: 'failed' }
   }
 
-  return saved ? { kind: 'saved' } : { kind: 'idle' }
+  return { kind: 'idle' }
 }

@@ -26,6 +26,5 @@ const SENTENCE: Record<SaveState['kind'], () => string> = {
   'changed-elsewhere': () => m.teams_changed_elsewhere(),
   failed: () => m.teams_save_failed(),
   idle: () => '',
-  saved: () => m.teams_saved(),
   saving: () => m.teams_saving(),
 }

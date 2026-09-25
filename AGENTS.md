@@ -424,11 +424,14 @@ one without reading the reason will reintroduce a bug that is already fixed.
   only that the reader wants out and not what should become of what they typed,
   so that is the one path that asks. A refused save does not close: there is
   something left to read and something left to do.
-  One consequence worth knowing: `SaveNotice`'s "Saved." is now unreachable in a
-  browser, because the surface it lives on is gone by the time it would say so.
-  The closing is the confirmation. The component still renders it and is still
-  tested where it is mounted alone, and the acceptance step that read it was
-  deleted rather than left asserting something nothing can produce.
+  One consequence, and it was followed through: **there is no "Saved." any
+  more.** The surface it lived on is gone by the time it would have said so, so
+  the closing is the confirmation. It survived one commit as a state a browser
+  could not reach, which is a branch every reader of `SaveState` has to rule out
+  for themselves — the arm, the string in both catalogues and the acceptance step
+  that read it are all deleted. What `SaveNotice` says now is only what the
+  reader is still there to hear: that a save is in flight, that it was refused,
+  or that somebody else wrote first.
   The question about closing is an inline bar in the footer, not a nested
   dialog: a focus trap inside a focus trap is what the keyboard sweep would find.
   It is not a live region either — `SaveNotice` is this surface's only one, and

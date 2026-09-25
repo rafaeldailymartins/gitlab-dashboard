@@ -155,7 +155,6 @@
   "teams_remove_member": "Remover {name}",
   "teams_save": "Salvar",
   "teams_save_failed": "Não foi possível salvar essa alteração. Tente de novo.",
-  "teams_saved": "Salvo.",
   "teams_saving": "Salvando…",
   "teams_search_heading": "Adicionar qualquer pessoa por nome",
   "teams_search_label": "Buscar uma pessoa no GitLab",

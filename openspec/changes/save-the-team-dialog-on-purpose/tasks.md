@@ -110,3 +110,8 @@ Independent of the draft, and first because it is what the reader reported.
       `SaveNotice`'s "Saved." became unreachable in a browser and the acceptance
       step that read it was deleted rather than left asserting nothing can
       produce it
+- [x] 8.4 The `saved` state went with the notice. It was reachable for exactly
+      one commit after saving began closing the dialog, and a state a browser
+      cannot reach is a branch every reader of the union has to rule out. The
+      arm, the string in both catalogues, the sentence and the acceptance step
+      are all gone

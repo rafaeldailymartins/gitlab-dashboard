@@ -154,7 +154,7 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
       dialog closes with nothing written. The same for the X and for clicking
       outside — a dismissal says you want out, not what to do with your edits.
 - [ ] Press Save: the dialog closes, and that is the confirmation — there is no
-      "Saved." line to look for any more. Press Cancel instead and it closes
+      "Saved." line anywhere, in either language. Press Cancel instead and it closes
       too, with nothing written. Neither asks, because both already said what to
       do about the edits.
 - [ ] Open the dialog and change nothing. Cancel is still available and still

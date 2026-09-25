@@ -23,13 +23,13 @@ this pass.
 | FSD conventions                    | 0 problems                                   | pass                           | `bun run arch:layers`           | pre-push, `verify`, CI   |
 | Dependency graph (cycles, orphans) | 0 violations                                 | pass, 250 modules, 849 edges   | `bun run arch:graph`            | pre-push, `verify`, CI   |
 | Dead code (files, exports, deps)   | 0 findings                                   | pass                           | `bun run deadcode`              | pre-push, `verify`, CI   |
-| Translations                       | every key in every language, and none unused | 177 messages, complete in 2    | `bun run i18n:check`            | `verify`, CI             |
+| Translations                       | every key in every language, and none unused | 176 messages, complete in 2    | `bun run i18n:check`            | `verify`, CI             |
 | Requirement traceability           | every requirement cited                      | 77 declared: 71 cited, 6 other | `bun run arch:trace`            | `verify`, CI             |
 | Type coverage                      | ≥ 99%                                        | 99.88% (51 911 of 51 969)      | `bun run types:coverage`        | `verify`, CI             |
 | Dependency vulnerabilities         | **0, at any severity**                       | 0, over 864 packages           | `bun run security:audit`        | pre-push, `verify`, CI   |
 | Test coverage, statements          | ≥ 90%                                        | 97.37%                         | `bun run test:coverage`         | CI                       |
-| Test coverage, branches            | ≥ 90%                                        | 93.67%                         | `bun run test:coverage`         | CI                       |
-| Test coverage, functions           | ≥ 90%                                        | 96.54%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, branches            | ≥ 90%                                        | 93.66%                         | `bun run test:coverage`         | CI                       |
+| Test coverage, functions           | ≥ 90%                                        | 96.53%                         | `bun run test:coverage`         | CI                       |
 | Test coverage, lines               | ≥ 90%                                        | 97.43%                         | `bun run test:coverage`         | CI                       |
 | Test coverage, `model/`            | **100%**                                     | 100%                           | `bun run test:coverage`         | CI                       |
 | Mutation score, `model/`           | ≥ 85%                                        | 93.46%, 66 of 1039 survived    | `bun run test:mutation`         | scheduled CI             |
@@ -246,7 +246,7 @@ path to make a number go up is not an acceptable fix.
 ## Coverage is a floor, not a target
 
 The thresholds are 90% overall and 100% on `model/`. Measured coverage sits at
-97.37% of statements and 93.67% of branches, and that gap is worth naming:
+97.37% of statements and 93.66% of branches, and that gap is worth naming:
 nothing forced it, and chasing it is not free.
 
 100% on `model/` is right. That layer is pure functions with no I/O, and it is
