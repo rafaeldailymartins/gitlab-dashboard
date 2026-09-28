@@ -1,0 +1,72 @@
+# Writes one shields.io endpoint document to the `badges` branch, which is what
+# the README's coverage and mutation badges read. A figure is only knowable
+# after a run, and a badge typed into the README by hand is wrong the first
+# time the figure moves.
+#
+# Its own branch rather than a file on `main`: the ruleset on `main` accepts
+# nothing but a pull request, and a commit per run there would be noise in the
+# history that matters. Netlify builds `main` only, so a push here deploys
+# nothing, and a push made with the workflow's own token starts no workflow.
+#
+# The colour says whether the gate holds — green at or above the floor the
+# suite enforces, red below it — so the badge and the gate cannot disagree.
+
+name: Publish badge
+description: Write a shields.io endpoint badge to the badges branch.
+
+inputs:
+  name:
+    description: File name on the badges branch, without `.json`.
+    required: true
+  label:
+    description: The badge's left-hand text.
+    required: true
+  value:
+    description: A percentage, as a number.
+    required: true
+  floor:
+    description: The percentage the gate enforces.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Publish ${{ inputs.label }} badge
+      shell: bash
+      env:
+        NAME: ${{ inputs.name }}
+        LABEL: ${{ inputs.label }}
+        VALUE: ${{ inputs.value }}
+        FLOOR: ${{ inputs.floor }}
+        TOKEN: ${{ github.token }}
+      run: |
+        remote="https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+        colour=$(awk -v value="$VALUE" -v floor="$FLOOR" 'BEGIN { print (value >= floor) ? "brightgreen" : "red" }')
+        message=$(awk -v value="$VALUE" 'BEGIN { printf "%.1f%%", value }')
+        work="$RUNNER_TEMP/badges"
+
+        # Both workflows write here, so a push can lose a race; it starts again
+        # from the branch as it is now, keeping whatever the other one wrote.
+        for attempt in 1 2 3; do
+          rm -rf "$work"
+          git clone --quiet --depth 1 --branch badges "$remote" "$work" 2>/dev/null ||
+            git init --quiet --initial-branch badges "$work"
+          printf '{"schemaVersion":1,"label":"%s","message":"%s","color":"%s"}\n' \
+            "$LABEL" "$message" "$colour" > "$work/$NAME.json"
+          git -C "$work" add "$NAME.json"
+          if git -C "$work" diff --cached --quiet; then
+            echo "The $LABEL badge already reads $message."
+            exit 0
+          fi
+          git -C "$work" \
+            -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit --quiet --message "chore(badges): $LABEL $message"
+          if git -C "$work" push --quiet "$remote" HEAD:badges; then
+            echo "The $LABEL badge now reads $message."
+            exit 0
+          fi
+          sleep $((attempt * 5))
+        done
+        echo "::error::Could not publish the $LABEL badge after three attempts."
+        exit 1

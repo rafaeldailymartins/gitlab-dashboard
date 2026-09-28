@@ -1,6 +1,7 @@
 # Mutation testing on the model layer. Scheduled rather than blocking: it takes
-# tens of minutes rather than seconds, and its answer changes only when the
-# rules change. A pull request never waits for it; the schedule reports it.
+# minutes rather than seconds — nine on this runner the first time it ran — and
+# its answer changes only when the rules change. A pull request never waits for
+# it; the schedule reports it.
 #
 # Its own workflow, not a job in `ci.yml`, for two reasons. `ci.yml` cancels a
 # run when a newer push arrives, and a push to `main` would cancel this one
@@ -24,13 +25,49 @@ jobs:
   mutation:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    outputs:
+      score: ${{ steps.score.outputs.score }}
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: bun run test:mutation
+      # Stryker's own definition: detected over valid, where a timeout counts
+      # as detected and a mutant no test reaches counts as missed.
+      - name: Mutation score
+        id: score
+        if: ${{ !cancelled() && hashFiles('reports/mutation/report.json') != '' }}
+        run: |
+          bun -e '
+            const { files } = await Bun.file("reports/mutation/report.json").json()
+            const statuses = Object.values(files).flatMap((file) => file.mutants.map((mutant) => mutant.status))
+            const count = (status) => statuses.filter((each) => each === status).length
+            const detected = count("Killed") + count("Timeout")
+            const missed = count("Survived") + count("NoCoverage")
+            const score = ((100 * detected) / (detected + missed)).toFixed(2)
+            await Bun.write(Bun.env.GITHUB_STEP_SUMMARY, `Mutation score: **${score}%** (${detected} of ${detected + missed} detected)\n`)
+            console.log(`score=${score}`)
+          ' >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: mutation-report
           path: reports/mutation/
           retention-days: 30
+
+  # The README's mutation badge. It runs after a failed mutation run too: a
+  # score under the break threshold is the one the badge most needs to show.
+  mutation-badge:
+    needs: mutation
+    if: ${{ !cancelled() && needs.mutation.outputs.score != '' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/publish-badge
+        with:
+          name: mutation
+          label: mutation score
+          value: ${{ needs.mutation.outputs.score }}
+          floor: 85

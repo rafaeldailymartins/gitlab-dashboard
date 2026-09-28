@@ -41,11 +41,14 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    outputs:
+      lines: ${{ steps.summary.outputs.lines }}
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: bun run test:coverage
       - name: Coverage summary
+        id: summary
         if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}
         run: |
           bun -e '
@@ -55,6 +58,7 @@ jobs:
             const table = ["| Coverage | |", "| --- | ---: |", ...rows].join("\n")
             await Bun.write(Bun.env.GITHUB_STEP_SUMMARY, `${table}\n`)
           '
+          echo "lines=$(bun -p 'require("./coverage/coverage-summary.json").total.lines.pct')" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
@@ -113,3 +117,22 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
+
+  # The README's coverage badge, from `main` only. It runs when `test` failed
+  # too, as long as coverage was measured: a figure that fell under the floor is
+  # exactly the one the badge must not keep hiding behind the last good one.
+  coverage-badge:
+    needs: test
+    if: ${{ !cancelled() && needs.test.outputs.lines != '' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/publish-badge
+        with:
+          name: coverage
+          label: coverage
+          value: ${{ needs.test.outputs.lines }}
+          floor: 90
