@@ -16,9 +16,22 @@ import type { Identity } from './identity.mjs'
  *
  * `suffix` does not weaken that and is worth saying out loud, because this is
  * where it could quietly be lost: it is a **constant the function module
- * chooses**, never a value read from the request. `v1/${sub}` and
+ * chooses**, never a value read from the request. `v1/${sub}/teams` and
  * `v1/${sub}/preferences` are both derived from the subject and from nothing a
  * caller sent.
+ *
+ * **A suffix on both documents also makes a collision inexpressible, which is
+ * the part of this that is not tidiness.** The teams suffix used to be empty,
+ * so the key was `v1/${sub}` — and `v1/${sub}` is what
+ * `v1/${'X/preferences'}` reads as when the teams document is asked for. A
+ * subject of `X/preferences` and a subject of `X` composed to the same string,
+ * so one reader could have landed on another's settings. It never could
+ * happen, because `USABLE_SUBJECT` refuses `/` before a subject reaches here —
+ * but it was refused by a regex rather than by the shape, and a regex is a
+ * thing somebody widens. With both documents named, there is no subject and no
+ * suffix that compose to another pair's key at all: reaching `v1/${sub}/teams`
+ * from a different subject would need a document whose suffix is empty, and
+ * neither is.
  *
  * And **nothing happens before the credential is checked**. An unauthenticated
  * request costs one signature verification against a warm key set and no

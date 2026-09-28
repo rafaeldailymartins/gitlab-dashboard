@@ -126,12 +126,25 @@ function reportDuplicates(
 /**
  * The document kind the teams endpoint is built from.
  *
- * `suffix` is empty: this is the reader's document, and the one that was here
- * before there were two. Changing it would move every stored roster.
+ * `suffix` names this document, exactly as the other one names itself. It was
+ * empty for a while — teams were the first document stored and took the
+ * reader's key unqualified — which left the teams key a *prefix* of the
+ * preferences key: a `list({ prefix: `v1/${sub}` })` would have returned both,
+ * counting the reader's teams as a container rather than a document. Nothing
+ * lists by prefix — `DocumentStore` offers `read` and `write` and nothing
+ * else — so it was a trap set and not sprung, and it is gone.
+ *
+ * **It is part of the address, and changing it moves nothing.** A deploy would
+ * start reading a key that is not there, and a missing key is indistinguishable
+ * from a reader who has never saved: no error, no null anybody sees, just an
+ * empty list where a roster was. The same hazard as the region constant in
+ * `blob-store.mts`, by the same mechanism. This one was changed only because
+ * the store was being emptied in the same breath and nobody had stored anything
+ * worth keeping; the next change has to copy first.
  */
 export const TEAMS_DOCUMENT: DocumentKind = {
   empty: EMPTY_DOCUMENT,
   maxBytes: MAX_BODY_BYTES,
   parse: parseDocument,
-  suffix: '',
+  suffix: '/teams',
 }

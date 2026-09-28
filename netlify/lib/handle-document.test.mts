@@ -5,6 +5,7 @@ import type { Identity } from './identity.mjs'
 
 import { memoryDocumentStore } from './document-store.mjs'
 import { ANY_VERSION, handleDocument, VERSION_HEADER } from './handle-document.mjs'
+import { PREFERENCES_DOCUMENT } from './preferences-document.mjs'
 import { MAX_BODY_BYTES, TEAMS_DOCUMENT } from './teams-document.mjs'
 
 const ADA = 'assertion-for-ada'
@@ -344,5 +345,81 @@ describe('what the browser and the endpoint agree to call it', () => {
     })
 
     expect(response.status).toBe(428)
+  })
+})
+/** The store, plus whatever key was last asked of it. */
+function watching(): { keys: string[]; store: DocumentStore } {
+  const keys: string[] = []
+  const inner = memoryDocumentStore()
+
+  return {
+    keys,
+    store: {
+      read: (key) => {
+        keys.push(key)
+
+        return inner.read(key)
+      },
+      write: (key, text, expected) => {
+        keys.push(key)
+
+        return inner.write(key, text, expected)
+      },
+    },
+  }
+}
+
+/**
+ * The key a write actually lands on, and the shape of the key space.
+ *
+ * Everything else in this file exercises the handler through its answers, which
+ * is right — but an answer cannot see a key, so every rule about the key was
+ * asserted in prose and nowhere else. Setting the teams suffix back to `''`
+ * passed the whole suite, including the test next door that proves the two
+ * documents do not overwrite each other: `v1/1` and `v1/1/preferences` are
+ * distinct keys too, so equality was never the property at risk.
+ *
+ * What was at risk is **containment**. With an empty suffix the teams key was a
+ * strict prefix of the preferences key, so a prefix listing would have returned
+ * both and read one reader's teams as a folder holding their settings. And a
+ * subject of `X/preferences` would have composed to exactly the key subject `X`
+ * uses for theirs — refused today only by `USABLE_SUBJECT`, which is a regex
+ * somebody can widen, rather than by the shape of the key space.
+ */
+describe('the key a document is filed under', () => {
+  it.each([
+    ['teams', TEAMS_DOCUMENT, 'v1/1/teams'],
+    ['preferences', PREFERENCES_DOCUMENT, 'v1/1/preferences'],
+  ])('files a reader’s %s under its own name', async (_what, kind, expected) => {
+    const watched = watching()
+
+    await handleDocument(
+      new Request('https://app.example/.netlify/functions/x', {
+        headers: { authorization: `Bearer ${ADA}` },
+      }),
+      { document: kind, store: watched.store, verify },
+    )
+
+    expect(watched.keys).toEqual([expected])
+  })
+
+  it('gives every document a name of its own', () => {
+    for (const kind of [TEAMS_DOCUMENT, PREFERENCES_DOCUMENT]) {
+      expect(kind.suffix).toMatch(/^\/\w+$/u)
+    }
+  })
+
+  /*
+   * The invariant, stated over the set rather than over a pair, so a third
+   * document has to satisfy it too rather than merely be added.
+   */
+  it('leaves no document’s key inside another’s', () => {
+    const suffixes = [TEAMS_DOCUMENT.suffix, PREFERENCES_DOCUMENT.suffix]
+
+    for (const one of suffixes) {
+      const others = suffixes.filter((other) => other !== one)
+
+      expect(others.some((other) => other.startsWith(one) || one.startsWith(other))).toBe(false)
+    }
   })
 })
