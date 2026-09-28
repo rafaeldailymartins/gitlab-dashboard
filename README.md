@@ -15,7 +15,6 @@
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
 ![TanStack](https://img.shields.io/badge/TanStack-Router_%26_Query-FF4154?logo=tanstack)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
-![Vibe coded with Claude Code](https://img.shields.io/badge/Vibe_coded_with-Claude_Code-D97757?logo=claude&logoColor=white)
 
 [🇺🇸 English](README.md) · [🇧🇷 Português](README.pt-BR.md)
 
@@ -33,11 +32,10 @@ their teams. **GitLab Dashboard** was built for exactly that: you sign in with
 your own GitLab account and see those hours aggregated in a dashboard that is
 easy to read, for yourself and for the teams you follow.
 
-🤖 The project was built with **vibe coding** using
-[Claude Code](https://claude.com/claude-code): each change was planned as an
-[OpenSpec](https://github.com/Fission-AI/OpenSpec) proposal and implemented by
-the agent under the rules in [`AGENTS.md`](AGENTS.md), with the quality gates
-below enforced in CI.
+🤖 The project was developed with
+[Claude Code](https://claude.com/claude-code). Each change was planned as an
+[OpenSpec](https://github.com/Fission-AI/OpenSpec) proposal, following the rules
+in [`AGENTS.md`](AGENTS.md), with the quality gates below enforced in CI.
 
 ## 📸 Screenshots
 
