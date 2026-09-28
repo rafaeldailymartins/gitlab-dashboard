@@ -727,8 +727,9 @@ one without reading the reason will reintroduce a bug that is already fixed.
   scope also puts `email` and `groups_direct` in that token, and the `Identity`
   return type is what keeps them from reaching anything else.
 - **The storage key is derived from the verified subject, so IDOR is not
-  expressible.** `v1/${sub}`, where `sub` comes from the signature and from
-  nothing the request carried — no path parameter, no body field, no header. The
+  expressible.** `v1/${sub}/teams` and `v1/${sub}/preferences`, in a store named
+  `readers`, where `sub` comes from the signature and from nothing the request
+  carried — no path parameter, no body field, no header. The
   difference from checking an id against the caller is that there is no check to
   forget: naming another reader's teams is not a request this endpoint can
   refuse, because it is not a request it can represent. A write carries the
@@ -736,6 +737,37 @@ one without reading the reason will reintroduce a bug that is already fixed.
   first write — and one carrying neither is refused **428** rather than
   accepted, because a `PUT` with no precondition is a client that never read,
   and the silent clobber is the failure mode a last-write-wins store has.
+  **The store names the partition and every document names itself**, and both
+  halves of that are corrections. The store was `teams`, which stopped being
+  true the day the reader's settings moved in beside them; it is `readers` now,
+  because the top level of every key is one reader and a name describing the
+  partition cannot go stale when a third document arrives. Not `users` or
+  `accounts`: those claim the store holds an identity, and it holds a subject
+  and nothing else, which is what `Identity` exists to enforce — the documents
+  themselves hold a great deal, and README.md says so. And the teams document's
+  suffix was empty: it was the first thing stored and took the reader's key
+  unqualified, which left the teams key a _prefix_ of the preferences key. A
+  `list({ prefix })` over `v1/${sub}` would have returned both and read one
+  reader's teams as a folder holding their settings, and a subject of
+  `X/preferences` would have composed to exactly the key subject `X` files
+  theirs under. Neither could happen — `DocumentStore` offers only `read` and
+  `write`, and `USABLE_SUBJECT` refuses `/` — but both were refused by a regex
+  and an absent feature rather than by the shape, and both of those are things
+  somebody widens. With every document named there is no subject and no suffix
+  that compose to another pair's key at all.
+  **Changing any of this moves nothing.** A deploy simply starts reading a key
+  that is not there, and a missing key is indistinguishable from a reader who
+  has never saved — no error, no null anybody sees, just an empty screen where
+  a roster was. It is the same hazard as the region, and it was taken here
+  deliberately: the store is being emptied rather than migrated, because nobody
+  had stored anything worth keeping yet. A later change does not have that
+  option, and `docs/qa/release-checklist.md` carries it under rollback.
+  `handle-document.test.mts` pins the key each document lands on and the
+  no-key-inside-another invariant over the set, because the whole of this used
+  to be asserted in prose: setting the suffix back to `''` passed the entire
+  suite, including the test next door that proves the two documents do not
+  overwrite each other — `v1/1` and `v1/1/preferences` are distinct keys too,
+  so equality was never the property at risk.
   **It is not `If-Match` and `If-None-Match`, which is what it was and where
   the semantics come from.** Those never reached the function on a deployed
   site: Netlify's CDN uses the `If-*` headers for its own conditional requests
@@ -837,10 +869,10 @@ one without reading the reason will reintroduce a bug that is already fixed.
   Vite hands a middleware and what a function is called with. The security
   property is unchanged and worth restating, because a refactor is where it could
   quietly be lost: **the suffix is a constant a function module chooses, never a
-  value read from the request.** `v1/${sub}` and `v1/${sub}/preferences` are both
-  derived from a subject the signature established and from nothing a caller
-  sent, so addressing another reader's anything stays inexpressible rather than
-  refused. Duplicating sixty lines of credential handling into a second module
+  value read from the request.** `v1/${sub}/teams` and `v1/${sub}/preferences`
+  are both derived from a subject the signature established and from nothing a
+  caller sent, so addressing another reader's anything stays inexpressible rather
+  than refused. Duplicating sixty lines of credential handling into a second module
   was the alternative and is worse: two copies are two places to fix a rule, and
   the second is the one somebody forgets. `config/vite/api-dev.ts` serves both
   under one store for the same reason the deployed ones share one — a suffix that

@@ -174,13 +174,28 @@ in a test file. `docs/qa/test-plan.md` delegates them here by name.
 ## If it has to be rolled back
 
 A rollback is still Netlify's "publish deploy" on the previous one, and it
-restores the function along with the bundle. Three things now survive it, and
+restores the function along with the bundle. Four things now survive it, and
 each is a different kind of risk.
 
 **The rosters.** Teams live in a site-wide Netlify Blobs store, not a
 deploy-scoped one, precisely so a team does not die with the deploy that wrote
 it. A rollback leaves every reader's teams exactly where they are — which is the
-behaviour you want, and also the thing that makes the next paragraph matter.
+behaviour you want, and also the thing that makes the next two paragraphs
+matter.
+
+**The store name and the key are part of the address too, and they do not
+follow the code either.** `blob-store.mts` names the store and each document
+module names its own suffix, so the documents a rolled-back function looks for
+are the ones that release spelled. Rolling back across the release that renamed
+the store from `teams` to `readers` and gave the teams document the suffix
+`/teams` points the restored function at store `teams`, key `v1/<sub>` — which
+holds nothing, and says so exactly the way an empty region does: no error, no
+null anybody sees, an empty roster and default settings for everybody. For that
+release specifically there is nothing to recover, because the old store was
+emptied deliberately rather than migrated; nobody had saved anything worth
+keeping yet. **That option expires the moment somebody does.** Treat a later
+change to either the store name or a suffix as the region paragraph below
+treats the region: copy first.
 
 **The region is part of the address, and it does not follow the code.**
 `blob-store.mts` pins `us-east-2`, and a site-wide store held anywhere else is
@@ -193,8 +208,8 @@ indistinguishable from a reader who has never saved, so nothing would report it.
 Any change to it needs the documents copied first:
 
 ```bash
-netlify blobs:get teams "v1/<sub>" --region <old> -O teams.json
-netlify blobs:set teams "v1/<sub>" --input teams.json --region <new>
+netlify blobs:get readers "v1/<sub>/teams" --region <old> -O teams.json
+netlify blobs:set readers "v1/<sub>/teams" --input teams.json --region <new>
 ```
 
 and the same for `v1/<sub>/preferences`. Compare the etags across the two

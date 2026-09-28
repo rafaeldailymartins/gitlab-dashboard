@@ -234,8 +234,9 @@ GitLab `id_token`, verified offline against GitLab's published keys with `jose`
 — RS256 named in the call rather than taken from the token, the audience checked
 against this application's own id, and nothing minted more than 150 seconds ago
 accepted, which bounds replay whatever the token claims for its own expiry. The
-storage key is `v1/<sub>`, plus a suffix the function module chooses for its own
-document, built from that verified subject and from nothing the request carried:
+storage keys are `v1/<sub>/teams` and `v1/<sub>/preferences`, in a store named
+`readers` — the suffix a constant the function module chooses for its own
+document — built from that verified subject and from nothing the request carried:
 no field in the body, no value in the address, and no identifier in the route at
 all — so naming somebody else's teams is not expressible rather than merely
 refused. The assertion itself is never stored: it

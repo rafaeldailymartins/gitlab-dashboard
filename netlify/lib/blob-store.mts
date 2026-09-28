@@ -3,9 +3,24 @@ import { getStore } from '@netlify/blobs'
 import type { DocumentStore } from './document-store.mjs'
 
 /**
- * The store name. One blob per reader lives under it, keyed by their subject.
+ * The store name.
+ *
+ * It names the **partition**, not a document: the top level of every key is one
+ * reader — `v1/${sub}/…` — and each reader holds documents under themselves.
+ * A name that describes the partition cannot go stale when a third document
+ * arrives, which is the one test the name this replaces failed. It was
+ * `teams`, chosen when teams were the only thing stored, and it was a lie from
+ * the day the reader's settings moved in beside them.
+ *
+ * "Reader" rather than "user" or "account" because it is the word this
+ * repository uses for this person everywhere, and because the other two would
+ * invite somebody to file a profile or an email beside the documents. The
+ * **key** carries a subject and nothing else — which is what `Identity` exists
+ * to enforce — and the store should not be named in a way that argues for more.
+ * The documents themselves hold plenty: a roster is colleagues' names and
+ * usernames, and README.md says so in as many words.
  */
-const STORE = 'teams'
+const STORE = 'readers'
 
 /**
  * Where the data is held, stated rather than defaulted — and stated as the
@@ -37,16 +52,18 @@ const STORE = 'teams'
 const REGION = 'us-east-2'
 
 /**
- * Teams at rest.
+ * A reader's documents at rest.
  *
  * Site-wide rather than deploy-scoped: a deploy store's contents die with the
- * deploy that wrote them, and a team that vanishes on the next release is worse
- * than one that was never saved.
+ * deploy that wrote them, and a team — or a working schedule — that vanishes on
+ * the next release is worse than one that was never saved.
  *
- * Strongly consistent rather than eventually. The one claim this feature makes
- * is that a team saved on the laptop is there on the phone, and the default
- * would also make the version check below unreliable — a caller could hold a
- * version that is already stale through no fault of its own.
+ * Strongly consistent rather than eventually. What both documents claim is that
+ * what you saved on the laptop is there on the phone, and for the schedule that
+ * is the whole reason it left the device: the same month drew different bars on
+ * two machines belonging to one person. The default would also make the version
+ * check below unreliable — a caller could hold a version that is already stale
+ * through no fault of its own.
  */
 export function blobDocumentStore(): DocumentStore {
   const store = getStore({ consistency: 'strong', name: STORE, region: REGION })
