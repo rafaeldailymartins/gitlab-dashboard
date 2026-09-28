@@ -1,0 +1,36 @@
+# Mutation testing on the model layer. Scheduled rather than blocking: it takes
+# tens of minutes rather than seconds, and its answer changes only when the
+# rules change. A pull request never waits for it; the schedule reports it.
+#
+# Its own workflow, not a job in `ci.yml`, for two reasons. `ci.yml` cancels a
+# run when a newer push arrives, and a push to `main` would cancel this one
+# halfway through. And on GitLab it was `allow_failure` so as not to turn the
+# rest of a pipeline red; alone, a red run is the report — a score under the
+# `break` threshold in `stryker.config.json` fails it, and that failure is what
+# reaches the owner by email.
+
+name: Mutation
+
+on:
+  schedule:
+    # Mondays at 06:00 UTC.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: bun run test:mutation
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: mutation-report
+          path: reports/mutation/
+          retention-days: 30

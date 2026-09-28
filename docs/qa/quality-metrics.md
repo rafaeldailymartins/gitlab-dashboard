@@ -426,7 +426,9 @@ linter — with coverage as the floor that stops whole paths going unexercised.
 - **No `BUN_INSTALL_CACHE_DIR` pointing inside the checkout.** The second
   pipeline died because it did: every dependency was unpacked where
   `prettier --check .` walks, and one of them carries a config Prettier cannot
-  resolve. What is cached is `node_modules/`.
+  resolve. GitLab cached `node_modules/`; GitHub Actions caches Bun's own
+  download cache under the home directory, which is outside the checkout for
+  the same reason.
 - **The shared runner needed no identity validation.** That was the one risk in
   the plan only the account owner could clear, and it did not appear.
 - **Two more pipeline failures were the suite, not the code.** The dev server did
@@ -444,6 +446,19 @@ expands more than three hundred. Mutation testing is kept off the blocking path,
 which is what left
 room inside the 400 compute minutes a month the Free plan allows.
 
+**CI moved to GitHub Actions on 2026-09-28**, with the repository and its whole
+history. The jobs are the same four plus the scheduled mutation run, in
+`.github/workflows/`. Three things changed with the move. The runtimes are the
+deploy's rather than an image's: Bun from `packageManager`, Node from the major
+`netlify.toml` pins, where GitLab ran a floating `oven/bun:1.4` and, for
+Stryker, Debian's Node. The mutation run is in a workflow of its own and
+actually runs — weekly, on Mondays — where on GitLab it waited for a pipeline
+schedule that was never created. And the coverage totals are read from
+`coverage-summary.json` into the job's summary, where GitLab parsed them out of
+the log for its merge-request widget. The minute budget above no longer
+applies: hosted runners on a public repository are not metered. The pipeline
+timings above were measured on GitLab.
+
 - **The acceptance suite runs against the built bundle, not the dev server.**
   It used to share one Vite instance across every browser, which transformed
   modules on demand — so the suite was both slow and worker-bound: Playwright's
@@ -454,8 +469,9 @@ room inside the 400 compute minutes a month the Free plan allows.
   and all three engines: 358s against the dev server at two workers, 128s against
   the build at eight. The ceiling rose rather than vanished — at eight workers the
   WebKit keyboard walk failed once — so the worker count is Playwright's default
-  locally and two in CI, where the runner has two cores. The ceiling is still
-  there: the local chromium run behind this revision took 2.4 minutes at four
+  locally and two in CI, which was the core count of GitLab's runner. The
+  ceiling is still there: the local chromium run behind this revision took 2.4
+  minutes at four
   workers and lost three scenarios to it.
 - **A local run is chromium only; the matrix is CI's job.** A hundred-odd
   scenarios in each of three engines is what a merge deserves, not what a change

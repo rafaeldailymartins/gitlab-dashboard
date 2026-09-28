@@ -10,8 +10,8 @@
   NODE_VERSION = "24"
   # Netlify runs `bun install` before the build command. Without these it would
   # resolve the lockfile again, and it would run the root `prepare` script,
-  # which installs git hooks a build agent has no use for. `.gitlab-ci.yml`
-  # installs with the same two flags, for the same reason.
+  # which installs git hooks a build agent has no use for. CI installs with the
+  # same two flags, for the same reason, in `.github/actions/setup/action.yml`.
   BUN_FLAGS = "--frozen-lockfile --ignore-scripts"
 
 # The part of this app that does not run in the browser: two endpoints over one

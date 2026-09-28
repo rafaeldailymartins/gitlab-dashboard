@@ -38,7 +38,7 @@ export default defineConfig({
       // istanbul instruments the source instead of merging V8 range trees,
       // whose merge step overflows the stack on a suite this size.
       provider: 'istanbul',
-      reporter: ['text', 'html', 'lcov', 'cobertura'],
+      reporter: ['text', 'html', 'lcov', 'json-summary'],
       reportsDirectory: './coverage',
       thresholds: {
         branches: 90,

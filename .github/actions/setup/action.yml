@@ -1,0 +1,37 @@
+# The install every job but `e2e` shares — what `default.before_script` was on
+# GitLab.
+#
+# Bun comes from `packageManager` in package.json and Node from the same major
+# `netlify.toml` pins, so a green run here is a claim about the runtime that
+# deploys rather than about whatever the runner image happened to carry.
+# Node is installed even for jobs that run everything under `bun --bun`: a
+# script that calls a binary with a `node` shebang runs it on Node when Node is
+# on the path, and a runner with a different Node from the deploy's is exactly
+# the drift this is here to remove.
+
+name: Set up Bun and Node
+description: Install the pinned Bun and Node, then the locked dependencies.
+
+runs:
+  using: composite
+  steps:
+    - uses: oven-sh/setup-bun@v2
+
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+
+    # Bun's own download cache, keyed on the lockfile. It lives in the home
+    # directory, outside the checkout, so `prettier --check .` never walks it:
+    # pointing it inside is what killed the second pipeline this project ever
+    # ran, and `docs/qa/quality-metrics.md` records why.
+    - uses: actions/cache@v6
+      with:
+        path: ~/.bun/install/cache
+        key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+
+    # `--ignore-scripts`: the `prepare` script installs git hooks, which a
+    # runner has no use for. Nothing else here has a postinstall that matters.
+    - name: Install dependencies
+      shell: bash
+      run: bun install --frozen-lockfile --ignore-scripts
