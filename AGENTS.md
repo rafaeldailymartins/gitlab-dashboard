@@ -6,7 +6,9 @@ Personal dashboard of hours logged in GitLab issues and merge requests. Read
 **Everything in this repository is written in English** — code, comments, commit
 messages, documentation, Gherkin features. User-facing strings never appear as
 literals; they live in `messages/{en,pt-BR}.json` and reach the UI through
-Paraglide.
+Paraglide. The one exception is `README.pt-BR.md`, the Portuguese translation of
+`README.md`: a change to either README is made to both, screenshots included
+(`docs/screenshots/*.{en,pt-BR}.png`).
 
 ## Commands
 
