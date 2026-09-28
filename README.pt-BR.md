@@ -15,7 +15,6 @@
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
 ![TanStack](https://img.shields.io/badge/TanStack-Router_%26_Query-FF4154?logo=tanstack)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
-![Vibe coding com Claude Code](https://img.shields.io/badge/Vibe_coding_com-Claude_Code-D97757?logo=claude&logoColor=white)
 
 [🇺🇸 English](README.md) · [🇧🇷 Português](README.pt-BR.md)
 
@@ -34,11 +33,11 @@ para isso: você entra com a sua própria conta do GitLab e vê essas horas
 agregadas num dashboard de fácil visualização, para você e para as equipes
 que acompanha.
 
-🤖 O projeto foi feito com **vibe coding** usando o
-[Claude Code](https://claude.com/claude-code): cada mudança foi planejada como
-uma proposta do [OpenSpec](https://github.com/Fission-AI/OpenSpec) e
-implementada pelo agente seguindo as regras do [`AGENTS.md`](AGENTS.md), com os
-gates de qualidade abaixo aplicados no CI.
+🤖 O projeto foi desenvolvido com o
+[Claude Code](https://claude.com/claude-code). Cada mudança foi planejada como
+uma proposta do [OpenSpec](https://github.com/Fission-AI/OpenSpec), seguindo as
+regras do [`AGENTS.md`](AGENTS.md), com os gates de qualidade abaixo aplicados
+no CI.
 
 ## 📸 Screenshots
 
