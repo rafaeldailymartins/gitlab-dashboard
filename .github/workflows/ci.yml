@@ -1,0 +1,115 @@
+# Every gate that guards a merge. Mutation testing reports on a schedule of its
+# own, in `mutation.yml`, so that a push here can never cancel it.
+#
+# Bun runs everything except the two tools that cannot: Stryker's plugin loader
+# and the Playwright run itself, both of which need Node. The Playwright image
+# ships Node and the browsers, so `e2e` runs inside it and installs Bun there;
+# the rest run on the runner through `.github/actions/setup`.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch or pull request makes the run in flight
+# worthless, so it is cancelled rather than left to finish.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Format, lint, ARIA, types, FSD layers, the dependency graph, dead code, type
+  # coverage and `bun audit` — the whole fast gate, in one job, because any one
+  # of them failing means the same thing: do not merge this.
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: bun run verify
+
+  # Coverage thresholds are enforced by the run itself: 90% overall, 100% on the
+  # model layer. The four totals are written to the job's summary, which is
+  # where GitLab used to show them beside the merge request.
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: bun run test:coverage
+      - name: Coverage summary
+        if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}
+        run: |
+          bun -e '
+            const { total } = await Bun.file("coverage/coverage-summary.json").json()
+            const rows = ["statements", "branches", "functions", "lines"]
+              .map((metric) => `| ${metric} | ${total[metric].pct}% |`)
+            const table = ["| Coverage | |", "| --- | ---: |", ...rows].join("\n")
+            await Bun.write(Bun.env.GITHUB_STEP_SUMMARY, `${table}\n`)
+          '
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+
+  # The bundle budget fails the job rather than warning, and the CSP is written
+  # here too, so a policy that cannot be generated stops the run instead of
+  # reaching a deploy.
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: bun run build
+      - run: bun run size
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
+  # Three browsers, axe on every route in both colour schemes, the 375-pixel pass
+  # and the keyboard walk. This is the slow one; it is still blocking, because it
+  # is the only level that sees what a reader sees.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    container:
+      # Keep this tag equal to the installed `@playwright/test`: the image's
+      # browsers are the ones that version was built against.
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+      # Chromium's shared memory is otherwise the container's 64 MB default.
+      options: --ipc=host
+    env:
+      # Any non-empty id will do: the OAuth flow is stubbed, and what this checks
+      # is that the app is configured rather than showing its not-configured
+      # screen. The real id is a Netlify environment variable, not a CI one.
+      VITE_GITLAB_CLIENT_ID: acceptance-suite-client-id
+    steps:
+      - uses: actions/checkout@v7
+      # The same Bun `packageManager` names, installed through the image's own
+      # npm: this image is where Node and the browsers come from, and Bun is the
+      # one thing it lacks.
+      - name: Install Bun
+        run: npm install --global "bun@$(node -p "require('./package.json').packageManager.split('@')[1]")"
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun run test:e2e
+      - uses: actions/upload-artifact@v7
+        if: ${{ failure() }}
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

@@ -186,16 +186,16 @@ procedure, the release checklist and the measured value of every gate.
 
 Everything below fails a build rather than warning:
 
-| Gate                               | Where                                    |
-| ---------------------------------- | ---------------------------------------- |
-| 90% coverage, **100% on `model/`** | `bun run test:coverage`                  |
-| Mutation score ≥ 85% on `model/`   | `bun run test:mutation`, scheduled in CI |
-| Zero dependency vulnerabilities    | `bun audit`                              |
-| 180 kB gzip initial bundle         | `size-limit`                             |
-| Zero axe violations, both themes   | the acceptance suite                     |
-| Layout shift under 0.1             | the acceptance suite                     |
-| No sideways scrolling at 375 px    | the acceptance suite                     |
-| Every requirement cited by a test  | `bun run arch:trace`                     |
+| Gate                               | Where                                 |
+| ---------------------------------- | ------------------------------------- |
+| 90% coverage, **100% on `model/`** | `bun run test:coverage`               |
+| Mutation score ≥ 85% on `model/`   | `bun run test:mutation`, weekly in CI |
+| Zero dependency vulnerabilities    | `bun audit`                           |
+| 180 kB gzip initial bundle         | `size-limit`                          |
+| Zero axe violations, both themes   | the acceptance suite                  |
+| Layout shift under 0.1             | the acceptance suite                  |
+| No sideways scrolling at 375 px    | the acceptance suite                  |
+| Every requirement cited by a test  | `bun run arch:trace`                  |
 
 Two linters, on purpose: ESLint for the rules that need type information or
 understand React and the test libraries, Biome for the ARIA rules — it is what

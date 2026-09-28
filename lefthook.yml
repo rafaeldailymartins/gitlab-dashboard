@@ -1,11 +1,12 @@
 # Git hooks. What runs here is what is cheap enough to run on every commit and
-# every push; the test suites run in CI, where `main` will not take a merge
-# request whose pipeline has not passed.
+# every push; the test suites run in CI, where `main` will not take a pull
+# request whose checks have not passed.
 #
 # The split is deliberate. Formatting, lint, types, architecture, dead code and
-# the audit answer in seconds and catch a mistake before it costs a pipeline.
+# the audit answer in seconds and catch a mistake before it costs a CI run.
 # The unit, component and acceptance suites are minutes, and CI runs them on
-# every push regardless — running them locally too bought nothing but the wait.
+# every pull request regardless — running them locally too bought nothing but
+# the wait.
 #
 # Managed by lefthook — installed by the `prepare` script on `bun install`.
 

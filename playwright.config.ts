@@ -77,8 +77,9 @@ export default defineConfig({
     url: ACCEPTANCE_ORIGIN,
   },
   /**
-   * Two workers in CI, where the runner has two cores. Locally, Playwright's
-   * default — one per two cores.
+   * Two workers in CI: the core count of GitLab's shared runner, where this
+   * suite first went green. GitHub's hosted runner has four; two is the number
+   * with a record behind it. Locally, Playwright's default — one per two cores.
    *
    * The static server raised the ceiling rather than removing it: measured on
    * this machine, all three engines took 358s against the dev server at two
