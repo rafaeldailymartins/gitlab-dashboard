@@ -1,6 +1,6 @@
 <div align="center">
 
-# 📊 GitLab Dashboard
+# <img src="public/favicon.svg" alt="" width="36" height="36" align="absmiddle"> GitLab Dashboard
 
 **The hours you log in GitLab — by day, by month, by project and by team, at a glance.**
 
