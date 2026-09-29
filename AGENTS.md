@@ -1010,6 +1010,12 @@ one without reading the reason will reintroduce a bug that is already fixed.
   `playwright-bdd` with step definitions in `tests/e2e/steps/`, including
   `axe-core` accessibility assertions.
 - `src/**/*.test.ts(x)` — unit and component tests, co-located.
+- `*.properties.test.ts` — property tests with `fast-check`, beside the
+  examples for the same module: a rule stated for every input, checked against a
+  few hundred generated ones, with the smallest failing input printed when one
+  breaks it. Where a rule holds for any answer or any zone — the reconciliation
+  never inventing an entry, a day span never overlapping the next — state it
+  there as well as by example. OpenSSF Scorecard counts them as fuzzing.
 - `netlify/**/*.test.mts` — both document endpoints' rules, in the `functions`
   project: node, no DOM, and no Netlify. The blob store and the identity verifier
   are ports, so these inject an in-memory store and a locally minted key pair
