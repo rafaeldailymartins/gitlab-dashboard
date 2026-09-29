@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { DocumentStore } from './document-store.mjs'
 import type { VerifierOptions } from './identity.mjs'
+import type { StoreName } from './store-name.mjs'
 
 import { documentEndpoint } from './document-endpoint.mjs'
 import { memoryDocumentStore } from './document-store.mjs'
@@ -36,9 +38,75 @@ function asked(): Request {
   return new Request('https://app.example/.netlify/functions/teams')
 }
 
+/** What the platform hands a function on a production deploy. */
+const PRODUCTION = { deploy: { context: 'production' } }
+
 function endpointWith(keys: Discover): (request: Request) => Promise<Response> {
-  return documentEndpoint({ document: TEAMS_DOCUMENT, keys, store: () => store })
+  const endpoint = documentEndpoint({ document: TEAMS_DOCUMENT, keys, store: () => store })
+
+  return (request) => endpoint(request, PRODUCTION)
 }
+
+/** An endpoint that records which store each request was filed under. */
+function recordingEndpoint(): {
+  endpoint: ReturnType<typeof documentEndpoint>
+  named: StoreName[]
+} {
+  const named: StoreName[] = []
+  const factory = (name: StoreName): DocumentStore => {
+    named.push(name)
+
+    return store
+  }
+
+  return {
+    endpoint: documentEndpoint({
+      document: TEAMS_DOCUMENT,
+      keys: () => Promise.resolve(KEYS),
+      store: factory,
+    }),
+    named,
+  }
+}
+
+/*
+ * DELIVERY-1. The platform says which deploy a function belongs to, and that is
+ * the only thing the store's name is taken from. Nothing is asked of a store for
+ * a deploy that cannot say what it is — not even a read.
+ */
+describe('the store a request is filed under', () => {
+  it("files production's requests under production's store", async () => {
+    const { endpoint, named } = recordingEndpoint()
+
+    await endpoint(asked(), PRODUCTION)
+
+    expect(named).toEqual(['readers'])
+  })
+
+  it.each(['branch-deploy', 'deploy-preview'])(
+    "files a %s's requests under homologation's",
+    async (context) => {
+      const { endpoint, named } = recordingEndpoint()
+
+      await endpoint(asked(), { deploy: { context } })
+
+      expect(named).toEqual(['readers-staging'])
+    },
+  )
+
+  it.each([{}, { deploy: {} }, { deploy: { context: 'staging' } }])(
+    'refuses a deploy that cannot say what it is, asking no store: %j',
+    async (invocation) => {
+      const { endpoint, named } = recordingEndpoint()
+
+      const response = await endpoint(asked(), invocation)
+
+      expect(response.status).toBe(503)
+      await expect(response.json()).resolves.toEqual({ error: 'store-unavailable' })
+      expect(named).toEqual([])
+    },
+  )
+})
 
 describe('before the handler is reached', () => {
   it('says identity is unavailable when the build has no application id', async () => {

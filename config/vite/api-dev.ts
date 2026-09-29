@@ -14,9 +14,16 @@ const ENDPOINTS: readonly { document: DocumentKind; path: string }[] = [
   { document: TEAMS_DOCUMENT, path: '/.netlify/functions/teams' },
 ]
 
+/**
+ * The deploy this middleware stands for: a local run, which the endpoint files
+ * under homologation's store. The memory store below ignores the name, so what
+ * this decides is only that a development request never looks like production's.
+ */
+const DEVELOPMENT = { deploy: { context: 'dev' } }
+
 interface Exchange {
   /** The deployed function's own body, with a memory store behind it. */
-  readonly endpoint: (request: Request) => Promise<Response>
+  readonly endpoint: ReturnType<typeof documentEndpoint>
   readonly incoming: IncomingMessage
   readonly outgoing: ServerResponse
   /** The address this endpoint is served at, not the key its document is kept under. */
@@ -103,7 +110,7 @@ async function bodyOf(incoming: IncomingMessage): Promise<string> {
 }
 
 async function respond({ endpoint, incoming, outgoing, path }: Exchange): Promise<void> {
-  const answer = await endpoint(await asRequest(incoming, path))
+  const answer = await endpoint(await asRequest(incoming, path), DEVELOPMENT)
 
   outgoing.writeHead(answer.status, Object.fromEntries(answer.headers))
   outgoing.end(await answer.text())

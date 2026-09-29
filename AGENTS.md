@@ -730,7 +730,8 @@ one without reading the reason will reintroduce a bug that is already fixed.
   return type is what keeps them from reaching anything else.
 - **The storage key is derived from the verified subject, so IDOR is not
   expressible.** `v1/${sub}/teams` and `v1/${sub}/preferences`, in a store named
-  `readers`, where `sub` comes from the signature and from nothing the request
+  `readers` — production's; every other deploy's is `readers-staging`, below —
+  where `sub` comes from the signature and from nothing the request
   carried — no path parameter, no body field, no header. The
   difference from checking an id against the caller is that there is no check to
   forget: naming another reader's teams is not a request this endpoint can
@@ -785,6 +786,30 @@ one without reading the reason will reintroduce a bug that is already fixed.
   the same reason: those rules are the part worth testing, and the acceptance
   suite serves a static `dist/` with `vite preview`, which runs no function — so
   the `functions` Vitest project is the only place they are proved.
+- **The store follows the deploy, and a deploy that cannot say which it is gets
+  none.** `netlify/lib/store-name.mts` (DELIVERY-1): `production` files readers'
+  documents under `readers`; `branch-deploy`, `deploy-preview` and `dev` under
+  `readers-staging`; anything else answers `503 store-unavailable` before a key
+  is fetched or a store is asked. Homologation is where something broken is tried
+  on purpose, and a roster is a list of colleagues, so the two must not be able
+  to reach each other's documents — before this, every preview wrote to
+  production's store.
+  The context comes from the function's second argument,
+  `context.deploy.context`, because there is nothing else at run time: `CONTEXT`
+  is a build-time variable, and a function is given only `URL`, `SITE_NAME` and
+  `SITE_ID`. A per-context variable set in the Netlify UI was the alternative,
+  and it is a second place the rule lives, silent when missing.
+  **Refusing is the point, not a gap.** Defaulting to production lets a misread
+  homologation deploy write over readers' documents in silence; defaulting to
+  homologation shows every reader in production an empty list of teams they did
+  make. A refusal is loud both ways, and the release checklist reads
+  production's teams straight after a deploy, which is where a value the
+  platform changed would show.
+  `readers` keeps its name for the reason the key paragraph above gives:
+  changing it moves nothing. And a bundle from before this names `readers` on
+  every deploy, so reverting it onto `staging` is homologation writing to
+  production — `docs/qa/release-checklist.md` says to turn staging's branch
+  deploys off first.
 - **The OAuth scope is `read_api openid`, and the deployment order is
   load-bearing.** Tick `openid` on the GitLab OAuth application **before**
   deploying the bundle that asks for it; the other order fails every sign-in with
@@ -955,7 +980,15 @@ one without reading the reason will reintroduce a bug that is already fixed.
   context would keep the old language. `LocaleProvider` keys its subtree on the
   locale to force the whole thing to render again; anything whose state must
   survive a language switch belongs outside it.
-- **Commits**: Conventional Commits, enforced by commitlint on commit-msg.
+- **Commits**: Conventional Commits, enforced by commitlint on commit-msg and
+  again in CI on every commit a pull request brings — the release notes are
+  built from them.
+- **Branches and pull requests**: `CONTRIBUTING.md` is the flow, and an agent
+  follows it too. A change branches from `staging` and its pull request goes
+  **into `staging`**; only `staging` (a promotion) and `hotfix/*` may open one
+  into `main`, and the `branch-policy` check refuses anything else. Merge
+  commits only. Every merge into `main` is a tagged release computed from the
+  commits, so there is no version to bump anywhere by hand.
 
 ## Tests
 

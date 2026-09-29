@@ -1,0 +1,52 @@
+# How a merge into `main` becomes a version and its notes (DELIVERY-3). Read by
+# git-cliff in the `release` job of `.github/workflows/ci.yml`, which publishes
+# what this renders as a GitHub Release. There is no CHANGELOG.md: the releases
+# are the changelog, and a file here would be a second copy to fall behind.
+
+[changelog]
+# The release's title is its version, so the body starts at the first group.
+header = ""
+# Groups sort by the hidden number in front of each name, then lose it.
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim }}
+{% for commit in commits %}
+- {% if commit.scope %}**{{ commit.scope }}:** {% endif %}\
+{% if commit.breaking %}**breaking:** {% endif %}\
+{{ commit.message | upper_first }} \
+([{{ commit.id | truncate(length=7, end="") }}](https://github.com/rafaeldailymartins/gitlab-dashboard/commit/{{ commit.id }}))\
+{% endfor %}
+{% endfor %}
+"""
+footer = ""
+trim = true
+
+[git]
+conventional_commits = true
+# Merge commits are not conventional and carry nothing the notes need — the
+# commits they merge are listed on their own. Anything else that is not
+# conventional never reached `main`: the `commit-messages` check refuses it.
+filter_unconventional = true
+split_commits = false
+commit_parsers = [
+  { message = "^feat", group = "<!-- 0 -->Features" },
+  { message = "^fix", group = "<!-- 1 -->Fixes" },
+  { message = "^perf", group = "<!-- 2 -->Performance" },
+  { message = "^refactor", group = "<!-- 3 -->Refactoring" },
+  { message = "^docs", group = "<!-- 4 -->Documentation" },
+  { message = "^test", group = "<!-- 5 -->Tests" },
+  { message = "^(build|ci)", group = "<!-- 6 -->Build and CI" },
+  { message = "^(chore|style|revert)", group = "<!-- 7 -->Chores" },
+]
+# A breaking commit is listed whatever its type, so it can never be dropped by a
+# parser that skips its group.
+protect_breaking_commits = true
+tag_pattern = "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+sort_commits = "oldest"
+
+# SemVer from the commits: breaking → major, `feat` → minor, anything else →
+# patch. There is deliberately no `no_increment_regex`: a promotion of `docs`,
+# `test`, `ci` or `chore` commits is still a release, and a patch.
+[bump]
+features_always_bump_minor = true
+breaking_always_bump_major = true

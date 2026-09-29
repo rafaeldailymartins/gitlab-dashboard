@@ -26,9 +26,11 @@ context: |
   preflight. Both authenticate from an `openid` id_token verified offline
   against JWKS and from nothing else, and both derive their storage key from the
   verified subject rather than from anything the request carried:
-  `v1/${sub}/teams` and `v1/${sub}/preferences`, in a store named `readers`,
-  the suffix being a constant the function module chooses. Deployed to
-  Netlify: static files plus those functions. Tick
+  `v1/${sub}/teams` and `v1/${sub}/preferences`, in a store named `readers`
+  in production and `readers-staging` on every other deploy, the suffix being
+  a constant the function module chooses. Deployed to Netlify: static files
+  plus those functions; `main` is production, and `staging` is homologation at
+  a fixed address (see CONTRIBUTING.md). Tick
   `openid` on the GitLab OAuth application before deploying a bundle that asks
   for it, or every sign-in fails with `invalid_scope`.
 

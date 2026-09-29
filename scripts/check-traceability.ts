@@ -35,6 +35,18 @@ const UNCITED_BY_DESIGN = new Map([
     'The claim is about how many exchanges the provider is asked for, which no screen shows: a burst of callers must cost one token call and consume one rotating credential. `src/entities/sessions/api/session-manager.test.ts` proves it by counting them.',
   ],
   [
+    'DELIVERY-1',
+    "Which store a deploy files a reader's documents under is invisible to a browser, and the acceptance suite serves a static `dist/` that runs no function at all. `netlify/lib/store-name.test.mts` pins every deploy context to its store, and `netlify/lib/document-endpoint.test.mts` proves a deploy that cannot say what it is is refused without a store being asked for.",
+  ],
+  [
+    'DELIVERY-2',
+    'The paths into production are repository rules, not application behaviour. The `branch-policy` job in `.github/workflows/ci.yml` fails a pull request into `main` from anything but `staging` or `hotfix/*` of this repository, and the rulesets on `main` and `staging` make it and the other checks required.',
+  ],
+  [
+    'DELIVERY-3',
+    'A version is computed after the merge, from commit messages, by the `release` job in `.github/workflows/ci.yml` under the rules in `cliff.toml`; the `commit-messages` job fails a pull request carrying a message those rules could not read. No screen shows a tag.',
+  ],
+  [
     // This entry used to claim a lint rule that does not exist. Half of the
     // requirement is now a real gate; the other half is a review matter, and
     // saying so is better than crediting a check nobody wrote.

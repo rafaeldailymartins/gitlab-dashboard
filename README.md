@@ -233,17 +233,27 @@ measured value of every gate.
 ## ☁️ Deployment
 
 The app deploys to [Netlify](https://www.netlify.com/) as static files plus the
-two functions in `netlify/functions/`, from `main`, with a deploy preview for
-every pull request.
+two functions in `netlify/functions/`. Production is built from `main`;
+homologation from `staging`, at
+[staging--gitlabdashboard.netlify.app](https://staging--gitlabdashboard.netlify.app/),
+with teams and schedules of its own; and every pull request gets a deploy
+preview.
 
-1. Set `VITE_GITLAB_CLIENT_ID` in the site's environment variables — the
-   functions read the same one.
-2. Add the deployed origin's `/auth/callback` to the OAuth application's
+1. Set `VITE_GITLAB_CLIENT_ID` in the site's environment variables, for every
+   deploy context — the functions read the same one.
+2. Add production's and staging's `/auth/callback` to the OAuth application's
    redirect URIs.
 3. Tick `openid` on the application before the first deploy that asks for it.
 
 Those three fail at sign-in rather than at build time.
 [`docs/qa/release-checklist.md`](docs/qa/release-checklist.md) is the full pass.
+
+## 🤝 Contributing
+
+Changes go into `staging` by pull request, and `staging` is promoted to `main`;
+every merge into `main` is a tagged release whose notes come from its commits.
+[`CONTRIBUTING.md`](CONTRIBUTING.md) has the environments, the branch names,
+hotfixes, promotion and the commit convention.
 
 ## 👨‍💻 Author
 
