@@ -264,6 +264,18 @@ o `main`; cada merge no `main` é uma release com tag, com notas geradas dos
 commits. O [`CONTRIBUTING.md`](CONTRIBUTING.md) (em inglês) descreve os
 ambientes, os nomes de branch, os hotfixes, a promoção e a convenção de commits.
 
+## 📄 Licença
+
+[PolyForm Noncommercial 1.0.0](LICENSE.md) (em inglês). Você pode ler, rodar,
+modificar e compartilhar este código para qualquer fim não comercial: uso
+pessoal, estudo, pesquisa, projeto de hobby, ou uso por uma entidade
+beneficente, uma instituição de ensino ou um órgão público. Qualquer uso
+comercial precisa de uma licença à parte do autor; entre em contato pelo
+[GitHub](https://github.com/rafaeldailymartins).
+
+Isso faz do projeto _source-available_, e não open source no sentido da OSI,
+cuja definição não permite que uma licença exclua o uso comercial.
+
 ## 👨‍💻 Autor
 
 Criado e mantido por:

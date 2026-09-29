@@ -118,6 +118,14 @@ and CI runs all of it. CodeQL analyses the code and the workflows on every pull
 request too; its findings appear on the pull request and under Security, without
 blocking the merge.
 
+## Licence of contributions
+
+The project is under the [PolyForm Noncommercial 1.0.0](LICENSE.md) licence,
+and its author may later offer it under other terms as well, commercial ones
+included. By opening a pull request you agree that your contribution may be
+distributed under the project's licence and under any licence the author
+chooses later, and you confirm that it is yours to give on those terms.
+
 ## Commit messages
 
 [Conventional Commits](https://www.conventionalcommits.org/), checked by

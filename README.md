@@ -258,6 +258,17 @@ every merge into `main` is a tagged release whose notes come from its commits.
 [`CONTRIBUTING.md`](CONTRIBUTING.md) has the environments, the branch names,
 hotfixes, promotion and the commit convention.
 
+## 📄 License
+
+[PolyForm Noncommercial 1.0.0](LICENSE.md). You may read, run, change and share
+this code for any noncommercial purpose: personal use, study, research, a hobby
+project, or use by a charity, a school or a public body. Any commercial use
+needs a separate licence from the author; get in touch through
+[GitHub](https://github.com/rafaeldailymartins).
+
+That makes the project source-available rather than open source in the OSI
+sense, whose definition does not allow a licence to exclude commercial use.
+
 ## 👨‍💻 Author
 
 Created and maintained by:
