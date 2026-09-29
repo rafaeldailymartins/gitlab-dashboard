@@ -174,6 +174,10 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+      # The attestation is signed with a certificate Sigstore issues against
+      # this job's OIDC identity, and stored with the repository's attestations.
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -190,10 +194,9 @@ jobs:
           args: --unreleased --bump --strip header
         env:
           OUTPUT: ${{ runner.temp }}/release-notes.md
-      - name: Publish the release
+      - name: Decide whether this is a release
+        id: decide
         env:
-          GH_TOKEN: ${{ github.token }}
-          NOTES: ${{ runner.temp }}/release-notes.md
           VERSION: ${{ steps.cliff.outputs.version }}
         run: |
           if [ -z "$VERSION" ] || [ "$VERSION" = null ]; then
@@ -204,5 +207,35 @@ jobs:
             echo "$VERSION is already released."
             exit 0
           fi
-          gh release create "$VERSION" --target "$GITHUB_SHA" --title "$VERSION" --notes-file "$NOTES"
+          echo "archive=gitlab-dashboard-$VERSION.tar.gz" >> "$GITHUB_OUTPUT"
+      # Every release carries the source it was cut from and a signed statement
+      # of where that archive came from: this repository, this workflow, this
+      # commit. `gh attestation verify <archive> --repo <this repository>`
+      # checks it. It is the source and not `dist/` because the build that
+      # runs in production is Netlify's, from this same commit, with a client
+      # id this workflow never sees; a bundle built here would be a different
+      # thing wearing the release's name.
+      - name: Archive the source
+        if: steps.decide.outputs.archive
+        env:
+          ARCHIVE: ${{ steps.decide.outputs.archive }}
+          VERSION: ${{ steps.cliff.outputs.version }}
+        run: git archive --format=tar.gz --prefix="gitlab-dashboard-$VERSION/" --output="$RUNNER_TEMP/$ARCHIVE" "$GITHUB_SHA"
+      - name: Attest where the archive came from
+        id: attest
+        if: steps.decide.outputs.archive
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ runner.temp }}/${{ steps.decide.outputs.archive }}
+      - name: Publish the release
+        if: steps.decide.outputs.archive
+        env:
+          ARCHIVE: ${{ runner.temp }}/${{ steps.decide.outputs.archive }}
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+          GH_TOKEN: ${{ github.token }}
+          NOTES: ${{ runner.temp }}/release-notes.md
+          VERSION: ${{ steps.cliff.outputs.version }}
+        run: |
+          cp "$BUNDLE" "$ARCHIVE.sigstore.json"
+          gh release create "$VERSION" --target "$GITHUB_SHA" --title "$VERSION" --notes-file "$NOTES" "$ARCHIVE" "$ARCHIVE.sigstore.json"
           echo "Released [$VERSION]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$VERSION)." >> "$GITHUB_STEP_SUMMARY"
