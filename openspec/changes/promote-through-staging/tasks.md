@@ -6,11 +6,11 @@ time.
 
 ## 1. Baseline
 
-- [ ] 1.1 **(owner)** Release `main` as it stands as `v2.0.0`:
+- [x] 1.1 **(owner)** Release `main` as it stands as `v2.0.0`:
       `gh release create v2.0.0 --target <main sha>` with a note saying it is the
       baseline everything before tagged releases is folded into. Verify:
       `gh release view v2.0.0` shows the tag on that commit
-- [ ] 1.2 **(owner)** Create `staging` from `main` and push it. Branch deploys
+- [x] 1.2 **(owner)** Create `staging` from `main` and push it. Branch deploys
       stay off until 6.2, so nothing deploys from it yet — the old bundle names
       `readers` unconditionally and must not run there. Verify:
       `git ls-remote --heads origin staging`
@@ -55,7 +55,7 @@ time.
       `commitlint.config.js` over `base..head` (design § 5). Verify:
       `bun commitlint --from origin/staging --to HEAD` passes on this branch and
       fails on a scratch commit whose message is `fixed stuff`
-- [ ] 4.4 `cliff.toml` at the root, with the parsers, groups, merge-commit skip,
+- [x] 4.4 `cliff.toml` at the root, with the parsers, groups, merge-commit skip,
       tag pattern and `[bump]` rules of design § 4. Verify, once `v2.0.0` exists:
       `git cliff --bumped-version` answers `v2.1.0`, and
       `git cliff --unreleased --tag v2.1.0` lists this change's commits by type
@@ -86,7 +86,7 @@ time.
 - [x] 5.5 `README.md` and `README.pt-BR.md`, in step: a short Contributing
       section, and the staging address in the deployment section
 - [x] 5.6 `openspec/config.yaml`: the context names both stores
-- [ ] 5.7 Every gate before the pull request. Gate:
+- [x] 5.7 Every gate before the pull request. Gate:
       `bun run verify && bun run test`
 
 ## 6. Delivered through staging
