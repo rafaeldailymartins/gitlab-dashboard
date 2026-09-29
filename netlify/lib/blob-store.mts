@@ -1,16 +1,19 @@
 import { getStore } from '@netlify/blobs'
 
 import type { DocumentStore } from './document-store.mjs'
+import type { StoreName } from './store-name.mjs'
 
-/**
- * The store name.
+/*
+ * The store's name is not decided here. It depends on which deploy is asking,
+ * and `store-name.mts` holds that rule and its reasons — including why
+ * production's must never change.
  *
- * It names the **partition**, not a document: the top level of every key is one
- * reader — `v1/${sub}/…` — and each reader holds documents under themselves.
- * A name that describes the partition cannot go stale when a third document
- * arrives, which is the one test the name this replaces failed. It was
- * `teams`, chosen when teams were the only thing stored, and it was a lie from
- * the day the reader's settings moved in beside them.
+ * What the name says holds for both. It names the **partition**, not a
+ * document: the top level of every key is one reader — `v1/${sub}/…` — and each
+ * reader holds documents under themselves. A name that describes the partition
+ * cannot go stale when a third document arrives, which is the one test the name
+ * before it failed: `teams`, chosen when teams were the only thing stored, and a
+ * lie from the day the reader's settings moved in beside them.
  *
  * "Reader" rather than "user" or "account" because it is the word this
  * repository uses for this person everywhere, and because the other two would
@@ -20,7 +23,6 @@ import type { DocumentStore } from './document-store.mjs'
  * The documents themselves hold plenty: a roster is colleagues' names and
  * usernames, and README.md says so in as many words.
  */
-const STORE = 'readers'
 
 /**
  * Where the data is held, stated rather than defaulted — and stated as the
@@ -65,8 +67,8 @@ const REGION = 'us-east-2'
  * check below unreliable — a caller could hold a version that is already stale
  * through no fault of its own.
  */
-export function blobDocumentStore(): DocumentStore {
-  const store = getStore({ consistency: 'strong', name: STORE, region: REGION })
+export function blobDocumentStore(name: StoreName): DocumentStore {
+  const store = getStore({ consistency: 'strong', name, region: REGION })
 
   return {
     async read(key) {
