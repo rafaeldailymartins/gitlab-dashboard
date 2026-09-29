@@ -1,6 +1,7 @@
 {
   "name": "gitlab-dashboard",
   "private": true,
+  "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
   "description": "Personal dashboard of hours logged in GitLab issues and merge requests.",
   "engines": {

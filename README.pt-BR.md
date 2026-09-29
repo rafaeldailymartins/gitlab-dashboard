@@ -7,6 +7,7 @@
 [![CI](https://github.com/rafaeldailymartins/gitlab-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaeldailymartins/gitlab-dashboard/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frafaeldailymartins%2Fgitlab-dashboard%2Fbadges%2Fcoverage.json)](https://github.com/rafaeldailymartins/gitlab-dashboard/actions/workflows/ci.yml)
 [![Mutation score](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frafaeldailymartins%2Fgitlab-dashboard%2Fbadges%2Fmutation.json)](https://github.com/rafaeldailymartins/gitlab-dashboard/actions/workflows/mutation.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/rafaeldailymartins/gitlab-dashboard/badge)](https://scorecard.dev/viewer/?uri=github.com/rafaeldailymartins/gitlab-dashboard)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/13bdc7be-eee4-42a8-8a0c-33eabff4915a/deploy-status)](https://gitlabdashboard.netlify.app/)
 
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
@@ -196,6 +197,7 @@ menos os testes de mutação, que rodam toda semana:
 | 90% de cobertura, **100% em `model/`** | `bun run test:coverage`                |
 | Score de mutação ≥ 85% em `model/`     | `bun run test:mutation`, semanal no CI |
 | Zero vulnerabilidades nas dependências | `bun audit`                            |
+| Nenhum pacote vulnerável novo          | dependency review, sobre o `bun.lock`  |
 | Bundle inicial de até 180 kB gzip      | `size-limit`                           |
 | Zero violações do axe, nos dois temas  | a suíte de aceitação                   |
 | Layout shift abaixo de 0,1             | a suíte de aceitação                   |
@@ -263,6 +265,18 @@ As mudanças entram no `staging` por pull request, e o `staging` é promovido pa
 o `main`; cada merge no `main` é uma release com tag, com notas geradas dos
 commits. O [`CONTRIBUTING.md`](CONTRIBUTING.md) (em inglês) descreve os
 ambientes, os nomes de branch, os hotfixes, a promoção e a convenção de commits.
+
+## 📄 Licença
+
+[PolyForm Noncommercial 1.0.0](LICENSE.md) (em inglês). Você pode ler, rodar,
+modificar e compartilhar este código para qualquer fim não comercial: uso
+pessoal, estudo, pesquisa, projeto de hobby, ou uso por uma entidade
+beneficente, uma instituição de ensino ou um órgão público. Qualquer uso
+comercial precisa de uma licença à parte do autor; entre em contato pelo
+[GitHub](https://github.com/rafaeldailymartins).
+
+Isso faz do projeto _source-available_, e não open source no sentido da OSI,
+cuja definição não permite que uma licença exclua o uso comercial.
 
 ## 👨‍💻 Autor
 

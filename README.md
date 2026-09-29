@@ -7,6 +7,7 @@
 [![CI](https://github.com/rafaeldailymartins/gitlab-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaeldailymartins/gitlab-dashboard/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frafaeldailymartins%2Fgitlab-dashboard%2Fbadges%2Fcoverage.json)](https://github.com/rafaeldailymartins/gitlab-dashboard/actions/workflows/ci.yml)
 [![Mutation score](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frafaeldailymartins%2Fgitlab-dashboard%2Fbadges%2Fmutation.json)](https://github.com/rafaeldailymartins/gitlab-dashboard/actions/workflows/mutation.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/rafaeldailymartins/gitlab-dashboard/badge)](https://scorecard.dev/viewer/?uri=github.com/rafaeldailymartins/gitlab-dashboard)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/13bdc7be-eee4-42a8-8a0c-33eabff4915a/deploy-status)](https://gitlabdashboard.netlify.app/)
 
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
@@ -190,6 +191,7 @@ except mutation testing, which runs weekly:
 | 90% coverage, **100% on `model/`** | `bun run test:coverage`               |
 | Mutation score ≥ 85% on `model/`   | `bun run test:mutation`, weekly in CI |
 | Zero dependency vulnerabilities    | `bun audit`                           |
+| No new vulnerable package, at all  | dependency review, over `bun.lock`    |
 | 180 kB gzip initial bundle         | `size-limit`                          |
 | Zero axe violations, both themes   | the acceptance suite                  |
 | Layout shift under 0.1             | the acceptance suite                  |
@@ -257,6 +259,17 @@ Changes go into `staging` by pull request, and `staging` is promoted to `main`;
 every merge into `main` is a tagged release whose notes come from its commits.
 [`CONTRIBUTING.md`](CONTRIBUTING.md) has the environments, the branch names,
 hotfixes, promotion and the commit convention.
+
+## 📄 License
+
+[PolyForm Noncommercial 1.0.0](LICENSE.md). You may read, run, change and share
+this code for any noncommercial purpose: personal use, study, research, a hobby
+project, or use by a charity, a school or a public body. Any commercial use
+needs a separate licence from the author; get in touch through
+[GitHub](https://github.com/rafaeldailymartins).
+
+That makes the project source-available rather than open source in the OSI
+sense, whose definition does not allow a licence to exclude commercial use.
 
 ## 👨‍💻 Author
 
