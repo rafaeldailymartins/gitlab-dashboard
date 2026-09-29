@@ -87,12 +87,36 @@ commits `staging` carries would make the next promotion propose them again.
 promotions' own merge commits, they carry no content, and nothing needs them
 back.
 
+Auto-merge is on, so a pull request can be armed to merge itself the moment its
+checks pass:
+
+```bash
+gh pr merge <number> --auto --merge
+```
+
+The head branch is deleted after the merge. `staging` and `main` never are: the
+rulesets forbid deleting them.
+
+## Dependencies
+
+- **Dependabot** opens pull requests into `staging` every Monday, one per group:
+  `chore(deps): …` for runtime packages, `chore(deps-dev): …` for tooling and
+  `ci(deps): …` for GitHub Actions. They go through the same checks and reach
+  production with the next promotion. `.github/dependabot.yml` has the rules.
+- **`bun audit` runs every day** on `main` (the `Audit` workflow), because
+  advisories are published between pull requests and Dependabot cannot raise
+  security updates for Bun. A red run is a new advisory against a locked
+  package: fix it on a branch into `staging`, or as a hotfix if it cannot wait.
+- Found a vulnerability in the app itself? `SECURITY.md` says how to report it.
+
 ## Checks
 
 Every pull request runs `verify`, `test`, `build`, `e2e` and `commit-messages`;
 one into `main` also needs `branch-policy`. Run `bun run verify && bun run test`
 before you open it — the git hooks run part of that on every commit and push,
-and CI runs all of it.
+and CI runs all of it. CodeQL analyses the code and the workflows on every pull
+request too; its findings appear on the pull request and under Security, without
+blocking the merge.
 
 ## Commit messages
 

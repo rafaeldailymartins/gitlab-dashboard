@@ -208,6 +208,9 @@ de release e o valor medido de cada gate (em inglês).
 
 ## 🔒 Segurança e privacidade
 
+Encontrou uma vulnerabilidade? Reporte de forma privada, como descreve o
+[`SECURITY.md`](SECURITY.md) (em inglês), e não numa issue pública.
+
 - **Zero vulnerabilidades conhecidas, de qualquer severidade.** Uma dependência
   com um alerta sem correção não entra: o Lighthouse CI não é usado porque o
   `@lhci/cli` traz `puppeteer` → `extract-zip`, `tmp` e `uuid` vulneráveis (o

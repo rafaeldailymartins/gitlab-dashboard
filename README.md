@@ -202,6 +202,9 @@ measured value of every gate.
 
 ## 🔒 Security and privacy
 
+Found a vulnerability? Please report it privately, as [`SECURITY.md`](SECURITY.md)
+describes, rather than in a public issue.
+
 - **Zero known vulnerabilities, at any severity.** A dependency with an
   unfixable advisory does not come in: Lighthouse CI is not used because
   `@lhci/cli` pulls in vulnerable `puppeteer` → `extract-zip`, `tmp` and `uuid`
