@@ -113,6 +113,9 @@ rulesets forbid deleting them.
   on every push to `staging` and `main`. That is what lets Dependabot alerts
   see a transitive advisory, and what `dependency-review` compares a pull
   request against.
+- **OpenSSF Scorecard** scores how the repository is kept, weekly and after
+  every release (`scorecard.yml`). Its findings are under Security → Code
+  scanning, beside CodeQL's.
 - Found a vulnerability in the app itself? `SECURITY.md` says how to report it.
 
 ## Checks

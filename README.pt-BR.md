@@ -7,6 +7,7 @@
 [![CI](https://github.com/rafaeldailymartins/gitlab-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaeldailymartins/gitlab-dashboard/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frafaeldailymartins%2Fgitlab-dashboard%2Fbadges%2Fcoverage.json)](https://github.com/rafaeldailymartins/gitlab-dashboard/actions/workflows/ci.yml)
 [![Mutation score](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frafaeldailymartins%2Fgitlab-dashboard%2Fbadges%2Fmutation.json)](https://github.com/rafaeldailymartins/gitlab-dashboard/actions/workflows/mutation.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/rafaeldailymartins/gitlab-dashboard/badge)](https://scorecard.dev/viewer/?uri=github.com/rafaeldailymartins/gitlab-dashboard)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/13bdc7be-eee4-42a8-8a0c-33eabff4915a/deploy-status)](https://gitlabdashboard.netlify.app/)
 
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
