@@ -1,0 +1,52 @@
+# OpenSSF Scorecard: how this repository's supply chain is kept — pinned
+# dependencies, token permissions, branch rules, dependency updates, and the
+# rest of its checks. The findings land under Security → Code scanning, and the
+# score is published for the badge in the README.
+#
+# Scorecard only reads the default branch, so this runs on `main`: after every
+# release, and weekly, because some of what it measures (maintenance, advisories
+# against the actions used) changes without a commit.
+#
+# `publish_results` holds the workflow to a shape Scorecard can verify came from
+# this repository: no top-level `env` or `defaults`, no containers, and only the
+# actions below. `./.github/actions/setup` is not one of them, so do not add it.
+
+name: Scorecard
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Mondays at 07:00 in São Paulo, after the Dependabot run.
+    - cron: '0 10 * * 1'
+  # Scorecard's Branch-Protection check reads the repository's rules.
+  branch_protection_rule:
+
+permissions: read-all
+
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # To upload the findings to code scanning.
+      security-events: write
+      # To sign the published result, which is how the badge knows it is ours.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+      - uses: actions/upload-artifact@v7
+        with:
+          name: scorecard
+          path: results.sarif
+          retention-days: 5
+      - uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results.sarif

@@ -1,0 +1,59 @@
+# Records each Netlify deploy of `main` as a GitHub deployment, so the
+# repository shows what production is running, since when, and at which
+# address.
+#
+# Netlify reports deploy previews to GitHub and nothing else: it has no
+# notification that creates a deployment, and it posts no status for a branch
+# deploy or for production. So this asks the site itself. The Netlify build
+# writes the commit it built to `/commit.txt` (`netlify.toml`), and the job waits
+# until production serves this push's commit. The `environment` key is what
+# makes the job a deployment: GitHub marks it in progress while the job runs,
+# and successful or failed with it.
+#
+# `staging` is not recorded, because nothing outside Netlify can see it: every
+# deploy but production sits behind Netlify's own access protection, and
+# `staging--gitlabdashboard.netlify.app` answers a request from a runner with
+# 401 and a login page. A job waiting on it would fail after twenty minutes on
+# every push, so it would record a failure for a deploy that went fine.
+#
+# A job that finds a newer commit served has been overtaken by a later push,
+# which is a deploy that happened rather than one that failed, so it succeeds;
+# the later push's own job marks it inactive. One that finds nothing it knows
+# for twenty minutes fails, and the Netlify deploy log says why.
+
+name: Deployments
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  netlify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: production
+      url: https://gitlabdashboard.netlify.app
+    steps:
+      - name: Wait for Netlify to publish this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SITE: https://gitlabdashboard.netlify.app
+        run: |
+          for attempt in $(seq 60); do
+            served=$(curl --fail --silent --show-error --header 'Cache-Control: no-cache' "$SITE/commit.txt?attempt=$attempt" || true)
+            if [ "$served" = "$GITHUB_SHA" ]; then
+              echo "$SITE is serving $GITHUB_SHA."
+              exit 0
+            fi
+            if [[ "$served" =~ ^[0-9a-f]{40}$ ]] && [ "$(gh api "repos/$GITHUB_REPOSITORY/compare/$GITHUB_SHA...$served" --jq .status)" = ahead ]; then
+              echo "$SITE is already serving $served, which comes after $GITHUB_SHA."
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::$SITE did not serve $GITHUB_SHA within twenty minutes. The Netlify deploy log for this commit says why."
+          exit 1

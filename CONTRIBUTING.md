@@ -23,6 +23,12 @@ a pull request that cannot merge rather than a surprise in production.
   on the OAuth application, exactly. Use a preview for the interface and
   `staging` for anything that needs a session.
 - **A local run keeps teams in memory**, so a restart forgets them.
+- **Production is a GitHub deployment.** Once Netlify serves a push to `main`,
+  `deployments.yml` records it under the `production` environment, which is
+  how the repository page shows what is running. A deployment that failed there
+  is a Netlify deploy that did not go live; its log is on Netlify. Homologation
+  is not recorded: it is behind Netlify's access protection, so a runner cannot
+  see what it serves.
 
 ## Branches
 
@@ -87,12 +93,55 @@ commits `staging` carries would make the next promotion propose them again.
 promotions' own merge commits, they carry no content, and nothing needs them
 back.
 
+Auto-merge is on, so a pull request can be armed to merge itself the moment its
+checks pass:
+
+```bash
+gh pr merge <number> --auto --merge
+```
+
+The head branch is deleted after the merge. `staging` and `main` never are: the
+rulesets forbid deleting them.
+
+## Dependencies
+
+- **Dependabot** opens pull requests into `staging` every Monday, one per group:
+  `chore(deps): …` for runtime packages, `chore(deps-dev): …` for tooling and
+  `ci(deps): …` for GitHub Actions. They go through the same checks and reach
+  production with the next promotion. `.github/dependabot.yml` has the rules.
+- **`bun audit` runs every day** on `main` (the `Audit` workflow), because
+  advisories are published between pull requests and Dependabot cannot raise
+  security updates for Bun. A red run is a new advisory against a locked
+  package: fix it on a branch into `staging`, or as a hotfix if it cannot wait.
+- **GitHub's dependency graph is given `bun.lock`.** It reads only
+  `package.json` on its own, which names seventy-odd packages out of the
+  twelve hundred installed, so `dependency-graph.yml` submits the locked tree
+  on every push to `staging` and `main`. That is what lets Dependabot alerts
+  see a transitive advisory, and what `dependency-review` compares a pull
+  request against.
+- **OpenSSF Scorecard** scores how the repository is kept, weekly and after
+  every release (`scorecard.yml`). Its findings are under Security → Code
+  scanning, beside CodeQL's.
+- Found a vulnerability in the app itself? `SECURITY.md` says how to report it.
+
 ## Checks
 
-Every pull request runs `verify`, `test`, `build`, `e2e` and `commit-messages`;
-one into `main` also needs `branch-policy`. Run `bun run verify && bun run test`
-before you open it — the git hooks run part of that on every commit and push,
-and CI runs all of it.
+Every pull request runs `verify`, `test`, `build`, `e2e`, `commit-messages` and
+`dependency-review`; one into `main` also needs `branch-policy`.
+`dependency-review` refuses a pull request that adds a package with a known
+advisory, or moves one to such a version, at any severity. Run
+`bun run verify && bun run test` before you open it — the git hooks run part of
+that on every commit and push, and CI runs all of it. CodeQL analyses the code
+and the workflows on every pull request too; its findings appear on the pull
+request and under Security, without blocking the merge.
+
+## Licence of contributions
+
+The project is under the [PolyForm Noncommercial 1.0.0](LICENSE.md) licence,
+and its author may later offer it under other terms as well, commercial ones
+included. By opening a pull request you agree that your contribution may be
+distributed under the project's licence and under any licence the author
+chooses later, and you confirm that it is yours to give on those terms.
 
 ## Commit messages
 
@@ -110,6 +159,7 @@ Why, wrapped at 100 columns.
 - `type` is one of `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `ci`,
   `build`, `chore`, `style` or `revert`. `scope` is optional and kebab-case.
 - The header is at most 72 characters.
+
 - A breaking change adds `!` after the type or scope (`feat(api)!: …`), or a
   `BREAKING CHANGE:` footer.
 

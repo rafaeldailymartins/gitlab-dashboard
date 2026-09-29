@@ -46,7 +46,7 @@ time.
 
 ## 4. CI and releases
 
-- [ ] 4.1 `ci.yml` runs on `push` to `staging` as well as `main`. Verify: the
+- [x] 4.1 `ci.yml` runs on `push` to `staging` as well as `main`. Verify: the
       workflow parses, and after 6.1 a push run appears for `staging`
 - [x] 4.2 The `branch-policy` job on `pull_request` (design § 2). Verify: its
       script run locally with the event fields of the five DELIVERY-2 branch
@@ -91,20 +91,20 @@ time.
 
 ## 6. Delivered through staging
 
-- [ ] 6.1 A pull request from `feat/promote-through-staging` into `staging`,
+- [x] 6.1 A pull request from `feat/promote-through-staging` into `staging`,
       merged when every check is green — `branch-policy` and `commit-messages`
       included, which is their first run
-- [ ] 6.2 **(owner)** Netlify: branch deploys for `staging` alone, and
+- [x] 6.2 **(owner)** Netlify: branch deploys for `staging` alone, and
       `VITE_GITLAB_CLIENT_ID` available to the branch-deploy context. Verify:
       the site's allowed branches are `main` and `staging`, and a deploy of
       `staging` is live at `https://staging--gitlabdashboard.netlify.app`
-- [ ] 6.3 **(owner)** `https://staging--gitlabdashboard.netlify.app/auth/callback`
+- [x] 6.3 **(owner)** `https://staging--gitlabdashboard.netlify.app/auth/callback`
       on the GitLab OAuth application. Verify: signing in there returns to the
       staging address signed in (DELIVERY-2, "Signing in on homologation")
-- [ ] 6.4 On staging, save a team and confirm production does not list it, and
+- [x] 6.4 On staging, save a team and confirm production does not list it, and
       that the Blobs browser shows it under `readers-staging` (DELIVERY-1, "A team
       saved in homologation")
-- [ ] 6.5 **(owner)** Rulesets: `staging` as design § 6; on `main`, the up-to-date
+- [x] 6.5 **(owner)** Rulesets: `staging` as design § 6; on `main`, the up-to-date
       requirement off and `branch-policy` and `commit-messages` required; tags
       `v*` protected from update and deletion. Verify:
       `gh api repos/rafaeldailymartins/gitlab-dashboard/rules/branches/staging`
@@ -112,12 +112,12 @@ time.
 
 ## 7. The first promotion
 
-- [ ] 7.1 **(owner)** A pull request from `staging` into `main` with
+- [x] 7.1 **(owner)** A pull request from `staging` into `main` with
       `docs/qa/release-pr.md` as its body, its checkboxes worked through on
       staging. Verify: `branch-policy` passes on it (DELIVERY-2, "A promotion")
-- [ ] 7.2 After the merge, `v2.1.0` is tagged and released with notes listing
+- [x] 7.2 After the merge, `v2.1.0` is tagged and released with notes listing
       this change's commits by type. Verify: `gh release view v2.1.0`
       (DELIVERY-3, "A promotion carrying a feature")
-- [ ] 7.3 On production, the teams that were there before are still listed and
+- [x] 7.3 On production, the teams that were there before are still listed and
       a save still works. If not, publish the previous deploy and read the
       context the function received (design § Risks)
