@@ -23,11 +23,12 @@ a pull request that cannot merge rather than a surprise in production.
   on the OAuth application, exactly. Use a preview for the interface and
   `staging` for anything that needs a session.
 - **A local run keeps teams in memory**, so a restart forgets them.
-- **Production and homologation are GitHub deployments.** Once Netlify serves a
-  push to `main` or `staging`, `deployments.yml` records it under the
-  `production` or `staging` environment, which is how the repository page
-  shows what each one is running. A deployment that failed there is a Netlify
-  deploy that did not go live; its log is on Netlify.
+- **Production is a GitHub deployment.** Once Netlify serves a push to `main`,
+  `deployments.yml` records it under the `production` environment, which is
+  how the repository page shows what is running. A deployment that failed there
+  is a Netlify deploy that did not go live; its log is on Netlify. Homologation
+  is not recorded: it is behind Netlify's access protection, so a runner cannot
+  see what it serves.
 
 ## Branches
 
