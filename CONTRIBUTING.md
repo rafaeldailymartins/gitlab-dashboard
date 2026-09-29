@@ -137,11 +137,11 @@ request and under Security, without blocking the merge.
 
 ## Licence of contributions
 
-The project is under the [PolyForm Noncommercial 1.0.0](LICENSE.md) licence,
-and its author may later offer it under other terms as well, commercial ones
-included. By opening a pull request you agree that your contribution may be
-distributed under the project's licence and under any licence the author
-chooses later, and you confirm that it is yours to give on those terms.
+The project is under the [GNU Affero General Public License v3.0](LICENSE), and
+its author also offers it under other terms, commercial ones included. By
+opening a pull request you agree that your contribution may be distributed
+under the AGPL and under any licence the author chooses, and you confirm that it
+is yours to give on those terms.
 
 ## Commit messages
 

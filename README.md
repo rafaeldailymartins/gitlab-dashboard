@@ -262,14 +262,14 @@ hotfixes, promotion and the commit convention.
 
 ## 📄 License
 
-[PolyForm Noncommercial 1.0.0](LICENSE.md). You may read, run, change and share
-this code for any noncommercial purpose: personal use, study, research, a hobby
-project, or use by a charity, a school or a public body. Any commercial use
-needs a separate licence from the author; get in touch through
-[GitHub](https://github.com/rafaeldailymartins).
+Copyright © 2026 Rafael Daily Santos Martins. Released under the
+[GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`).
 
-That makes the project source-available rather than open source in the OSI
-sense, whose definition does not allow a licence to exclude commercial use.
+You may use, study, change and share this code, commercially or not. What the
+licence asks in return is that anybody who gives others a changed version,
+whether as files or as a service they reach over a network, also gives them its
+source, under these same terms. A licence on other terms is available from the
+author; get in touch through [GitHub](https://github.com/rafaeldailymartins).
 
 ## 👨‍💻 Author
 
