@@ -137,11 +137,11 @@ request and under Security, without blocking the merge.
 
 ## Licence of contributions
 
-The project is under the [PolyForm Noncommercial 1.0.0](LICENSE.md) licence,
-and its author may later offer it under other terms as well, commercial ones
-included. By opening a pull request you agree that your contribution may be
-distributed under the project's licence and under any licence the author
-chooses later, and you confirm that it is yours to give on those terms.
+The project is under the [GNU Affero General Public License v3.0](LICENSE), and
+its author also offers it under other terms, commercial ones included. By
+opening a pull request you agree that your contribution may be distributed
+under the AGPL and under any licence the author chooses, and you confirm that it
+is yours to give on those terms.
 
 ## Commit messages
 
@@ -178,6 +178,13 @@ whose notes list the commits since the previous version, grouped by type.
 - The rules live in `cliff.toml`, and the `release` job in
   `.github/workflows/ci.yml` applies them after every check on `main` has passed.
 - The first version is `v2.0.0`, the app as it stood before releases were tagged.
+- **Every release carries its source and a signed statement of where it came
+  from.** `gitlab-dashboard-<version>.tar.gz` is the commit the release was cut
+  from, and `….tar.gz.sigstore.json` is a Sigstore attestation that this
+  repository's `release` job built it. Check one with
+  `gh attestation verify gitlab-dashboard-<version>.tar.gz --repo rafaeldailymartins/gitlab-dashboard`.
+  It is the source rather than `dist/`: production runs Netlify's own build of
+  the same commit.
 - **The tags are the only record of a version.** There is no `CHANGELOG.md` and
   no `version` in `package.json` — the releases page is the changelog. Tags
   `v*` cannot be moved or deleted.
