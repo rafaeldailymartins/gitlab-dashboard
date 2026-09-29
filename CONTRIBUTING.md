@@ -23,6 +23,11 @@ a pull request that cannot merge rather than a surprise in production.
   on the OAuth application, exactly. Use a preview for the interface and
   `staging` for anything that needs a session.
 - **A local run keeps teams in memory**, so a restart forgets them.
+- **Production and homologation are GitHub deployments.** Once Netlify serves a
+  push to `main` or `staging`, `deployments.yml` records it under the
+  `production` or `staging` environment, which is how the repository page
+  shows what each one is running. A deployment that failed there is a Netlify
+  deploy that did not go live; its log is on Netlify.
 
 ## Branches
 
@@ -153,6 +158,7 @@ Why, wrapped at 100 columns.
 - `type` is one of `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `ci`,
   `build`, `chore`, `style` or `revert`. `scope` is optional and kebab-case.
 - The header is at most 72 characters.
+
 - A breaking change adds `!` after the type or scope (`feat(api)!: …`), or a
   `BREAKING CHANGE:` footer.
 

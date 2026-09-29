@@ -1,5 +1,9 @@
 [build]
-  command = "bun run build"
+  # `commit.txt` names the commit this deploy was built from. It is how
+  # `.github/workflows/deployments.yml` knows when a push has gone live, since
+  # Netlify tells GitHub about deploy previews and nothing else. Only a Netlify
+  # build sets `COMMIT_REF`, so it is written here rather than by `bun run build`.
+  command = 'bun run build && printf "%s\n" "$COMMIT_REF" > dist/commit.txt'
   publish = "dist"
 
 [build.environment]
