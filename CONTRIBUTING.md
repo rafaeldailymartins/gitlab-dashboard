@@ -134,6 +134,20 @@ whose notes list the commits since the previous version, grouped by type.
 - Rolling production back is Netlify's "publish deploy" on an earlier deploy;
   `docs/qa/release-checklist.md` has the rest of that procedure.
 
+## When a merge does not start anything
+
+GitHub has dropped the push event of a merge outright, with its status page all
+green: the branch moves, and nothing else happens — no CI run, no release, no
+deploy. If a few minutes after a merge the Actions tab shows no run for it:
+
+- **On `main`:** Actions → CI → **Run workflow** on `main`. A manual run on
+  `main` does everything a push does, the release and the coverage badge
+  included. Netlify did not see the push either, so trigger a production deploy
+  from the Netlify dashboard (Deploys → Trigger deploy).
+- **On `staging`:** the same Run workflow on `staging` gives its head the checks
+  a promotion needs. For its deploy, the next merge into `staging` rebuilds it,
+  or a Netlify build hook for the `staging` branch does it now.
+
 ## Planning a change
 
 A change to behaviour is planned with OpenSpec before it is written — proposal,
