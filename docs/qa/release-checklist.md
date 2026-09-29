@@ -12,8 +12,9 @@ which is the mercy in it.
   redeploy of the same artifact.
 - **The deploy URL missing from the OAuth application's redirect URIs.** The
   build succeeds and the app loads; GitLab refuses the round trip. Every
-  deploy-preview URL is a different origin, so a preview needs its own entry, or
-  the check has to happen on the production URL.
+  deploy-preview URL is a different origin and GitLab matches exactly, which is
+  why the checks that need a session happen on staging, whose address never
+  changes — `CONTRIBUTING.md` has the environments.
 - **`openid` not ticked on the OAuth application before the bundle that asks for
   it is deployed.** The build succeeds and the app loads; every new sign-in
   fails with `invalid_scope`, for everybody, including readers who never open
@@ -54,11 +55,13 @@ Applications**.
 - [ ] Redirect URIs include every origin that will complete a sign-in:
 - [ ] `http://localhost:3000/auth/callback`, for development
 - [ ] the production Netlify URL plus `/auth/callback`
-- [ ] the deploy-preview URL plus `/auth/callback`, if a preview is to be signed
-      into
+- [ ] `https://staging--gitlabdashboard.netlify.app/auth/callback`, for
+      homologation. Deploy previews are not registered: each has its own origin,
+      so they are for the interface and staging is for a session
 - [ ] The Application ID is in Netlify under **Site configuration → Environment
-      variables** as `VITE_GITLAB_CLIENT_ID`, for the contexts that need it
-      (production, and deploy previews if they are to work).
+      variables** as `VITE_GITLAB_CLIENT_ID`, for the production, branch-deploy
+      and deploy-preview contexts. Staging is a branch deploy, so without that
+      context it builds the "no GitLab application" screen.
 
 `VITE_GITLAB_BASE_URL` is optional and defaults to `https://gitlab.com`. Set it
 only for a self-managed instance.
@@ -92,19 +95,30 @@ mean the same thing in two places.
       unauthenticated flood never reaches Netlify Blobs. Invocations are still
       metered, and the notification is what tells you they are climbing.
 
-## On the deploy preview
+## On staging
+
+`https://staging--gitlabdashboard.netlify.app`, after the change has merged into
+`staging` and before it is promoted. `docs/qa/release-pr.md` is these steps as
+the promotion pull request's body.
+
+Staging keeps its teams and schedules in `readers-staging`, which no production
+deploy reads, so everything below can be tried for real without touching a
+reader's documents (DELIVERY-1).
 
 - [ ] The app loads and asks for a sign-in.
 - [ ] Sign in end to end against real GitLab. If this fails with a redirect-URI
-      error, the preview URL is missing from the application.
+      error, the staging callback is missing from the application.
 - [ ] Today's hours match GitLab's own report.
 - [ ] Hard-refresh `/days/<a date>`. The SPA fallback serves it rather than a 404.
 - [ ] Open the teams dialog and save a team. The function is deployed and answers: the
       team survives a reload, and `/.netlify/functions/teams` returns a document
       rather than a 404 or a `503 identity-unavailable`. The acceptance suite
       cannot cover this — it serves a static `dist/` with `vite preview`, which
-      runs no function — so a preview is the first place the endpoint exists at
+      runs no function — so a deploy is the first place the endpoint exists at
       all.
+- [ ] **That team is not listed in production.** Homologation files it under
+      `readers-staging`; seeing it in production means a deploy took the wrong
+      store, and the next staging experiment would land in readers' documents.
 - [ ] **With the network panel open, read the `PUT` that save sent.** It carries
       `x-document-version`, and the answer is a `200` with an `ETag` — not a
       `428`. A 428 means the header did not reach the function, which is a fact
@@ -166,10 +180,18 @@ in a test file. `docs/qa/test-plan.md` delegates them here by name.
 ## After promoting to production
 
 - [ ] Sign in on the production URL.
+- [ ] **The teams listed are the ones production had, and a save works.** The
+      function names its store from the deploy context the platform hands it,
+      and it refuses rather than guesses when that is not a value it knows. A
+      refusal answers `503 store-unavailable`, and the teams surface says it
+      cannot reach them: publish the previous deploy, and read what
+      `context.deploy.context` was.
 - [ ] Reload and confirm the figures paint before any request — the cache is
       per-origin, so production has its own and this is the first time it is
       exercised there.
 - [ ] Sign out, and confirm IndexedDB and the refresh token are gone.
+- [ ] The release for the merge is on the releases page, with its version and
+      its notes. A merge whose checks failed publishes none.
 
 ## If it has to be rolled back
 
@@ -196,6 +218,16 @@ emptied deliberately rather than migrated; nobody had saved anything worth
 keeping yet. **That option expires the moment somebody does.** Treat a later
 change to either the store name or a suffix as the region paragraph below
 treats the region: copy first.
+
+**Which store a deploy uses follows the code, and that cuts one way.** Since
+`store-name.mts`, production files documents under `readers` and every other
+deploy under `readers-staging`. Publishing an earlier production deploy touches
+production alone. But a bundle from before that change names `readers` on
+every deploy — so reverting it on `staging`, or a deploy preview of a branch cut
+before it, is homologation reading and writing readers' real documents. Turn
+branch deploys off for `staging` before such a revert reaches it. The other
+direction is harmless: what homologation wrote stays in `readers-staging`,
+unread.
 
 **The region is part of the address, and it does not follow the code.**
 `blob-store.mts` pins `us-east-2`, and a site-wide store held anywhere else is
