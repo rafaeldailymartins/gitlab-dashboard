@@ -190,6 +190,7 @@ except mutation testing, which runs weekly:
 | 90% coverage, **100% on `model/`** | `bun run test:coverage`               |
 | Mutation score ≥ 85% on `model/`   | `bun run test:mutation`, weekly in CI |
 | Zero dependency vulnerabilities    | `bun audit`                           |
+| No new vulnerable package, at all  | dependency review, over `bun.lock`    |
 | 180 kB gzip initial bundle         | `size-limit`                          |
 | Zero axe violations, both themes   | the acceptance suite                  |
 | Layout shift under 0.1             | the acceptance suite                  |

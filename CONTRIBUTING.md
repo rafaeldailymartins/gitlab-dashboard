@@ -107,16 +107,24 @@ rulesets forbid deleting them.
   advisories are published between pull requests and Dependabot cannot raise
   security updates for Bun. A red run is a new advisory against a locked
   package: fix it on a branch into `staging`, or as a hotfix if it cannot wait.
+- **GitHub's dependency graph is given `bun.lock`.** It reads only
+  `package.json` on its own, which names seventy-odd packages out of the
+  twelve hundred installed, so `dependency-graph.yml` submits the locked tree
+  on every push to `staging` and `main`. That is what lets Dependabot alerts
+  see a transitive advisory, and what `dependency-review` compares a pull
+  request against.
 - Found a vulnerability in the app itself? `SECURITY.md` says how to report it.
 
 ## Checks
 
-Every pull request runs `verify`, `test`, `build`, `e2e` and `commit-messages`;
-one into `main` also needs `branch-policy`. Run `bun run verify && bun run test`
-before you open it — the git hooks run part of that on every commit and push,
-and CI runs all of it. CodeQL analyses the code and the workflows on every pull
-request too; its findings appear on the pull request and under Security, without
-blocking the merge.
+Every pull request runs `verify`, `test`, `build`, `e2e`, `commit-messages` and
+`dependency-review`; one into `main` also needs `branch-policy`.
+`dependency-review` refuses a pull request that adds a package with a known
+advisory, or moves one to such a version, at any severity. Run
+`bun run verify && bun run test` before you open it — the git hooks run part of
+that on every commit and push, and CI runs all of it. CodeQL analyses the code
+and the workflows on every pull request too; its findings appear on the pull
+request and under Security, without blocking the merge.
 
 ## Licence of contributions
 
