@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
       - run: bun run verify
 
@@ -54,7 +54,7 @@ jobs:
     outputs:
       lines: ${{ steps.summary.outputs.lines }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
       - run: bun run test:coverage
       - name: Coverage summary
@@ -69,7 +69,7 @@ jobs:
             await Bun.write(Bun.env.GITHUB_STEP_SUMMARY, `${table}\n`)
           '
           echo "lines=$(bun -p 'require("./coverage/coverage-summary.json").total.lines.pct')" >> "$GITHUB_OUTPUT"
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ !cancelled() }}
         with:
           name: coverage
@@ -83,11 +83,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
       - run: bun run build
       - run: bun run size
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dist
           path: dist/
@@ -101,8 +101,10 @@ jobs:
     timeout-minutes: 60
     container:
       # Keep this tag equal to the installed `@playwright/test`: the image's
-      # browsers are the ones that version was built against.
-      image: mcr.microsoft.com/playwright:v1.62.1-noble
+      # browsers are the ones that version was built against. The digest pins
+      # the tag to one image, as every action here is pinned to one commit;
+      # bumping the tag means taking the new tag's digest with it.
+      image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
       # Chromium's shared memory is otherwise the container's 64 MB default.
       options: --ipc=host
     env:
@@ -111,15 +113,18 @@ jobs:
       # screen. The real id is a Netlify environment variable, not a CI one.
       VITE_GITLAB_CLIENT_ID: acceptance-suite-client-id
     steps:
-      - uses: actions/checkout@v7
-      # The same Bun `packageManager` names, installed through the image's own
-      # npm: this image is where Node and the browsers come from, and Bun is the
-      # one thing it lacks.
-      - name: Install Bun
-        run: npm install --global "bun@$(node -p "require('./package.json').packageManager.split('@')[1]")"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # This image is where Node and the browsers come from, and Bun is the one
+      # thing it lacks. `setup-bun` installs the version `packageManager` names,
+      # like every other job, and unpacks it with `unzip`, which the image does
+      # not carry either. It used to be `npm install --global bun@…`, which
+      # Scorecard counts as an unpinned download: npm resolves it at run time.
+      - name: Install unzip
+        run: apt-get update && apt-get install --yes --no-install-recommends unzip
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile --ignore-scripts
       - run: bun run test:e2e
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ failure() }}
         with:
           name: playwright-report
@@ -145,7 +150,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/publish-badge
         with:
           name: coverage
@@ -170,7 +175,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       # Pinned to a commit, not a tag: this is the one step that can write a
