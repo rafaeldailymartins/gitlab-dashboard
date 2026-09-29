@@ -208,7 +208,9 @@ in a test file. `docs/qa/test-plan.md` delegates them here by name.
       exercised there.
 - [ ] Sign out, and confirm IndexedDB and the refresh token are gone.
 - [ ] The release for the merge is on the releases page, with its version and
-      its notes. A merge whose checks failed publishes none.
+      its notes. A merge whose checks failed publishes none. A merge with no CI
+      run at all is a push GitHub never delivered —
+      `CONTRIBUTING.md` § When a merge does not start anything.
 
 ## If it has to be rolled back
 

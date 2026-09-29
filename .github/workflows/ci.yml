@@ -172,9 +172,15 @@ jobs:
   # The README's coverage badge, from `main` only. It runs when `test` failed
   # too, as long as coverage was measured: a figure that fell under the floor is
   # exactly the one the badge must not keep hiding behind the last good one.
+  #
+  # A manual run on `main` counts as much as a push does, here and in `release`
+  # below. GitHub has dropped the push event of a merge outright — twice in one
+  # afternoon, with its status page all green — and then nothing runs: no
+  # checks, no release, no deploy. "Run workflow" on `main` is the recovery,
+  # and it has to recover all of it.
   coverage-badge:
     needs: test
-    if: ${{ !cancelled() && needs.test.outputs.lines != '' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    if: ${{ !cancelled() && needs.test.outputs.lines != '' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -199,7 +205,7 @@ jobs:
   # the run that replaced it releases the same commits, and more.
   release:
     needs: [verify, test, build, e2e]
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
