@@ -1,6 +1,5 @@
 {
   "name": "gitlab-dashboard",
-  "version": "2.0.0",
   "private": true,
   "type": "module",
   "description": "Personal dashboard of hours logged in GitLab issues and merge requests.",

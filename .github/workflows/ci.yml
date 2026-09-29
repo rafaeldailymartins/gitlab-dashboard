@@ -1,5 +1,7 @@
-# Every gate that guards a merge. Mutation testing reports on a schedule of its
-# own, in `mutation.yml`, so that a push here can never cancel it.
+# Every gate that guards a merge, and the release that follows one into `main`.
+# Mutation testing reports on a schedule of its own, in `mutation.yml`, so that
+# a push here can never cancel it. `CONTRIBUTING.md` describes the flow these
+# jobs enforce.
 #
 # Bun runs everything except the two tools that cannot: Stryker's plugin loader
 # and the Playwright run itself, both of which need Node. The Playwright image
@@ -9,13 +11,17 @@
 name: CI
 
 on:
+  # `staging` as well as `main`: a promotion's head is the head of `staging`,
+  # and GitHub lets a pull request merge on checks its head already carries.
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
   workflow_dispatch:
 
 # A newer push to the same branch or pull request makes the run in flight
-# worthless, so it is cancelled rather than left to finish.
+# worthless, so it is cancelled rather than left to finish. On `main` that
+# includes a release in waiting: the run that replaced it releases the same
+# commits, and more.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -24,6 +30,51 @@ permissions:
   contents: read
 
 jobs:
+  # The only two ways into `main` (DELIVERY-2): a promotion from `staging`, or a
+  # `hotfix/*` branch. Both must be branches of this repository — a fork can
+  # name a branch `staging` too. Every pull request into `staging` passes, which
+  # is what lets a hotfix come back from `main` like any other change.
+  branch-policy:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Only staging and hotfix branches go into main
+        env:
+          BASE: ${{ github.event.pull_request.base.ref }}
+          HEAD: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          if [ "$BASE" != main ]; then
+            echo "Into $BASE: nothing to enforce."
+            exit 0
+          fi
+          if [ "$HEAD_REPOSITORY" = "$REPOSITORY" ] && { [ "$HEAD" = staging ] || [[ "$HEAD" == hotfix/* ]]; }; then
+            echo "$HEAD may go into main."
+            exit 0
+          fi
+          echo "::error::Only staging, or a hotfix/* branch of $REPOSITORY, may open a pull request into main; this one comes from $HEAD_REPOSITORY:$HEAD. Open it into staging instead — CONTRIBUTING.md has the flow."
+          exit 1
+
+  # The release notes are built from commit messages, so a message they cannot
+  # read is refused before the merge rather than lost after it. The hook on the
+  # author's machine runs the same config, and can be skipped; this cannot.
+  # `config-conventional` ignores merge commits, whose messages nothing reads.
+  commit-messages:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - run: bun commitlint --from "$BASE" --to "$HEAD" --verbose
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+
   # Format, lint, ARIA, types, FSD layers, the dependency graph, dead code, type
   # coverage and `bun audit` — the whole fast gate, in one job, because any one
   # of them failing means the same thing: do not merge this.
@@ -136,3 +187,52 @@ jobs:
           label: coverage
           value: ${{ needs.test.outputs.lines }}
           floor: 90
+
+  # Every merge into `main` is a release (DELIVERY-3): the next version is
+  # computed from the Conventional Commits since the last tag, and published as
+  # a tag and a GitHub Release whose notes are those commits. Only after every
+  # gate has passed on this commit, and only from `main`. `cliff.toml` holds the
+  # rules; `CONTRIBUTING.md` says what a version means.
+  #
+  # One `gh release create` makes the tag and the release together, so a run
+  # cancelled by a newer push cannot leave a tag with no release behind — and
+  # the run that replaced it releases the same commits, and more.
+  release:
+    needs: [verify, test, build, e2e]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      # Pinned to a commit, not a tag: this is the one step that can write a
+      # release, and a tag can be moved under it. The binary it downloads is
+      # pinned too.
+      - name: Compute the version and its notes
+        id: cliff
+        uses: orhun/git-cliff-action@a9a95522b26fe6403f7bb24031f21fb573d0f5ff # v4.9.1
+        with:
+          version: v2.14.2
+          config: cliff.toml
+          args: --unreleased --bump --strip header
+        env:
+          OUTPUT: ${{ runner.temp }}/release-notes.md
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES: ${{ runner.temp }}/release-notes.md
+          VERSION: ${{ steps.cliff.outputs.version }}
+        run: |
+          if [ -z "$VERSION" ] || [ "$VERSION" = null ]; then
+            echo "Nothing since the last tag is a release."
+            exit 0
+          fi
+          if git rev-parse --quiet --verify "refs/tags/$VERSION" > /dev/null; then
+            echo "$VERSION is already released."
+            exit 0
+          fi
+          gh release create "$VERSION" --target "$GITHUB_SHA" --title "$VERSION" --notes-file "$NOTES"
+          echo "Released [$VERSION]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$VERSION)." >> "$GITHUB_STEP_SUMMARY"

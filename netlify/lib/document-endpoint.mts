@@ -1,18 +1,32 @@
 import type { DocumentStore } from './document-store.mjs'
 import type { DocumentKind } from './handle-document.mjs'
 import type { Identity, VerifierOptions } from './identity.mjs'
+import type { StoreName } from './store-name.mjs'
 
 import { blobDocumentStore } from './blob-store.mjs'
 import { gitLabConfig } from './gitlab.mjs'
 import { handleDocument } from './handle-document.mjs'
 import { providerKeys, verifyIdentity } from './identity.mjs'
+import { storeNameFor } from './store-name.mjs'
 
 export interface EndpointOptions {
   readonly document: DocumentKind
   /** Injected in tests; the real one discovers the provider's published keys. */
   readonly keys?: (baseUrl: string) => Promise<Keys | null>
   /** Injected in tests; the real one throws outside a Netlify environment. */
-  readonly store?: () => DocumentStore
+  readonly store?: (name: StoreName) => DocumentStore
+}
+
+/**
+ * The one part of what the platform hands a function that this endpoint reads.
+ *
+ * Structural rather than the platform's own `Context`, so that the development
+ * middleware and the tests can say which deploy they stand for without faking
+ * the rest of it. Every field is optional because a deploy that leaves them out
+ * is exactly the case `storeNameFor` refuses.
+ */
+interface Invocation {
+  readonly deploy?: { readonly context?: unknown }
 }
 
 type Keys = VerifierOptions['keys']
@@ -31,15 +45,25 @@ type Keys = VerifierOptions['keys']
  * What is shared is the wiring, not the authority. The key is still derived
  * inside `handle-document.mts` from a subject the signature established, and
  * the `document` each function passes is still a constant that module chooses.
+ *
+ * **Which store comes first**, before the configuration and before any key is
+ * fetched (DELIVERY-1). It is a fact about the deploy, not about the caller, and
+ * a deploy that cannot say which it is gets nothing from any store at all.
  */
 export function documentEndpoint({
   document,
   keys = providerKeys,
   store = blobDocumentStore,
-}: EndpointOptions): (request: Request) => Promise<Response> {
+}: EndpointOptions): (request: Request, invocation: Invocation) => Promise<Response> {
   const discovery = keyCache(keys)
 
-  return async (request) => {
+  return async (request, invocation) => {
+    const name = storeNameFor(invocation.deploy?.context)
+
+    if (name === null) {
+      return storeUnavailable()
+    }
+
     const config = gitLabConfig(process.env)
 
     if (config === null) {
@@ -60,7 +84,7 @@ export function documentEndpoint({
 
     return handleDocument(request, {
       document,
-      store: store(),
+      store: store(name),
       verify: (token): Promise<Identity> => verifyIdentity(token, options),
     })
   }
@@ -93,6 +117,21 @@ function keyCache(
 
     return pending
   }
+}
+
+/**
+ * Says that no store may be asked on this deploy.
+ *
+ * The same status as a provider that cannot be reached, because to a reader it
+ * is the same thing — the teams cannot be read right now — and the browser
+ * already says that for a `503`. A different word in the body, because to
+ * whoever reads the log it is nothing to do with identity.
+ */
+function storeUnavailable(): Response {
+  return Response.json(
+    { error: 'store-unavailable' },
+    { headers: { 'cache-control': 'no-store' }, status: 503 },
+  )
 }
 
 /** Says only that identity could not be established, never why. */

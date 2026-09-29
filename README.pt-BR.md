@@ -239,18 +239,27 @@ de release e o valor medido de cada gate (em inglês).
 ## ☁️ Deploy
 
 A aplicação é publicada no [Netlify](https://www.netlify.com/) como arquivos
-estáticos mais as duas funções em `netlify/functions/`, a partir do `main`, com
-um deploy preview para cada pull request.
+estáticos mais as duas funções em `netlify/functions/`. Produção é gerada a
+partir do `main`; a homologação, a partir do `staging`, em
+[staging--gitlabdashboard.netlify.app](https://staging--gitlabdashboard.netlify.app/),
+com equipes e jornadas próprias; e cada pull request ganha um deploy preview.
 
-1. Defina `VITE_GITLAB_CLIENT_ID` nas variáveis de ambiente do site — as funções
-   leem a mesma.
-2. Adicione o `/auth/callback` da origem publicada às redirect URIs da aplicação
-   OAuth.
+1. Defina `VITE_GITLAB_CLIENT_ID` nas variáveis de ambiente do site, para todos
+   os contextos de deploy — as funções leem a mesma.
+2. Adicione o `/auth/callback` de produção e o de staging às redirect URIs da
+   aplicação OAuth.
 3. Marque o `openid` na aplicação antes do primeiro deploy que o solicita.
 
 Esses três falham no login, não no build. O
 [`docs/qa/release-checklist.md`](docs/qa/release-checklist.md) é o roteiro
 completo.
+
+## 🤝 Como contribuir
+
+As mudanças entram no `staging` por pull request, e o `staging` é promovido para
+o `main`; cada merge no `main` é uma release com tag, com notas geradas dos
+commits. O [`CONTRIBUTING.md`](CONTRIBUTING.md) (em inglês) descreve os
+ambientes, os nomes de branch, os hotfixes, a promoção e a convenção de commits.
 
 ## 👨‍💻 Autor
 
