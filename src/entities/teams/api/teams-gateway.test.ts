@@ -39,7 +39,7 @@ function respond(status: number, body: JsonBodyType, etag?: string) {
     lastRequest = request.clone()
 
     return HttpResponse.json(body, {
-      headers: etag === undefined ? {} : { etag },
+      headers: etag === undefined ? {} : { [VERSION_HEADER]: etag },
       status,
     })
   })
@@ -86,6 +86,23 @@ describe('read', () => {
     expect(document.etag).toBe('"1"')
     expect(document.teams).toHaveLength(1)
     expect(document.teams[0]?.name).toBe('Squad Fiscal')
+  })
+
+  /*
+   * Netlify's CDN rewrites `ETag` when it compresses a response — `"1"` arrives
+   * as `"1-df"` — and a version that is not the stored one refuses every write
+   * after the first. The version travels in a header of this app's own.
+   */
+  it('reads the version from its own header, never from an ETag the CDN rewrote', async () => {
+    server.use(
+      http.get(ENDPOINT, () =>
+        HttpResponse.json(STORED, { headers: { etag: '"1-df"', [VERSION_HEADER]: '"1"' } }),
+      ),
+    )
+
+    const document = await httpTeamsGateway(identified().caller).read()
+
+    expect(document.etag).toBe('"1"')
   })
 
   it('carries the identity assertion and nothing else', async () => {

@@ -13,6 +13,14 @@
  * preflight either, because these requests are same-origin — and the endpoint
  * still emits no CORS headers, so a cross-site caller could not set it.
  *
+ * **The answer carries the version back the same way, and for the same kind of
+ * reason.** It used to come back as `ETag`, which the CDN rewrites when it
+ * compresses a response — `"8c97…208"` arrived as `"8c97…208-df"`. The version
+ * a reader then handed back named nothing stored, so every save after the first
+ * was refused "changed somewhere else", and settings quietly stopped syncing.
+ * Every first write goes out as `*`, which is why a deploy could look healthy:
+ * only the second save goes down this path.
+ *
  * Here in `shared/` because both gateways need it and FSD forbids one entity
  * slice reaching into another. The endpoint declares the same two values for
  * itself, since `netlify/` is a different runtime that must not import from

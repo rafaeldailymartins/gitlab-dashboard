@@ -80,7 +80,10 @@ function bodyOf(settings: null | StoredPreferences): string {
  * rather than thrown, which is why it does not go through `documentOf`.
  */
 async function contested(response: Response): Promise<PreferencesDocument> {
-  const etag = response.headers.get('etag')
+  // Not `ETag`, which the CDN rewrites on a compressed response: a rewritten
+  // version turns every later write into a conflict this gateway then resolves
+  // by adopting, so settings silently stopped following the reader.
+  const etag = response.headers.get(VERSION_HEADER)
 
   try {
     const body: unknown = await response.json()

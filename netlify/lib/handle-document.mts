@@ -73,7 +73,8 @@ interface WriteTarget {
 }
 
 /**
- * The header a write names the version it replaces in.
+ * The header a write names the version it replaces in, and a response hands
+ * the current version back in.
  *
  * Exported so both gateways spell it the same way as the handler, rather than
  * agreeing by coincidence across two layers and two runtimes.
@@ -107,7 +108,17 @@ export async function handleDocument(
     : write(request, { document, key, store })
 }
 
-/** Every response says not to keep it: these are somebody's colleagues. */
+/**
+ * Every response says not to keep it: these are somebody's colleagues.
+ *
+ * **The version goes back in `VERSION_HEADER`, never in `ETag`.** Netlify's CDN
+ * rewrites `ETag` when it compresses a response — `"8c97…208"` reached the
+ * browser as `"8c97…208-df"` — so the version a reader handed back named
+ * nothing stored, and every save after their first was refused as a conflict.
+ * It is the `If-Match` lesson the other way round: a header HTTP defines is a
+ * header the path between here and the browser acts on. `ETag` is not sent at
+ * all, so no client can read the corrupted copy instead.
+ */
 function answer(status: number, body: unknown, etag?: string): Response {
   const headers = new Headers({
     'cache-control': 'no-store',
@@ -115,7 +126,7 @@ function answer(status: number, body: unknown, etag?: string): Response {
   })
 
   if (etag !== undefined) {
-    headers.set('etag', etag)
+    headers.set(VERSION_HEADER, etag)
   }
 
   return Response.json(body, { headers, status })

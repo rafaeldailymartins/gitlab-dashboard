@@ -54,7 +54,10 @@ function respond(status: number, body: JsonBodyType, etag?: string) {
   return http.all(ENDPOINT, ({ request }) => {
     sent.push(request.clone())
 
-    return HttpResponse.json(body, { headers: etag === undefined ? {} : { etag }, status })
+    return HttpResponse.json(body, {
+      headers: etag === undefined ? {} : { [VERSION_HEADER]: etag },
+      status,
+    })
   })
 }
 
@@ -72,7 +75,7 @@ function respondInTurn(
     turn += 1
 
     return HttpResponse.json(answer?.body ?? null, {
-      headers: answer?.etag === undefined ? {} : { etag: answer.etag },
+      headers: answer?.etag === undefined ? {} : { [VERSION_HEADER]: answer.etag },
       status: answer?.status ?? 200,
     })
   })
@@ -85,6 +88,26 @@ function settings(updatedAt: string, timeZone = 'Europe/Lisbon'): StoredPreferen
 describe('reading', () => {
   it('answers with the stored settings and the version they were read at', async () => {
     server.use(respond(200, onTheWire(LATER), '"7"'))
+
+    await expect(httpPreferencesGateway(caller().identified).read()).resolves.toEqual({
+      etag: '"7"',
+      settings: settings(LATER),
+    })
+  })
+
+  /*
+   * Netlify's CDN rewrites `ETag` when it compresses a response — `"7"` arrives
+   * as `"7-df"` — and a version that is not the stored one makes every write
+   * after the first a conflict, which this gateway resolves by quietly adopting.
+   */
+  it('reads the version from its own header, never from an ETag the CDN rewrote', async () => {
+    server.use(
+      http.get(ENDPOINT, () =>
+        HttpResponse.json(onTheWire(LATER), {
+          headers: { etag: '"7-df"', [VERSION_HEADER]: '"7"' },
+        }),
+      ),
+    )
 
     await expect(httpPreferencesGateway(caller().identified).read()).resolves.toEqual({
       etag: '"7"',

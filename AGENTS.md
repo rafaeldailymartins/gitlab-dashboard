@@ -782,7 +782,19 @@ one without reading the reason will reintroduce a bug that is already fixed.
   since `netlify/` must not import from `src/` at run time, and
   `handle-document.test.mts` holds the two spellings against each other. The
   instrument that can see the path itself is a deploy, and
-  `docs/qa/release-checklist.md` now reads the request rather than the result. `DocumentStore` is a port for
+  `docs/qa/release-checklist.md` now reads the request rather than the result.
+  **And it is not `ETag` on the way back, for the same kind of reason.** The
+  version returned as `ETag`, which the CDN rewrites when it compresses a
+  response: `"8c97…208"` reached the browser as `"8c97…208-df"`, the reader
+  handed that back, and it named nothing stored — so every save after a
+  reader's first was refused as "changed somewhere else", and settings stopped
+  syncing without a word. It survived a release checklist that read the `PUT`,
+  because every first write goes out as `*`: only a second save takes this
+  path, and the first second save anybody made was in production. The answer
+  carries `x-document-version` now and no `ETag` at all, so there is no
+  corrupted copy for a client to read, and the checklist saves twice. A header
+  HTTP defines is a header the path between here and the browser acts on;
+  every header this protocol needs is one of its own. `DocumentStore` is a port for
   the same reason: those rules are the part worth testing, and the acceptance
   suite serves a static `dist/` with `vite preview`, which runs no function — so
   the `functions` Vitest project is the only place they are proved.
