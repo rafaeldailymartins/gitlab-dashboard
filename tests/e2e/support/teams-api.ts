@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
 
+import { VERSION_HEADER } from '../../../src/shared/api/document-version'
 import { ANA, BRUNO, userNode } from './gitlab-teams'
 
 /**
@@ -112,7 +113,7 @@ export async function stubTeamsWithoutIdentity(page: Page): Promise<void> {
 }
 
 function etagFor(version: number): Record<string, string> {
-  return { etag: `"${String(version)}"` }
+  return { [VERSION_HEADER]: `"${String(version)}"` }
 }
 
 function memberOf(person: { name: string; username: string }) {

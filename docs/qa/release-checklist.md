@@ -120,8 +120,9 @@ reader's documents (DELIVERY-1).
       `readers-staging`; seeing it in production means a deploy took the wrong
       store, and the next staging experiment would land in readers' documents.
 - [ ] **With the network panel open, read the `PUT` that save sent.** It carries
-      `x-document-version`, and the answer is a `200` with an `ETag` — not a
-      `428`. A 428 means the header did not reach the function, which is a fact
+      `x-document-version`, and the answer is a `200` carrying
+      `x-document-version` back — not a `428`, and no `ETag` at all. A 428 means
+      the header did not reach the function, which is a fact
       about the path between the browser and it and not about this code. It
       happened: the version used to travel as `If-Match` and `If-None-Match: *`,
       Netlify's CDN consumes the `If-*` headers for its own conditional
@@ -131,11 +132,21 @@ reader's documents (DELIVERY-1).
       is a Vite middleware. **Read the request, not only the outcome**: a save
       that appears to work is not evidence, because a first write against an
       empty store and a refused write look the same to a reader with no teams.
+- [ ] **Save the same team a second time, and read that `PUT` too.** Every
+      first write goes out as `*`, so a store that has only ever been written
+      once proves nothing about the version a write names afterwards. The
+      version it sends must be exactly the one the previous answer carried, and
+      the answer must be a `200`, not a `409`. It was not, for a while: the
+      version came back as `ETag`, which Netlify's CDN rewrites when it
+      compresses a response (`"8c97…208"` arrived as `"8c97…208-df"`), so every
+      save after a reader's first was refused as "changed somewhere else" —
+      found in production, by the second save anybody ever made there.
 - [ ] Change a weekday target in `/settings`. The same holds for
       `/.netlify/functions/preferences`, which is a second function and so a
       second thing that can fail to deploy. Clear this device's `preferences`
       key, reload, and confirm the value comes back — which is the whole of what
-      a second device is. Read its `PUT` too, for the same reason and with more
+      a second device is. Then change it once more. Read both `PUT`s, for the
+      same reasons and with more
       care: this one **fails quietly**. A refused settings write costs no dialog
       and no error, only the one line saying the settings are not reaching your
       other devices — which is easy to have never looked at.
@@ -179,6 +190,12 @@ in a test file. `docs/qa/test-plan.md` delegates them here by name.
 
 ## After promoting to production
 
+- [ ] **The deploy Netlify is serving is this merge's.** A deploy that built is
+      not a deploy that went live: publishing an earlier deploy by hand locks
+      auto-publishing, and every later deploy then builds `ready` and is never
+      published — three did, one after another, with nothing on the site saying
+      so. `Deploys` shows the published one; if it is not the merge's commit,
+      unlock auto-publishing and publish it.
 - [ ] Sign in on the production URL.
 - [ ] **The teams listed are the ones production had, and a save works.** The
       function names its store from the deploy context the platform hands it,
