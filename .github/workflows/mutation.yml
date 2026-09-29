@@ -28,7 +28,7 @@ jobs:
     outputs:
       score: ${{ steps.score.outputs.score }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
       - run: bun run test:mutation
       # Stryker's own definition: detected over valid, where a timeout counts
@@ -47,7 +47,7 @@ jobs:
             await Bun.write(Bun.env.GITHUB_STEP_SUMMARY, `Mutation score: **${score}%** (${detected} of ${detected + missed} detected)\n`)
             console.log(`score=${score}`)
           ' >> "$GITHUB_OUTPUT"
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ !cancelled() }}
         with:
           name: mutation-report
@@ -64,7 +64,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/publish-badge
         with:
           name: mutation
