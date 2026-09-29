@@ -1,0 +1,49 @@
+# Weekly dependency updates, opened as pull requests into `staging` like any
+# other change — `CONTRIBUTING.md` § Dependencies. They reach production with the
+# next promotion.
+#
+# Version updates only. Dependabot cannot raise security updates for Bun, so a
+# new advisory against a locked package is caught by the daily `bun audit` in
+# `audit.yml` instead; and a security update for an action would be raised
+# against `main`, which `branch-policy` refuses from anything but `staging` or a
+# hotfix. Both are covered by the weekly run below.
+#
+# The messages are Conventional Commits the `commit-messages` check accepts:
+# `chore(deps): …`, `chore(deps-dev): …` and `ci(deps): …`. The group names are
+# short because they end up in a header held to 72 characters.
+
+version: 2
+
+updates:
+  - package-ecosystem: bun
+    directory: /
+    target-branch: staging
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/Sao_Paulo
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      runtime:
+        dependency-type: production
+      tooling:
+        dependency-type: development
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: staging
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/Sao_Paulo
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      actions:
+        patterns: ['*']

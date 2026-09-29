@@ -1,0 +1,28 @@
+# `bun audit` every day against what production runs, because advisories are
+# published between pull requests. The gate in `verify` only speaks when a pull
+# request happens to run it: fast-uri's two high advisories were found that way,
+# in the middle of unrelated work. Dependabot cannot raise security updates for
+# Bun, so this is the alarm — a red run here reaches the owner by email.
+#
+# A failure is a new advisory against a locked package. Fix it like any change,
+# into `staging` — or as a `hotfix/*` when it cannot wait for a promotion.
+
+name: Audit
+
+on:
+  schedule:
+    # Every day at 06:00 in São Paulo.
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: bun run security:audit
