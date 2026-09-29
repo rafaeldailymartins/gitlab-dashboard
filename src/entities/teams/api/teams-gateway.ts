@@ -117,8 +117,13 @@ function headersFor({ body, etag }: Attempt, token: string): Headers {
   return headers
 }
 
+/**
+ * The version comes from `VERSION_HEADER`, never from `ETag`: the CDN rewrites
+ * `ETag` on a compressed response, and a rewritten version names nothing stored
+ * — every save after the first came back "changed somewhere else".
+ */
 async function parse(response: Response): Promise<TeamsDocument> {
-  return { etag: response.headers.get('etag'), teams: decodeTeams(await response.text()) }
+  return { etag: response.headers.get(VERSION_HEADER), teams: decodeTeams(await response.text()) }
 }
 
 /**

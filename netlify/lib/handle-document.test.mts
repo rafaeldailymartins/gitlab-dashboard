@@ -151,7 +151,7 @@ describe('reading', () => {
 
     const response = await get(ADA)
 
-    expect(response.headers.get('etag')).toBe(written.headers.get('etag'))
+    expect(response.headers.get(VERSION_HEADER)).toBe(written.headers.get(VERSION_HEADER))
     await expect(response.json()).resolves.toEqual(document())
   })
 
@@ -177,7 +177,38 @@ describe('writing', () => {
     const response = await put(ADA, document(), FIRST)
 
     expect(response.status).toBe(200)
-    expect(response.headers.get('etag')).not.toBeNull()
+    expect(response.headers.get(VERSION_HEADER)).not.toBeNull()
+  })
+
+  /*
+   * The path every reader takes from their second save on, and the one nothing
+   * exercised: every other write here is a first write or a stale one. The
+   * version is handed back verbatim, so it names exactly what is stored.
+   */
+  it('accepts a write against the version it handed back', async () => {
+    const first = await put(ADA, document('first'), FIRST)
+
+    const second = await put(ADA, document('second'), {
+      [VERSION_HEADER]: first.headers.get(VERSION_HEADER) ?? '',
+    })
+
+    expect(second.status).toBe(200)
+    await expect(get(ADA).then((response) => response.json())).resolves.toMatchObject({
+      teams: [{ name: 'second' }],
+    })
+  })
+
+  /*
+   * Netlify's CDN rewrites `ETag` when it compresses a response — `"1"` arrives
+   * as `"1-df"` — so a version offered there is one the reader cannot hand back.
+   * It is not offered there at all, and a client cannot read the wrong one.
+   */
+  it('hands back no ETag for the CDN to rewrite', async () => {
+    const written = await put(ADA, document(), FIRST)
+    const read = await get(ADA)
+
+    expect(written.headers.get('etag')).toBeNull()
+    expect(read.headers.get('etag')).toBeNull()
   })
 
   it('refuses a write that named no version it was made against', async () => {
@@ -189,10 +220,12 @@ describe('writing', () => {
 
   it('refuses a write against a version that is no longer current', async () => {
     const first = await put(ADA, document('first'), FIRST)
-    await put(ADA, document('second'), { [VERSION_HEADER]: first.headers.get('etag') ?? '' })
+    await put(ADA, document('second'), {
+      [VERSION_HEADER]: first.headers.get(VERSION_HEADER) ?? '',
+    })
 
     const stale = await put(ADA, document('third'), {
-      [VERSION_HEADER]: first.headers.get('etag') ?? '',
+      [VERSION_HEADER]: first.headers.get(VERSION_HEADER) ?? '',
     })
 
     expect(stale.status).toBe(409)
@@ -201,10 +234,12 @@ describe('writing', () => {
 
   it('hands a conflict the current document, so it can be resolved', async () => {
     const first = await put(ADA, document('first'), FIRST)
-    await put(ADA, document('second'), { [VERSION_HEADER]: first.headers.get('etag') ?? '' })
+    await put(ADA, document('second'), {
+      [VERSION_HEADER]: first.headers.get(VERSION_HEADER) ?? '',
+    })
 
     const stale = await put(ADA, document('third'), {
-      [VERSION_HEADER]: first.headers.get('etag') ?? '',
+      [VERSION_HEADER]: first.headers.get(VERSION_HEADER) ?? '',
     })
 
     await expect(stale.json()).resolves.toMatchObject({ teams: [{ name: 'second' }] })

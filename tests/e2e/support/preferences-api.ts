@@ -1,5 +1,7 @@
 import { expect, type Page } from '@playwright/test'
 
+import { VERSION_HEADER } from '../../../src/shared/api/document-version'
+
 const ENDPOINT = '**/.netlify/functions/preferences'
 
 /**
@@ -69,7 +71,7 @@ export async function stubPreferencesStore(page: Page): Promise<void> {
       // which is what tells a device to send its own rather than adopt defaults.
       body: JSON.stringify(seen.document),
       contentType: 'application/json',
-      headers: { etag: `"${String(version)}"` },
+      headers: { [VERSION_HEADER]: `"${String(version)}"` },
       status: OK,
     })
   })
