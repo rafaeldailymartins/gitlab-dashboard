@@ -93,7 +93,13 @@ does not take anything from.
 
 ### 2. The flow is one required check, not a convention
 
-A `branch-policy` job in `ci.yml`, on `pull_request` only. It passes unless the
+A `branch-policy` job in `pull-request.yml`, a workflow triggered by pull
+requests and by nothing else. It was first a job in `ci.yml` guarded by
+`if: pull_request`, and that left a _skipped_ `branch-policy` on every commit a
+push to `staging` or `main` ran on — which GitHub counts as a passing required
+check, so any branch pointed at staging's head met it before its own pull
+request had run. In a workflow no push triggers, no push can create one. It
+passes unless the
 base is `main` and the head is neither `staging` nor `hotfix/*` **of this
 repository** — `github.event.pull_request.head.repo.full_name` must equal
 `github.repository`, which is what keeps a fork's branch named `staging` out.
@@ -145,7 +151,8 @@ from pull request titles, and every promotion is titled
 
 ### 5. Commit messages are checked in CI with the config the hook already uses
 
-A `commit-messages` job on `pull_request`: full history, the shared setup, then
+A `commit-messages` job in `pull-request.yml`, for the reason § 2 gives: full
+history, the shared setup, then
 `bun commitlint --from <base sha> --to <head sha> --verbose`. It reads
 `commitlint.config.js`, so the hook and the check cannot disagree.
 `config-conventional` ignores merge commits by default, which is DELIVERY-3's

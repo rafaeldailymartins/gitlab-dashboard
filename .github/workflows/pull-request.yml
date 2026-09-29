@@ -1,0 +1,69 @@
+# The checks that are about a pull request itself — where it comes from, and
+# what its commits say — rather than about the code at a commit.
+#
+# Their own workflow, triggered by pull requests and by nothing else, because a
+# job that exists in a workflow but does not apply still reports: as skipped,
+# and GitHub counts a skipped check as a passing one. In `ci.yml`, which also
+# runs on pushes to `staging` and `main`, every push left a skipped
+# `branch-policy` and a skipped `commit-messages` on its commit. A pull request
+# whose head was that commit — any branch pointed at staging's head, under any
+# name — then met both required checks before its own had run, and could be
+# merged into `main` in the seconds before `branch-policy` refused it. Here no
+# push creates a check by either name, so the only ones a head can carry are
+# the ones its own pull request ran.
+
+name: Pull request
+
+on:
+  pull_request:
+
+concurrency:
+  group: pull-request-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # The only two ways into `main` (DELIVERY-2): a promotion from `staging`, or a
+  # `hotfix/*` branch. Both must be branches of this repository — a fork can
+  # name a branch `staging` too. Every pull request into `staging` passes, which
+  # is what lets a hotfix come back from `main` like any other change.
+  branch-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Only staging and hotfix branches go into main
+        env:
+          BASE: ${{ github.event.pull_request.base.ref }}
+          HEAD: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          if [ "$BASE" != main ]; then
+            echo "Into $BASE: nothing to enforce."
+            exit 0
+          fi
+          if [ "$HEAD_REPOSITORY" = "$REPOSITORY" ] && { [ "$HEAD" = staging ] || [[ "$HEAD" == hotfix/* ]]; }; then
+            echo "$HEAD may go into main."
+            exit 0
+          fi
+          echo "::error::Only staging, or a hotfix/* branch of $REPOSITORY, may open a pull request into main; this one comes from $HEAD_REPOSITORY:$HEAD. Open it into staging instead — CONTRIBUTING.md has the flow."
+          exit 1
+
+  # The release notes are built from commit messages, so a message they cannot
+  # read is refused before the merge rather than lost after it. The hook on the
+  # author's machine runs the same config, and can be skipped; this cannot.
+  # `config-conventional` ignores merge commits, whose messages nothing reads.
+  commit-messages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - run: bun commitlint --from "$BASE" --to "$HEAD" --verbose
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}

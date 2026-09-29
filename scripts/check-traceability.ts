@@ -40,11 +40,11 @@ const UNCITED_BY_DESIGN = new Map([
   ],
   [
     'DELIVERY-2',
-    'The paths into production are repository rules, not application behaviour. The `branch-policy` job in `.github/workflows/ci.yml` fails a pull request into `main` from anything but `staging` or `hotfix/*` of this repository, and the rulesets on `main` and `staging` make it and the other checks required.',
+    'The paths into production are repository rules, not application behaviour. The `branch-policy` job in `.github/workflows/pull-request.yml` fails a pull request into `main` from anything but `staging` or `hotfix/*` of this repository, and the rulesets on `main` and `staging` make it and the other checks required.',
   ],
   [
     'DELIVERY-3',
-    'A version is computed after the merge, from commit messages, by the `release` job in `.github/workflows/ci.yml` under the rules in `cliff.toml`; the `commit-messages` job fails a pull request carrying a message those rules could not read. No screen shows a tag.',
+    'A version is computed after the merge, from commit messages, by the `release` job in `.github/workflows/ci.yml` under the rules in `cliff.toml`; the `commit-messages` job in `.github/workflows/pull-request.yml` fails a pull request carrying a message those rules could not read. No screen shows a tag.',
   ],
   [
     // This entry used to claim a lint rule that does not exist. Half of the
