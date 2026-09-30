@@ -316,8 +316,14 @@ one without reading the reason will reintroduce a bug that is already fixed.
   The frontier is **per person**, not per report: each row is its own
   connection, so a month that fitted one round is final while somebody else is
   still being read, and `frontierOf` in `model/report.ts` is computed from that
-  person's own newest entry. `TeamReport.complete` is the only thing that waits
-  on everybody, because it is the one figure that is about the whole team.
+  person's own newest entry. The row's total follows the same read: `GridRow.settled`
+  is that person's connection having no cursor left, never the frontier reaching
+  the month's end — a padding-day entry does that one round early. It waited on
+  the whole team for a while after the cells stopped doing so, and a finished
+  colleague's total sat as a pulsing bar beside cells that already showed it.
+  `TeamReport.complete` is the only thing that waits on everybody, because it is
+  the figure about the whole team — the footer — and what the six-row placement
+  cap is chosen over.
   The frontier is the day _before_ the newest entry read, since the next round
   can still carry more of that same day.
 - **Bars on the team screen measure against the reader's own working schedule,
@@ -464,6 +470,11 @@ one without reading the reason will reintroduce a bug that is already fixed.
   nothing implemented it, which `arch:trace` never noticed because it matches
   requirement ids and GROUP-20 is cited by two other scenarios. And deleting the
   addressed team inside the visit, which touches nothing remembered at all.
+  The first is repaired on arrival, not at the save: a team deleted from
+  Settings or another device is a save this screen never sees. The route hands
+  the page the remembered identifier — only it can tell an address completed
+  from memory from one somebody sent — and `lib/forget-remembered.ts` moves off
+  it, in place, once the list has answered without holding it.
   Neither is fixed by falling back to the first team, which GROUP-14 forbids: an
   address naming a team that was never yours has to say so. The save is the
   event instead — it is the only moment the list is known to have changed and to
@@ -846,7 +857,10 @@ one without reading the reason will reintroduce a bug that is already fixed.
   above learn who is calling without this app vouching for the claim itself. A
   session granted before the scope changed keeps working and is not signed out:
   it authorises everything else it always did, so the reader sees an inline
-  reconnect notice on the teams surface and the quiet unsynced line on
+  reconnect notice on the teams surface — with a button that authorises again
+  and comes back to the same address, which `SignInAgainButton` in
+  `entities/sessions` is, and which only the read-failure notice carries,
+  because a failed write has a draft on screen — and the quiet unsynced line on
   `/settings`, and authorising once more repairs both. Both surfaces degrade to
   what the device itself holds, which is what they showed before any of this
   existed. Signing them out would lose their place for no gain, and saying

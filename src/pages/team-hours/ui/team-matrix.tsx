@@ -106,13 +106,7 @@ export function TeamMatrix({
         </thead>
         <tbody>
           {visible.map((row) => (
-            <MatrixRow
-              complete={report.complete}
-              key={row.member.id}
-              marks={marks}
-              row={row}
-              scoped={scoped}
-            />
+            <MatrixRow key={row.member.id} marks={marks} row={row} scoped={scoped} />
           ))}
         </tbody>
         <MatrixFoot

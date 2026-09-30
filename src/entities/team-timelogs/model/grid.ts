@@ -74,6 +74,14 @@ export interface GridRow {
    */
   readonly placed: null | Shortfall
   /**
+   * Whether this person's read is over, so their total and its caveat are final.
+   *
+   * Theirs and not the report's, as `MemberWindow.settled` is: a row that has
+   * been read to its end is presented as final while somebody else's is still
+   * arriving (GROUP-7). Never inferred from the frontier — see there.
+   */
+  readonly settled: boolean
+  /**
    * What the provider says this person logged, minus what it showed. Signed,
    * and null when the provider was not asked about them. See `shortfallOf`.
    */
@@ -105,6 +113,16 @@ export interface MemberWindow {
   /** The last day their read is complete through, or null when nothing has been. */
   readonly loadedThrough: IsoDate | null
   readonly member: Member
+  /**
+   * Whether their connection has nothing more to give — no cursor left.
+   *
+   * Not the same as `loadedThrough` reaching the period's end, and not derivable
+   * from it. The frontier is clamped to the period, so a person whose newest
+   * entry read so far sits on the padding day after the month reads as complete
+   * through its last day while their window is still open — and the shortfall,
+   * measured over the whole window, would be taken for final one round early.
+   */
+  readonly settled: boolean
 }
 
 /**
@@ -324,6 +342,7 @@ function rowOf(
     identity: window.identity,
     member: window.member,
     placed: null,
+    settled: window.settled,
     shortfall: shortfallOf(window.declared, visibleOf(window.entries)),
     total: totalOf(cells),
   }

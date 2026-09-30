@@ -64,6 +64,8 @@ Feature: A team's month as a matrix
     And Bruno's month has been read up to 2026-05-12
     Then the cell for Ana on 2026-05-20 is "unlogged"
     And the cell for Bruno on 2026-05-20 is "pending"
+    And Ana's row total is final
+    And Bruno's row total is still pending
 
   # Spec: team-timelog-report / GROUP-6
   Scenario: The grand total agrees with the rows and with the columns

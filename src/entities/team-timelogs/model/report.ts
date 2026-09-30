@@ -187,6 +187,7 @@ function windowsOf(
       identity: identityOf(member),
       loadedThrough: frontierOf(entries, isSettled(answer), options),
       member,
+      settled: isSettled(answer),
     }
   })
 }

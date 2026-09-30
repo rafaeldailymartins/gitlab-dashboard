@@ -13,6 +13,12 @@ const PERSISTED_WITHIN = 10_000
 /** The widest reach this screen has: every hour the provider counts. */
 const EVERYWHERE = /wherever they logged it|onde quer que tenham sido lançadas/iu
 
+/** Where the route keeps the team this reader chose last. */
+const REMEMBERED_TEAM = 'team-report-team'
+
+/** A team identifier the stubbed store does not hold. */
+const DELETED_TEAM = '018f3b2c-7a41-7c9e-9f2d-000000000000'
+
 /** The key every answer on this screen would be persisted under, if any were. */
 const TEAM_HOURS = 'team-timelogs'
 
@@ -44,15 +50,33 @@ Then('the screen says the figures cover everywhere these people logged', async (
 })
 
 /**
- * The reach is wider than the reader's own sight, and the screen says so.
+ * Unnarrowed, an hour the reader cannot open is declared beside the row, never
+ * counted into it — placement only runs on a report narrowed to a group.
  *
- * A figure here may count hours logged on work this account cannot open, taken
+ * The caption used to say the figures included such hours, and this step only
+ * looked for "cannot open", so it held a claim nothing on the screen did. It
+ * reads the sentence that says they are left out now, which a caption claiming
+ * the opposite does not contain.
+ */
+Then('hours on work this account cannot open are said not to be counted in', async ({ page }) => {
+  await expect(page.locator('caption')).toContainText(
+    /cannot open are not counted in|não pode abrir não são somadas/iu,
+  )
+})
+
+/**
+ * Narrowed, the reach is wider than the reader's own sight, and the screen says
+ * so.
+ *
+ * A figure here may count hours logged on work this account cannot open, placed
  * from what the provider declares about the person rather than read from any
  * entry. A reader who took a total for something they could go and inspect would
  * be wrong about it and would have no way to find out.
  */
-Then('the figures are said to include work this account cannot open', async ({ page }) => {
-  await expect(page.locator('caption')).toContainText(/cannot open|não pode abrir/iu)
+Then('the figures are said to possibly include work this account cannot open', async ({ page }) => {
+  await expect(page.locator('caption')).toContainText(
+    /may include[^.]*cannot open|podem incluir[^.]*não pode abrir/iu,
+  )
 })
 
 Then(
@@ -115,6 +139,28 @@ Then('the sync control says only when the hours arrived', async ({ page }) => {
 
   await expect(status).toHaveText(/updated|updating|atualizad/iu)
   await expect(status).not.toHaveText(/hidden|ocultas|cannot read|não pode ler/iu)
+})
+
+/**
+ * The device remembers a team the store no longer holds — deleted from Settings,
+ * in another tab or on another device, none of which this device saw.
+ *
+ * Written straight into the device rather than walked through the dialog: every
+ * way in that this device could watch already moves the address when it saves,
+ * and the case the clause is about is the one it could not watch.
+ */
+Given('the team I chose last has since been deleted', async ({ page }) => {
+  await page.evaluate(
+    ([key, team]) => {
+      localStorage.setItem(key, team)
+    },
+    [REMEMBERED_TEAM, DELETED_TEAM] as const,
+  )
+})
+
+/** "Not one of yours" is what a sent link to somebody else's team gets, not this. */
+Then('the screen does not say the team is not mine', async ({ page }) => {
+  await expect(page.getByText(/not one of yours|não é sua/iu)).toHaveCount(0)
 })
 
 /**

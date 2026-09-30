@@ -27,6 +27,7 @@ function row({ identity = { kind: 'unresolved' }, saved, seconds = 0 }: RowOptio
     identity,
     member: saved,
     placed: null,
+    settled: true,
     shortfall: null,
     total: { entryCount: seconds === 0 ? 0 : 1, hours: seconds / HOUR, seconds },
   }

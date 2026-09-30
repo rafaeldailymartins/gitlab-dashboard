@@ -21,6 +21,7 @@ function gridOf(overrides: Partial<GridRequest> = {}): TeamGrid {
         identity: { kind: 'confirmed', person: ANA },
         loadedThrough: MAY.to,
         member: member(ANA),
+        settled: true,
       },
     ],
     period: MAY,
@@ -53,6 +54,7 @@ describe('legendShows', () => {
           identity: { kind: 'confirmed', person: ANA },
           loadedThrough: MAY.to,
           member: member(ANA),
+          settled: true,
         },
       ],
     })

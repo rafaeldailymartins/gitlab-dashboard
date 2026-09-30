@@ -44,6 +44,7 @@ function window(person: Person, overrides: Partial<MemberWindow> = {}): MemberWi
     identity: { kind: 'confirmed', person },
     loadedThrough: MAY.to,
     member: member(person),
+    settled: true,
     ...overrides,
   }
 }
@@ -145,6 +146,17 @@ describe('teamGrid, cell kinds', () => {
 
     expect(cellOn(grid, '2026-05-20', 0)?.kind).toBe('unlogged')
     expect(cellOn(grid, '2026-05-20', 1)?.kind).toBe('pending')
+  })
+
+  // GROUP-7: the row, not only its cells. And taken from the read, never from the
+  // frontier: an entry on the padding day after the month puts the frontier at
+  // the month's end while a cursor is still left.
+  it('says a row is settled only when that person’s own read is over', () => {
+    const grid = teamGrid(request({ members: [window(ANA), window(BRUNO, { settled: false })] }))
+
+    expect(grid.rows[0]?.settled).toBe(true)
+    expect(grid.rows[1]?.settled).toBe(false)
+    expect(cellOn(grid, '2026-05-31', 1)?.kind).not.toBe('pending')
   })
 
   it('marks a column pending even when entries for it have already arrived', () => {

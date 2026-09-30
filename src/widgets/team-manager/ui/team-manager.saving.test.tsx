@@ -149,9 +149,28 @@ describe('what a save says', () => {
   it('asks a session that predates the identity scope to sign in again', async () => {
     manager(refusingTeams({ kind: 'identity-unavailable' }))
 
-    expect(await screen.findByText(/sign in again/iu)).toBeInTheDocument()
+    expect(await screen.findByText(/sign in again to grant it/iu)).toBeInTheDocument()
     // Not an outage: waiting repairs one of these two failures and never the
     // other, so one sentence for both would send this reader waiting forever.
     expect(screen.queryByText(/could not be loaded/iu)).not.toBeInTheDocument()
+  })
+
+  // AUTH-11: the sentence says to sign in again, so the notice offers it, and
+  // never by signing the reader out.
+  it('offers to authorise again and to come back to the same address', async () => {
+    globalThis.history.replaceState(null, '', '/team?team=abc&month=2026-05')
+    const { session } = manager(refusingTeams({ kind: 'identity-unavailable' }))
+
+    await userEvent.click(await screen.findByRole('button', { name: /^sign in again$/iu }))
+
+    expect(session.startSignIn).toHaveBeenCalledWith('/team?team=abc&month=2026-05')
+    expect(session.signOut).not.toHaveBeenCalled()
+  })
+
+  it('offers no sign-in for an outage, which waiting repairs', async () => {
+    manager(refusingTeams({ kind: 'unavailable' }))
+
+    expect(await screen.findByText(/could not be loaded/iu)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /sign in again/iu })).not.toBeInTheDocument()
   })
 })

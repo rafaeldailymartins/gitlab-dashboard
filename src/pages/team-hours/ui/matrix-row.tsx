@@ -19,8 +19,6 @@ const STICKY_RIGHT =
   'relative sticky right-0 z-10 w-24 min-w-24 border-b border-l border-border bg-card px-3 text-right align-middle group-hover:bg-accent'
 
 interface MatrixRowProps {
-  /** True once the whole period has been read, so a total is an answer. */
-  readonly complete: boolean
   readonly marks: ColumnMarks
   readonly row: GridRow
   /** True when the figures are narrowed to a group. See `DayCell`. */
@@ -32,9 +30,14 @@ interface MatrixRowProps {
  *
  * Memoised: a month of a forty-person team is over a thousand cells, and
  * re-ordering the rows or hovering one would otherwise re-render every one of
- * them. While the month is still being read every cell is reserved space rather
- * than a figure, so the renders that happen most are also the cheapest, and the
- * one full render happens once.
+ * them. While a person's month is still being read their row is reserved space
+ * rather than a figure, so the renders that happen most are also the cheapest.
+ *
+ * A row is final on **its own** read, `row.settled`, never on the report's
+ * (GROUP-7). It waited on the whole team once, when one serial read made every
+ * row settle together; the per-person frontier moved the cells and left the
+ * total behind, so a finished colleague's figure sat as a pulsing bar beside
+ * cells that already showed it.
  *
  * Deliberately **not** carrying `.cv-auto`, which the day feed uses. That
  * utility sets `content-visibility: auto` with no intrinsic size, which is right
@@ -42,9 +45,10 @@ interface MatrixRowProps {
  * row, where an off-screen row collapsing to nothing takes the column widths and
  * the scroll height with it.
  */
-export const MatrixRow = memo(function MatrixRow({ complete, marks, row, scoped }: MatrixRowProps) {
+export const MatrixRow = memo(function MatrixRow({ marks, row, scoped }: MatrixRowProps) {
   const { locale } = useActiveLocale()
-  const { allHidden, caveat, known, withheld } = readingOf(row, complete, locale)
+  const { settled } = row
+  const { allHidden, caveat, known, withheld } = readingOf(row, locale)
 
   return (
     <tr className="group">
@@ -62,7 +66,7 @@ export const MatrixRow = memo(function MatrixRow({ complete, marks, row, scoped 
         />
       ))}
       <td className={STICKY_RIGHT}>
-        {complete && known ? (
+        {settled && known ? (
           <span className="tabular text-sm font-semibold">
             <HourFigure
               className=""
@@ -71,7 +75,7 @@ export const MatrixRow = memo(function MatrixRow({ complete, marks, row, scoped 
             />
           </span>
         ) : null}
-        {known && !complete ? (
+        {known && !settled ? (
           <span
             aria-hidden
             className="ml-auto block h-3 w-10 animate-pulse rounded-sm bg-chart-empty"
@@ -80,7 +84,7 @@ export const MatrixRow = memo(function MatrixRow({ complete, marks, row, scoped 
         {/* Drawn as nothing at all rather than as reserved space: reserved space
             is a figure that is coming, and for this row none ever will. */}
         {known ? null : <span className="sr-only">{m.team_row_total_unknown()}</span>}
-        {caveat === null || !complete ? null : (
+        {caveat === null || !settled ? null : (
           <span className="block text-[11px] leading-tight text-muted-foreground">{caveat}</span>
         )}
       </td>
@@ -145,14 +149,16 @@ function caveatFor(shortfall: null | Shortfall, locale: string): null | string {
  * doing its job, because a component computing what it is entitled to say is a
  * component doing two things.
  */
-function readingOf(row: GridRow, complete: boolean, locale: string): Reading {
+function readingOf(row: GridRow, locale: string): Reading {
   // What is left of the shortfall after the cells took their share of it. On a
   // row whose hours were all placed this is nothing, and the note disappears —
   // the marks in the columns say the same thing, and say where.
   const unplaced = unplacedOf(row)
   // The count rather than the seconds: a withheld entry and a withheld
   // correction cancel in seconds while both are still being kept from the reader.
-  const withheld = complete && unplaced !== null && unplaced.entryCount !== 0
+  // Only once their read is over: mid-read, the shortfall is everything not
+  // arrived yet, which is not the same thing as withheld.
+  const withheld = row.settled && unplaced !== null && unplaced.entryCount !== 0
 
   return {
     // Read here so the cell takes a plain boolean: a `&&` chain in a prop

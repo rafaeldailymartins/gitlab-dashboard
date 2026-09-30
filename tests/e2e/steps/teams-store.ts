@@ -118,6 +118,10 @@ Then('the screen says my teams could not be loaded', async ({ page }) => {
  * A reader whose grant predates the identity scope must not be told the store is
  * down: that sends them away to wait for something that will never change on its
  * own. What they need is what is missing and that authorising again supplies it.
+ *
+ * The offer is read as a button, not as words. This step used to look for "sign
+ * in again" in the text, which the sentence itself contains — so it passed over
+ * a notice that named an action and offered nothing to press.
  */
 Then(
   'the screen says permission to identify me is needed, and offers a fresh sign-in',
@@ -127,7 +131,9 @@ Then(
     await expect(
       notice.getByText(/permission to identify you|permissão de identificar/iu),
     ).toBeVisible(SETTLES)
-    await expect(notice.getByText(/sign in again|entre de novo/iu)).toBeVisible()
+    await expect(
+      notice.getByRole('button', { name: /^(sign in again|entrar de novo)$/iu }),
+    ).toBeVisible()
   },
 )
 

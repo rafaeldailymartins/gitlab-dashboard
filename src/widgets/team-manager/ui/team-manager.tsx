@@ -2,6 +2,7 @@ import { type ReactNode, useEffect } from 'react'
 
 import type { Team } from '@/entities/teams'
 
+import { SignInAgainButton } from '@/entities/sessions'
 import { m } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Skeleton } from '@/shared/ui/skeleton'
@@ -66,7 +67,7 @@ export function TeamManager({ onCancel, onDirtyChange, onSaved }: TeamManagerPro
   }
 
   if (unreachable !== null) {
-    return <Notice>{unreachable}</Notice>
+    return <Notice reconnect={edits.failure?.kind === 'identity-unavailable'}>{unreachable}</Notice>
   }
 
   return (
@@ -124,10 +125,25 @@ export function TeamManager({ onCancel, onDirtyChange, onSaved }: TeamManagerPro
   )
 }
 
-function Notice({ children }: { readonly children: ReactNode }) {
+/**
+ * Why the list could not be read, and the way to repair it when there is one.
+ *
+ * The offer to authorise again is only here, where the list could not be read
+ * and so no draft exists. A write refused for the same reason leaves a draft on
+ * screen, and sending the reader to GitLab from there would lose it to the round
+ * trip.
+ */
+function Notice({
+  children,
+  reconnect,
+}: {
+  readonly children: ReactNode
+  readonly reconnect: boolean
+}) {
   return (
-    <p className="m-5 rounded-lg border border-border px-4 py-8 text-center text-sm text-muted-foreground">
-      {children}
-    </p>
+    <div className="m-5 flex flex-col items-center gap-4 rounded-lg border border-border px-4 py-8 text-center text-sm text-muted-foreground">
+      <p>{children}</p>
+      {reconnect ? <SignInAgainButton /> : null}
+    </div>
   )
 }

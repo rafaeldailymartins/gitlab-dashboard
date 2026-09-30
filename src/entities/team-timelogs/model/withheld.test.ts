@@ -123,6 +123,7 @@ function window(overrides: Partial<MemberWindow> = {}): MemberWindow {
     identity: { kind: 'confirmed', person: ANA },
     loadedThrough: MAY.to,
     member: member(ANA),
+    settled: true,
     ...overrides,
   }
 }
