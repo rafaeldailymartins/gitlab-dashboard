@@ -268,15 +268,15 @@ ambientes, os nomes de branch, os hotfixes, a promoção e a convenção de comm
 
 ## 📄 Licença
 
-[PolyForm Noncommercial 1.0.0](LICENSE.md) (em inglês). Você pode ler, rodar,
-modificar e compartilhar este código para qualquer fim não comercial: uso
-pessoal, estudo, pesquisa, projeto de hobby, ou uso por uma entidade
-beneficente, uma instituição de ensino ou um órgão público. Qualquer uso
-comercial precisa de uma licença à parte do autor; entre em contato pelo
-[GitHub](https://github.com/rafaeldailymartins).
+Copyright © 2026 Rafael Daily Santos Martins. Distribuído sob a
+[GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`, em inglês).
 
-Isso faz do projeto _source-available_, e não open source no sentido da OSI,
-cuja definição não permite que uma licença exclua o uso comercial.
+Você pode usar, estudar, modificar e compartilhar este código, comercialmente ou
+não. O que a licença pede em troca é que quem oferecer a outras pessoas uma
+versão modificada, seja em arquivos ou como um serviço acessado pela rede,
+entregue também o código-fonte dela, nestes mesmos termos. Uma licença em outros
+termos pode ser obtida com o autor; entre em contato pelo
+[GitHub](https://github.com/rafaeldailymartins).
 
 ## 👨‍💻 Autor
 
