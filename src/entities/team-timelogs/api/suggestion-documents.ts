@@ -1,9 +1,10 @@
 /**
  * Who could be on a team, and which groups the reader may narrow a report to.
  *
- * None of these is on the report's path. A month of hours asks the three
- * documents in `documents.ts` and nothing else; these are read when somebody is
- * building a team or choosing a filter.
+ * Only `GROUP_REF` is on the report's path, resolving a narrowed address before
+ * the month is asked. Otherwise a month of hours asks the three documents in
+ * `documents.ts` and nothing else; the rest are read when somebody is building a
+ * team or choosing a filter.
  */
 
 /**

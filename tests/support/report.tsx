@@ -208,15 +208,10 @@ export function renderRoutedReport(ui: ReactNode, options: ReportRenderOptions =
     getParentRoute: () => rootRoute,
     path: '/days/$date',
   })
-  const teamsRoute = createRoute({
-    component: () => <p>Teams screen</p>,
-    getParentRoute: () => rootRoute,
-    path: '/teams',
-  })
 
   const router = createRouter({
     history: createMemoryHistory({ initialEntries: ['/'] }),
-    routeTree: rootRoute.addChildren([indexRoute, dayRoute, teamsRoute]),
+    routeTree: rootRoute.addChildren([indexRoute, dayRoute]),
   })
 
   return { router, ...renderReport(<RouterProvider router={router} />, options) }

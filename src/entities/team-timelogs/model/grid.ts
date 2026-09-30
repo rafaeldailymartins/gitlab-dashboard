@@ -51,7 +51,7 @@ export interface GridCell {
 
 export interface GridRequest {
   readonly granularity: Granularity
-  /** One per person the team names, in the order their rows are drawn. */
+  /** One per person the team names, in the order it names them. */
   readonly members: readonly MemberWindow[]
   readonly period: DateRange
   readonly reference: ReferenceSchedule

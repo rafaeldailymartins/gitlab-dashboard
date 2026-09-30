@@ -12,26 +12,26 @@ Paraglide. The one exception is `README.pt-BR.md`, the Portuguese translation of
 
 ## Commands
 
-| Command                           | What it does                                                                                                                |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `bun run dev`                     | Dev server on http://localhost:3000, with both document endpoints served by `config/vite/api-dev.ts`                        |
-| `bun run verify`                  | Every fast gate: format, lint, ARIA, contrast, translations, types, architecture, dead code, type coverage, vulnerabilities |
-| `bun run test`                    | Unit, component, Gherkin domain and serverless-function tests (`domain` + `functions` + `ui` Vitest projects)               |
-| `bun run test:coverage`           | Same, with coverage thresholds enforced                                                                                     |
-| `bun run test:e2e`                | Builds, serves `dist/`, runs Playwright over `features/acceptance/*.feature` — chromium locally, three engines in CI        |
-| `bun run test:mutation`           | Stryker mutation testing on the model layer                                                                                 |
-| `bun run build` && `bun run size` | Production build, its Content-Security-Policy, and the 180 kB gzip budget                                                   |
-| `bun run arch:trace`              | Every scenario cites a requirement, and every requirement is cited                                                          |
-| `bun run lint:a11y`               | Biome, ARIA rules only                                                                                                      |
-| `bun run a11y:contrast`           | Every colour pair that has to stay legible, measured against both schemes                                                   |
-| `bun run i18n:check`              | Every message exists in every language, and no message exists in only one                                                   |
+| Command                           | What it does                                                                                                                              |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run dev`                     | Dev server on http://localhost:3000, with both document endpoints served by `config/vite/api-dev.ts`                                      |
+| `bun run verify`                  | Every fast gate: format, lint, ARIA, contrast, translations, types, architecture, traceability, dead code, type coverage, vulnerabilities |
+| `bun run test`                    | Unit, component, Gherkin domain and serverless-function tests (`domain` + `functions` + `ui` Vitest projects)                             |
+| `bun run test:coverage`           | Same, with coverage thresholds enforced                                                                                                   |
+| `bun run test:e2e`                | Builds, serves `dist/`, runs Playwright over `features/acceptance/*.feature` — chromium locally, three browsers in CI                     |
+| `bun run test:mutation`           | Stryker mutation testing on the model layer                                                                                               |
+| `bun run build` && `bun run size` | Production build, its Content-Security-Policy, and the 180 kB gzip budget                                                                 |
+| `bun run arch:trace`              | Every scenario cites a requirement, and every requirement is cited                                                                        |
+| `bun run lint:a11y`               | Biome, ARIA rules and unique element ids only                                                                                             |
+| `bun run a11y:contrast`           | Every colour pair that has to stay legible, measured against both schemes                                                                 |
+| `bun run i18n:check`              | Every message exists in every language, and no message exists in only one                                                                 |
 
 Run `bun run verify && bun run test` before calling any change finished.
 
 ### Runtime
 
-Bun is the package manager, script runner and runtime. Two exceptions, both
-deliberate and both marked in `package.json`:
+Bun is the package manager, script runner and runtime. Three exceptions, all
+deliberate and each marked where it is invoked:
 
 - **Stryker runs on Node** (`node ./node_modules/@stryker-mutator/core/bin/stryker.js`).
   Its plugin loader cannot resolve its own TestRunner plugins under Bun.
@@ -44,7 +44,13 @@ deliberate and both marked in `package.json`:
   point fails for want of a server rather than for anything it asserts. The
   `vite build` before it still runs on Bun.
 
-Everything else uses `bun --bun`. `bunfig.toml` is deliberately absent: a global
+Everything else uses `bun --bun`, except `arch:graph` and `types:coverage`,
+which name their binaries bare and so run on whatever their shebang says. Both
+run green under `bun --bun`; they stay bare because `knip` recognises a
+dependency's binary only as the first word of a script, and prefixed it reports
+`dependency-cruiser` and `type-coverage` as unused — the alternative is an
+ignore entry, which would stop it noticing if either really were.
+`bunfig.toml` is deliberately absent: a global
 `[run] bun = true` symlinks `node` to Bun, which silently breaks the three tools
 above.
 
@@ -57,7 +63,7 @@ src/
   app/          router, providers, global styles, and routes/ (TanStack Router
                 file-based routing lives inside the app layer, because route
                 files are wiring). `lib/runtime.ts` builds the session manager,
-                the timelog gateway and the data client once, from one
+                the timelog and viewer gateways and the data client once, from one
                 configuration read — it hands out the client rather than a third
                 gateway, so a screen most readers never open keeps its adapter
                 out of the bundle everybody downloads;
@@ -93,30 +99,35 @@ src/
       model/    PURE business rules and ports. No React, no I/O, no strings.
       api/      adapters: the GitLab GraphQL gateway, zod schemas, query options
       ui/       the gateway provider
+      lib/      the words a screen writes where a project has no name
       index.ts  public API — import from here, never from internals
     sessions/     PKCE, credentials, the OAuth adapter and the token stores
     viewers/      who is signed in, on its own query so a screen that wants a
                   name does not load a season of hours to get one
-    preferences/  daily target, time zone, theme choice
+    preferences/  daily target, time zone, theme choice, and the sync that
+                  carries the first two to the endpoint below
     team-timelogs/ one team’s month, read through a `User` parent: the widened
                   window, the grid, the shortfall measured against GitLab’s own
                   totals, the column probe that puts a withheld hour on its own
                   day, and the suggestions a team is seeded from
     teams/        the lists of people the reader keeps — the document, its
-                  gateway to the endpoint below, and the edits in progress
-  shared/       ui (shadcn plus ours), api (the GraphQL client, the query client
-                and the cache persister), lib, i18n, config
+                  gateway to the endpoint below, and every edit a team can take
+  shared/       ui (shadcn plus ours), api (the GraphQL client, the query client,
+                the cache persister, the never-persisted mark and the
+                document-version header), lib, i18n, config
 netlify/        the two document endpoints: `functions/{teams,preferences}.mts`
                 name a document and nothing else, and `lib/` holds everything
                 worth testing — the endpoint body they share, the handler under
                 it and its credential rules, each document's own shape, the
-                identity verifier, the blob store and the in-memory one the
+                identity verifier and the configuration it reads, the store each
+                deploy is given, the blob store and the in-memory one the
                 tests and `bun run dev` use
 config/         eslint/ (the layer, purity and limit rules) and
                 vite/api-dev.ts, which serves that same handler under
-                `bun run dev` in thirty lines rather than a platform emulator
+                `bun run dev` in a few dozen lines rather than a platform emulator
 scripts/        build and gate tooling: the CSP writer, the traceability check,
-                the contrast measurement, the translation-parity check, and the
+                the contrast measurement, the translation-parity check, the
+                lockfile snapshot GitHub's dependency review reads, and the
                 message compiler, which every `pre*` script calls and which
                 rebuilds only when the catalogues change
 ```
@@ -134,7 +145,7 @@ adapter. Both linters recognise them, which custom names like `domain/` and
 | Slice public API, no cross-slice imports, no layer skipping                                                                         | `steiger` (`bun run arch:layers`)                            |
 | No import cycles, no orphan modules, no devDependency in `src/` or `netlify/`                                                       | `dependency-cruiser` (`bun run arch:graph`, over both trees) |
 | `model/` stays pure: no React, no `@tanstack/*`, no `api/`, no i18n, no `fetch`/`window`/`localStorage`                             | `DOMAIN_PURITY_RULES` (`config/eslint/layers.js`)            |
-| Shipped code never imports `node:*`                                                                                                 | `BROWSER_ONLY_RULES`                                         |
+| The browser bundle never imports `node:*`                                                                                           | `BROWSER_ONLY_RULES`                                         |
 | Cyclomatic complexity ≤ 8, cognitive complexity ≤ 10, ≤ 40 lines per function (60 for components), ≤ 200 lines per file, ≤ 3 params | `config/eslint/limits.js`                                    |
 | No unused export, file or dependency                                                                                                | `knip` (`bun run deadcode`)                                  |
 | ARIA attributes are supported by the role they sit on                                                                               | `biome` (`bun run lint:a11y`)                                |
@@ -158,11 +169,13 @@ one without reading the reason will reintroduce a bug that is already fixed.
   `15:00:00Z`. So a period asked of GitLab is a window of UTC days, and its
   totals disagree with the days on screen by the hours logged on the boundary
   days. History is read newest first instead, and every period is cut locally
-  where the reader's zone is known. See `design.md` § 4.
-- **`totalSpentTime` is a string and `summary` is `''`, not null.** Both are
-  normalised at the adapter boundary. The fixtures in `tests/e2e/support/` and
-  `tests/support/gitlab-timelogs.ts` are shaped from a real recorded response for
-  that reason; keep them that way.
+  where the reader's zone is known. See § 4 of
+  `openspec/changes/archive/2026-08-31-rebuild-personal-hours-dashboard/design.md`.
+- **`totalSpentTime` is a string and `summary` is `''`, not null.** Each is
+  normalised at the adapter boundary that reads it — `summary` in `timelogs`,
+  `totalSpentTime` in `team-timelogs`. The fixtures in `tests/e2e/support/`,
+  `tests/support/gitlab-timelogs.ts` and `tests/support/gitlab-team-timelogs.ts`
+  are shaped from a real recorded response for that reason; keep them that way.
 - **A period total says whether it is settled.** A total whose loaded history
   does not reach past the period's start is a floor, not an answer, and the query
   keeps loading until it is. Presenting a floor as final would understate the
@@ -247,10 +260,11 @@ one without reading the reason will reintroduce a bug that is already fixed.
   were read at two instants, while `TEAM_HOURS_PAGE` asks both on the same field
   of the same request, where the aggregate and the nodes are one relation under
   one range and cannot disagree at all.
-- **The group filter goes through all three documents and all three query keys,
-  or through none of them.** `TEAM_HOURS_PAGE`, `teamHoursFollowing` and
-  `teamColumnProbe` each take `$group: GroupID`, and `queries.ts` puts `groupId`
-  in every key beside the month and the roster. Leaving it out of one of them is
+- **The group filter goes through all three documents and both query keys, or
+  through none of them.** `TEAM_HOURS_PAGE`, `teamHoursFollowing` and
+  `teamColumnProbe` each take `$group: GroupID`, and in `queries.ts`
+  `teamHoursQuery` keys on the month, `groupId` and the roster, and
+  `teamColumnsQuery` on the person, `groupId` and the spans. Leaving it out of one of them is
   the worst bug this screen can have, because nothing on it would look wrong: an
   instrument measuring a wider set than the figures reports hours withheld that
   were merely filtered out, an instrument measuring a narrower set reports none
@@ -365,7 +379,7 @@ one without reading the reason will reintroduce a bug that is already fixed.
   What thirty days loses is somebody away for the whole month, and they are one
   search away by name.
   Naming the group **is** making the team: it is minted already full, in one
-  conditional write. It used to be a combobox in the editor followed by a plus
+  edit to the draft, and Save writes it in one conditional write. It used to be a combobox in the editor followed by a plus
   beside each person, which asked the reader to re-answer, one name at a time and
   one write at a time, the question they had already answered by naming the
   squad. The same list is reachable afterwards as "add from a group", which
@@ -434,7 +448,7 @@ one without reading the reason will reintroduce a bug that is already fixed.
   that read it are all deleted. What `SaveNotice` says now is only what the
   reader is still there to hear: that a save is in flight, that it was refused,
   or that somebody else wrote first.
-  The question about closing is an inline bar in the footer, not a nested
+  The question about closing is an inline bar under the footer, not a nested
   dialog: a focus trap inside a focus trap is what the keyboard sweep would find.
   It is not a live region either — `SaveNotice` is this surface's only one, and
   the acceptance suite reads it with an unscoped status locator that resolves to
@@ -456,7 +470,7 @@ one without reading the reason will reintroduce a bug that is already fixed.
   have been accepted — and the team it moves to is read from the **written
   document**, never from what the dialog minted. `withTeam` returns the list
   unchanged at `MAX_TEAMS` and on a duplicate id while the write still succeeds
-  and still says "Saved.", so a minted identifier would name a team nothing
+  and the dialog still closes, so a minted identifier would name a team nothing
   created.
 - **The teams a reader keeps are edited in a dialog over the report, and `/teams`
   is gone.** This reverses the decision the surface shipped with, and that
@@ -479,14 +493,11 @@ one without reading the reason will reintroduce a bug that is already fixed.
   were also redundant: a `select` and a `combobox` both take an accessible name
   from `aria-label` — which is what the assistive tree reads and what
   `getByLabel` finds — while the label above restated what the control's own
-  value already says. The way into the teams dialog is an icon button **inside
-  the team control's own border**: a control that acts on the thing beside it
-  belongs attached to it, and at the end of a row of unrelated controls it read
-  as a fifth filter. (This paragraph described it as an icon button inside the
-  team control's own border for a while after it had stopped being one; it is a
-  labelled button at the far end of the row, and `report-toolbar.tsx` argues
-  that case itself.)
-- **Every dropdown in the app opens the same panel, out of
+  value already says. The way into the teams dialog is a labelled button
+  pushed to the far end of the row: the controls on the left narrow or move what
+  the table shows, this one changes what a team _is_, and beside a filter it
+  read as a fifth one. `report-toolbar.tsx` argues that case itself.
+- **Every dropdown on the report opens the same panel, out of
   `shared/ui/popup.ts`.** There are two of them and they answer different
   questions: a **combobox** for a list that comes from the provider a page at a
   time and has to be typed at (the group filter, thousands of groups), a
@@ -501,10 +512,12 @@ one without reading the reason will reintroduce a bug that is already fixed.
   opening the operating system's, in a different font, a different width and a
   different highlight, six pixels apart. The surface, the rows, the list, the
   closed control and its size are five constants both read.
-  `entities/preferences` keeps the **native** `SelectField` for the time zone,
-  and that is not the same decision reversed: several hundred zones is a list a
-  custom listbox would have to virtualise to stay responsive, and a native
-  select is also the platform's own picker on a phone.
+  `/settings` keeps the **native** `SelectField` from `shared/ui` for all three
+  of its lists — the time zone, the colour scheme and the language — and that
+  is not the same decision reversed: none of them stands beside a popup,
+  several hundred zones is a list a custom listbox would have to virtualise to
+  stay responsive, and a native select is also the platform's own picker on a
+  phone.
   The select needed two corrections Base UI's defaults would have hidden.
   `alignItemWithTrigger` is false, or the panel lays itself over the trigger
   with the chosen row on top — native macOS behaviour, and not what the combobox
@@ -524,7 +537,7 @@ one without reading the reason will reintroduce a bug that is already fixed.
   So the button starts the import on `pointerenter` and on `focus`, and the
   report screen starts it again from `requestIdleCallback` — which is skipped
   where there is none rather than replaced by a timer that would race the
-  month's own requests. Warm, the same open is 21 ms on a normal machine.
+  month's own requests. Warm, the same open waits on no request.
   What is left is the page behind it being laid out again: 248 ms at six times
   slower over the month's table against 112 ms over `/settings`, which is the
   scroll lock changing the document's width and a month-wide fixed table with
@@ -560,20 +573,21 @@ one without reading the reason will reintroduce a bug that is already fixed.
   would be a bug. The weekday targets already settle where it matters — the
   network write waits 800 ms in `use-preferences-sync.ts`, and the per-keystroke
   work left is a `localStorage` write the reader's own screen depends on. The
-  team name saves on blur or Enter, never on a keystroke, so there is nothing to
-  delay.
+  team name goes into the draft on every keystroke and reaches the store only on
+  Save, so there is nothing to delay.
   Nothing in the unit suite used to type into either search box, so this was
   removable with every gate green. `team-manager.test.tsx` now counts what
   reaches the provider, and both counts fail without the debounce.
-- **A column nothing is expected of is drawn from `share`, not from the cell's
+- **A column nothing is expected of is drawn from the reference, not from the cell's
   kind, and it is named like every other column.** "Nothing expected" means the
   reader's working schedule is zero for that weekday — not that it is a Saturday
   or a Sunday: a Saturday with hours in Settings is a working column, and a
   Wednesday without is tinted. A cell is only `non-working` once its column
   has been read and nobody logged in it, so such a column still loading — or one
   later this month — would lose its tint and its narrow width, and the table
-  would change shape as the pages landed. `share` is null exactly when the
-  reference expects nothing, which is the fact the column is drawn from. The
+  would change shape as the pages landed. The column is drawn from the
+  reference itself — `referenceHours === 0` for the header, the footer and the
+  width, and `share`, which is null exactly then, for the body cells. The
   widths live in a `<colgroup>`: a fixed table takes its widths from the first
   row, and the first row here is the week bands, whose cells span several columns
   and say nothing about any one of them.
@@ -647,7 +661,7 @@ one without reading the reason will reintroduce a bug that is already fixed.
   substitute, and an empty parameter renders a sentence with a hole in it. The
   table caption carries the scope either way, so it is announced where the
   figures are rather than in a subtitle above them.
-- **The sync control carries no caveats.** It answers three questions — when the
+- **The team screen's sync control carries no caveats.** It answers three questions — when the
   hours arrived, whether they are arriving now, whether asking failed — and owns
   the screen's one status region. Sentences about what a figure could not include
   were appended to it and read as part of the sync state: announced on every
@@ -675,7 +689,9 @@ one without reading the reason will reintroduce a bug that is already fixed.
   first round already answered for free — it carries a `count` beside the nodes,
   so a row whose count matches what arrived proves with no second request that
   nothing was removed from it. A team where the reader can open everything costs
-  no extra request at all. One request per short row, capped at six.
+  no extra request at all. One request per short row, capped at six, and only
+  on a report narrowed to a group: unnarrowed nobody is asked, because almost
+  every row is short there and marking six of them would mean nothing.
   A whole grid is not askable: each alias costs 7 of GitLab’s 250-point
   complexity budget, so a month of columns plus the period check scores 229 and
   fits, while forty columns score 292 and are refused. A team's grid is columns
@@ -700,8 +716,8 @@ one without reading the reason will reintroduce a bug that is already fixed.
   instant count an entry twice and spans a millisecond apart lose one a day.
 - **The team report is never written to the device, and neither is the team.**
   Every query in the slice carries `meta: { persist: false }` — from
-  `NOT_PERSISTED` in `api/query-shape.ts`, one constant rather than a copy per
-  file, because it is a rule and a second copy is a second place to forget it —
+  `NOT_PERSISTED` in `shared/api`, one constant rather than a copy per slice,
+  because it is a rule and a second copy is a second place to forget it —
   and `__root.tsx` reads that rather than a key it has to recognise. The reader's
   own hours are persisted because that is what paints a return visit before any
   request. These belong to other people, and a shared machine must not keep them.
@@ -761,7 +777,7 @@ one without reading the reason will reintroduce a bug that is already fixed.
   **Changing any of this moves nothing.** A deploy simply starts reading a key
   that is not there, and a missing key is indistinguishable from a reader who
   has never saved — no error, no null anybody sees, just an empty screen where
-  a roster was. It is the same hazard as the region, and it was taken here
+  a roster was. It is the same hazard as the Blobs region `blob-store.mts` pins, and it was taken here
   deliberately: the store is being emptied rather than migrated, because nobody
   had stored anything worth keeping yet. A later change does not have that
   option, and `docs/qa/release-checklist.md` carries it under rollback.
@@ -898,8 +914,8 @@ one without reading the reason will reintroduce a bug that is already fixed.
   appends, the document it parses and the size it accepts;
   `document-endpoint.mts` is everything in front of it — the configuration read,
   the key discovery and its cache, the 503 that says only that identity could
-  not be established — so `netlify/functions/{teams,preferences}.mts` are three
-  lines each, naming a document and a path. They were fifty lines each and
+  not be established — so `netlify/functions/{teams,preferences}.mts` are one call
+  each, naming a document and a path. They were fifty lines each and
   identical, and the copy held the least obvious rule of the three: a **failed**
   discovery must not be cached, or one bad minute outlasts itself for the whole
   life of the instance. `config/vite/api-dev.ts` was a third copy, and a worse
@@ -962,19 +978,19 @@ one without reading the reason will reintroduce a bug that is already fixed.
 - **Imports**: sorted by `perfectionist`; run `bun run lint:fix`.
 - **UI components**: add them with `bunx shadcn@latest add <name>`; they land in
   `src/shared/ui` (style `base-nova`, Base UI primitives). Do not hand-write
-  what the CLI generates — with four exceptions, all marked in place:
+  what the CLI generates — with five exceptions, all marked in place:
   `button.tsx` and `input.tsx` carry measured contrast fixes to the invalid
   border, the outline edge, and the solid and quiet hover states, and
-  `dialog.tsx` and `select.tsx` carry corrections to what the generator wrote.
-  Regenerating any of them means re-applying those. Three of button's four are
-  held by `bun run a11y:contrast`, so undoing them fails `verify` rather than
-  shipping. Anything that opens a list also reads `popup.ts`.
+  `combobox.tsx`, `dialog.tsx` and `select.tsx` carry corrections to what the generator wrote.
+  Regenerating any of them means re-applying those. `bun run a11y:contrast`
+  measures the tokens those fixes name, never the classes in `button.tsx` that
+  name them, so undoing any of the four still passes `verify` and ships. Anything that opens a list also reads `popup.ts`.
   **The CLI rewrites files it was not asked for, and installs a package that is
   not real.** `shadcn add dialog` overwrote `button.tsx`, dropping every fix
   above; both it and `shadcn add select` wrote `import { cn } from "cn"` and
   installed an unrelated npm package of that name, because the alias in
-  `components.json` does not resolve. Read `git diff` after every add: the
-  contrast gate catches the first of those and nothing catches the second.
+  `components.json` does not resolve. Read `git diff` after every add: it
+  is the only thing that catches either of those.
 - **Design tokens**: CSS custom properties in `src/app/styles.css`. Light values
   on `:root`, dark on `.dark`. Never hardcode a colour in a component.
 - **Time**: GitLab reports seconds. Convert with `secondsToHours` and accumulate
@@ -1038,7 +1054,8 @@ gate, its target, where it is enforced, and why coverage alone is not the
 quality signal here — the `aria-label` bug had 100% coverage over it.
 
 `docs/qa/` also holds the test plan, the manual regression pass, the browser
-matrix, the screen-reader procedure and the release checklist.
+matrix, the screen-reader procedure, the release checklist and the promotion pull
+request's body.
 
 ## Planning
 

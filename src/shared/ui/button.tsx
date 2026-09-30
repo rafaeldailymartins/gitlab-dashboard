@@ -5,8 +5,9 @@ import { cn } from '@/shared/lib/utils'
 
 /*
  * Four deviations from what `shadcn add button` writes, all measured, all to be
- * kept if this component is ever regenerated. `scripts/check-contrast.ts` holds
- * the first three, so undoing one fails `bun run verify` rather than shipping.
+ * kept if this component is ever regenerated. `scripts/check-contrast.ts` measures
+ * the tokens these name, never the classes below, so undoing one still passes
+ * `bun run verify` and ships.
  *
  * - The invalid border is full-alpha in dark mode too. As generated it is
  *   `dark:aria-invalid:border-destructive/50`, which composites to #814e41 over

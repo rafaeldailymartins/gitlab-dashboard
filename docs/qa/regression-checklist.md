@@ -4,7 +4,7 @@ The manual pass before a release, in a real browser against the real GitLab. The
 automated suites cover the same ground against stubs; this list exists for the
 things a stub cannot be wrong about.
 
-Work through it on the Netlify deploy preview, signed out, in a private window.
+Work through it on staging, signed out, in a private window: a deploy preview has an origin GitLab was never told about, so it cannot complete a sign-in.
 
 ## Signing in
 
@@ -117,23 +117,23 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
 - [ ] The teams surface is not in the navigation and should not be: the header
       still carries four links. It opens as a dialog from the teams button in the
       report's toolbar and from the teams card on `/settings`, and both open the
-      same one. There is no `/teams` address any more; typing one 404s, which is
-      the honest answer.
+      same one. There is no `/teams` address any more; typing one gets
+      the not-found page, which is the honest answer.
 - [ ] Open it from the report, change the team, close it. You are on the same
       report, on the same month, with the change in it — no navigation, no
       reload, no lost place.
 - [ ] Press "New team", then a group. The team is made in one action, named after
       the group and carrying everyone who logged time in it over the window.
-      Watch the network panel: at most four `GroupSuggestions` requests, and one
-      write. The pane says a group is a template and that you can change who is
+      Watch the network panel: at most four `GroupSuggestions` requests, and no
+      write until you press Save. The pane says a group is a template and that you can change who is
       on the team; it does **not** state the window, and nothing says the read
       may have been short. Both were removed with the candidate list they were
       about — see `team-timelog-report` GROUP-15.
 - [ ] Press "New team", then "Start an empty team". A team appears already
-      chosen, and the notice under it reads "Saved." before you have typed
-      anything: every edit here is a save, and there is no draft to lose.
-- [ ] Rename it. The save happens when the field is left or Enter is pressed —
-      watch the network: one `PUT` for the rename, not one per letter.
+      chosen, with "Not saved yet" beside the buttons: nothing is written until
+      you press Save, and Cancel takes the team back.
+- [ ] Rename it. Watch the network: nothing goes out while you type, and the
+      rename travels in the one `PUT` Save sends, not one per letter.
 - [ ] Empty the name. The field says a name is needed, nothing is sent, and what
       you typed stays in the field.
 - [ ] Build a team from a group and read who landed on it. It is whoever logged
@@ -151,7 +151,7 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
       and press Save once. All three are stored, and the name is stored even
       though you never left the field.
 - [ ] Edit something and press Escape. You are **asked** rather than closed.
-      Answer "Keep editing" and you are where you were; answer "Discard" and the
+      Answer "Keep editing" and you are where you were; answer "Discard them" and the
       dialog closes with nothing written. The same for the X and for clicking
       outside — a dismissal says you want out, not what to do with your edits.
 - [ ] Press Save: the dialog closes, and that is the confirmation — there is no
@@ -188,27 +188,16 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
       `/.netlify/functions/teams` carrying an `Authorization: Bearer` header, no
       cookie, and no identifier anywhere in the address. The answer says
       `cache-control: no-store`.
-- [ ] Turn the network off and remove somebody. The notice says the change could
-      not be saved and the person is **still on the list**: the screen shows what
-      the store holds, never what you typed. Turn it back on, remove them again,
-      reload — that one stuck.
 - [ ] Open your teams on a second device, signed in as the same reader. The same
-      teams are there. Add somebody there; then, without reloading the first
-      device, remove somebody on it. The first says the teams were changed
+      teams are there. Add somebody there and press Save; then, without
+      reloading the first device, remove somebody on it and press Save. The first says the teams were changed
       somewhere else, the list in front of you becomes the second device's
-      version, and your change was not saved. Make it again and it lands.
-- [ ] Delete a team. It goes, the editor falls back to whatever is left rather
-      than to an empty form, and a reload confirms it.
+      version, and your change was not saved. Make it again, press Save, and it lands.
+- [ ] Delete a team. It goes, and the editor falls back to whatever is left
+      rather than to an empty form. Press Save, and a reload confirms it.
 - [ ] Sign in as a different GitLab account in another private window. It has its
       own teams and never yours: the storage key is derived from the identity
       GitLab signed, not from anything the request carried.
-- [ ] A session granted before this release carries no identity, and renewing
-      carries the old scopes forward, so this one is done on the production URL:
-      sign in there before promoting, and do not sign out afterwards. `/team`
-      says, in place of the report, that permission to identify you is missing
-      and that signing in again grants it; the teams dialog says the same above an empty
-      list. The dashboard, `/insights` and a day screen are untouched, and
-      nothing has signed you out. Sign in again: both screens work.
 
 ## The team report
 
@@ -251,14 +240,15 @@ Work through it on the Netlify deploy preview, signed out, in a private window.
       filter still shows the path your link asked for rather than resetting
       itself.
 - [ ] On a team some of whose hours GitLab holds back from you, a row's total
-      carries "+n h hidden" once the month has been read. Wait for the placement:
+      carries "+n h hidden" once the month has been read. Narrow to a group and wait for
+      the placement — unnarrowed, the row keeps the note and no cell grows:
       the cells for the days the provider counted them grow to include them, the
       note goes when nothing is left over, and the row, the column and the corner
       still add up.
 - [ ] Somebody the provider counted hours for and showed none of keeps their row,
       with "Hours you cannot read" under their name.
 - [ ] On a team where nothing is withheld, no `TeamColumnProbe` request is made
-      at all. Where more than six rows are short, no more than six are made: the
+      at all. Unnarrowed, none is made however many rows are short; narrowed, where more than six rows are short no more than six are made: the
       rest keep the note, and their cells stay at what arrived.
 - [ ] Scroll the matrix sideways: the person column and the total column stay
       put. Scroll it down: the two header rows and the totals row stay put.

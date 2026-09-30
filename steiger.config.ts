@@ -15,14 +15,14 @@ export default defineConfig([
   },
   {
     /**
-     * `shared-lib-grouping` counts files, and half of these are their own
-     * tests.
+     * `shared-lib-grouping` counts files, and more than half of these are
+     * their own tests.
      *
      * The rule's threshold is fifteen modules, on the argument that a bag of
      * that many loose utilities wants subfolders. `src/shared/lib` holds
      * **eight**: date, duration, format, people, single-flight, storage,
-     * use-debounced and utils. The other eight files are the co-located
-     * `*.test.ts` for each, which this repository requires and which say
+     * use-debounced and utils. The other nine files are the co-located
+     * `*.test.ts` for each — two of them for date — which this repository requires and which say
      * nothing about whether the directory is organised.
      *
      * Turned off rather than worked around by moving a test elsewhere, which

@@ -120,8 +120,8 @@ Browser (static files on a CDN)
 ### 📋 Prerequisites
 
 - [Bun](https://bun.sh) 1.4 or newer
-- [Node.js](https://nodejs.org) 24 or newer (Stryker and Playwright still run on
-  Node)
+- [Node.js](https://nodejs.org) 24 or newer (Stryker, Playwright and the
+  preview server it tests against still run on Node)
 
 ### 1. Create a GitLab OAuth application
 
@@ -176,7 +176,7 @@ the dev server itself, over an in-memory store.
 | `bun run verify`        | Every fast gate: format, lint, ARIA, contrast, i18n, types, architecture … |
 | `bun run test`          | Unit, component, Gherkin domain and endpoint tests                         |
 | `bun run test:coverage` | The same, with the coverage thresholds enforced                            |
-| `bun run test:e2e`      | The acceptance suite — Chromium locally, three engines in CI               |
+| `bun run test:e2e`      | The acceptance suite — Chromium locally, three browsers in CI              |
 | `bun run test:mutation` | Mutation testing on the model layer                                        |
 | `bun run build`         | Production build into `dist/`, plus its CSP                                |
 
@@ -245,7 +245,8 @@ with teams and schedules of its own; and every pull request gets a deploy
 preview.
 
 1. Set `VITE_GITLAB_CLIENT_ID` in the site's environment variables, for every
-   deploy context — the functions read the same one.
+   deploy context — the functions read the same one. On a self-managed GitLab,
+   set `VITE_GITLAB_BASE_URL` beside it; it defaults to `https://gitlab.com`.
 2. Add production's and staging's `/auth/callback` to the OAuth application's
    redirect URIs.
 3. Tick `openid` on the application before the first deploy that asks for it.

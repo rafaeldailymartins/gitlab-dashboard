@@ -115,7 +115,7 @@ export function followUser(index: number): string {
  *
  * The same instrument as the page document's aggregates, narrowed. They are
  * computed over the finder's relation after the time filter and before the
- * reader's own entries are removed from the nodes, so asking over one day's span
+ * entries the reader may not read are removed from the nodes, so asking over one day's span
  * says how much was logged that day and how much of it is being withheld — which
  * is the only way to learn a withheld entry's day. The entry itself is
  * unrecoverable: it is spliced out of the array with no id and no `spentAt`.
@@ -162,7 +162,8 @@ export function teamColumnProbe(count: number): string {
  * that reaches into it. So continuing is a different document, addressing one
  * person per alias.
  *
- * This is the one document bounded by complexity, and the bound is measured
+ * Like the column probe, this document is bounded by complexity, and the bound
+ * is measured
  * rather than estimated: one alias scores 17, eight score 115, sixteen score 227
  * and twenty-four score 339 and are refused. So the batch is sixteen —
  * seventeen fits at 241 and leaves nine points, which is not enough to absorb a

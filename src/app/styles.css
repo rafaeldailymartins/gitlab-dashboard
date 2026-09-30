@@ -186,8 +186,9 @@
   }
 
   /*
-   * Lets the browser skip layout and paint for rows scrolled out of view while
-   * keeping their space reserved — the day feed's answer to a long history.
+   * Lets the browser skip layout and paint for rows scrolled out of view — the
+   * day feed's answer to a long history. It reserves no space by itself: a row
+   * keeps its height only through the `contain-intrinsic-size` its caller sets.
    */
   .cv-auto {
     content-visibility: auto;

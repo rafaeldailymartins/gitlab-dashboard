@@ -66,9 +66,9 @@ function AuthenticatedLayout() {
             </Link>
             {/* The only link that carries search parameters, and so the only one
                 that has to say to ignore them: a link is current when its search
-                is a subset of the address's, and this one's empty group and month
+                is a subset of the address's, and this one's empty team and month
                 are filled the moment the screen opens — by the route's own
-                recovery, by the remembered group, or by the reader choosing. Left
+                recovery, by the remembered team, or by the reader choosing. Left
                 to the default, the tab the reader is looking at would be the one
                 tab never marked current. */}
             <Link

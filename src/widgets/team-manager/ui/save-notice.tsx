@@ -6,8 +6,9 @@ import type { SaveState } from '../lib/use-team-edits'
  * What the last save did.
  *
  * A live region, and deliberately a polite one that does not move focus: the
- * reader is in the middle of clicking names, and a screen that took the cursor
- * away to announce "saved" would make a list of ten people ten interruptions.
+ * reader who pressed Save is still on this surface, and a notice that took the
+ * cursor away to say the save was refused would leave them hunting for the
+ * edits it is about.
  *
  * It is always in the document, empty when there is nothing to say. A live
  * region added to the page at the moment it has something to announce is a

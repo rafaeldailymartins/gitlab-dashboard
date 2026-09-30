@@ -59,7 +59,7 @@ function TeamRoute() {
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const gateway = useMemo(() => gitLabTeamTimelogGateway(apiClient()), [])
-  // The session is the identity: the teams store asks GitLab who is calling
+  // The session is the identity: the teams store verifies a token GitLab signed
   // rather than being handed a credential that reads GitLab.
   const teams = useMemo(() => httpTeamsGateway(sessionManager()), [])
 

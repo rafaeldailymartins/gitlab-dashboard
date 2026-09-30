@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { ANA, BRUNO, CAMILA, entry, member } from '~tests/support/gitlab-team-timelogs'
-import { fakeTeamGateway, fakeTeamsGateway, renderRoutedReport, SQUAD } from '~tests/support/report'
+import { fakeTeamGateway, fakeTeamsGateway, renderReport, SQUAD } from '~tests/support/report'
 
 import type { TeamHoursPage as PageType } from '@/entities/team-timelogs'
 import type { Team } from '@/entities/teams'
@@ -69,9 +69,7 @@ function page(
   teams = fakeTeamsGateway([FISCAL]),
 ) {
   const onChange = vi.fn<(next: Partial<TeamSearch>) => void>()
-  // Routed, because the screen links to the teams screen — and a link is what
-  // this app's answer to "you have no teams yet" is made of.
-  const view = renderRoutedReport(
+  const view = renderReport(
     <TeamHoursPage onChange={onChange} search={{ ...MAY, ...overrides }} />,
     { teams, timelogs },
   )
@@ -84,7 +82,7 @@ function pageUnder(dailyTarget: Record<number, number>) {
   const storage = memoryStorage()
 
   storage.write('preferences', JSON.stringify({ dailyTarget }))
-  renderRoutedReport(<TeamHoursPage onChange={vi.fn()} search={MAY} />, {
+  renderReport(<TeamHoursPage onChange={vi.fn()} search={MAY} />, {
     storage,
     teams: fakeTeamsGateway([FISCAL]),
     timelogs: loggedGateway(),

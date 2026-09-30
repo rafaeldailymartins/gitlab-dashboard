@@ -33,7 +33,7 @@ interface Exchange {
 /**
  * The document endpoints, during `bun run dev`.
  *
- * Thirty lines rather than a dependency. Netlify's own Vite plugin would
+ * A few dozen lines rather than a dependency. Netlify's own Vite plugin would
  * emulate the whole platform, and it brings a large tree with it — `README.md`
  * records this project rejecting `@lhci/cli` for exactly that, because
  * `bun audit` must report zero at any severity and a tool's dependencies count.

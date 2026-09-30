@@ -199,9 +199,9 @@ export default defineConfig(
   },
   {
     /**
-     * The serverless function.
+     * The serverless functions.
      *
-     * It runs on Node, which is why it lives outside `src/` — and why the
+     * They run on Node, which is why they live outside `src/` — and why the
      * browser-only rule above does not reach it. That rule is applied by a
      * `src/**` glob rather than by an exclusion here; widening the glob to
      * `**\/*.ts` would forbid `node:*` in the one place it belongs.

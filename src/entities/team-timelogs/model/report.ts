@@ -13,7 +13,7 @@ import { identityLookup } from './identity'
 
 export interface ReportOptions {
   readonly granularity: Granularity
-  /** The team, in the order its rows are drawn. */
+  /** The team, in the order it names them; the screen orders the rows itself. */
   readonly members: readonly Member[]
   readonly reference: ReferenceSchedule
   readonly timeZone: string
@@ -171,7 +171,7 @@ function visibleTotalOf(windows: readonly MemberWindow[]): PeriodTotal {
   return { entryCount: entries.length, hours: secondsToHours(seconds), seconds }
 }
 
-/** One slice of the window per person the team names, in the order drawn. */
+/** One slice of the window per person the team names, in the order it names them. */
 function windowsOf(
   gathered: ReadonlyMap<string, Gathered>,
   identityOf: (member: Member) => MemberIdentity,

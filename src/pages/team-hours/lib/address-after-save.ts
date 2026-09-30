@@ -18,8 +18,8 @@ import type { Team } from '@/entities/teams'
  *
  * **Read from the written document, never from what was about to be written.**
  * `withTeam` returns the list unchanged when it is already at `MAX_TEAMS` or the
- * identifier is already used, and the write that follows still succeeds and is
- * still reported as saved — so an address moved to a minted identifier would
+ * identifier is already used, and the write that follows still succeeds and still
+ * closes the dialog as saved — so an address moved to a minted identifier would
  * name a team nothing created, manufacturing exactly the state this exists to
  * remove.
  *

@@ -9,7 +9,7 @@ import type { KnipConfig } from 'knip'
 export default {
   entry: [
     'src/app/routes/**/*.tsx',
-    // The serverless function: an entry point nothing imports, reached by URL.
+    // The serverless functions: entry points nothing imports, reached by URL.
     'netlify/functions/**/*.mts',
     'steiger.config.ts',
     'tests/**/*.ts',

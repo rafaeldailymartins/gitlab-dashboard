@@ -13,44 +13,46 @@ this pass.
 
 ## Enforced gates
 
-| Metric                             | Target                                       | Measured                       | Command                         | Enforced at              |
-| ---------------------------------- | -------------------------------------------- | ------------------------------ | ------------------------------- | ------------------------ |
-| Formatting                         | no deviation                                 | pass                           | `bun run format:check`          | pre-commit, `verify`, CI |
-| Lint (type-aware)                  | 0 errors, 0 warnings                         | pass                           | `bun run lint`                  | pre-commit, `verify`, CI |
-| Lint (ARIA and element ids)        | 0 errors                                     | pass, 121 files                | `bun run lint:a11y`             | `verify`, CI             |
-| Colour contrast                    | every pair above its floor, in both schemes  | pass, 96 pairs                 | `bun run a11y:contrast`         | `verify`, CI             |
-| TypeScript                         | 0 errors under full strictness               | pass                           | `bun run typecheck`             | pre-push, `verify`, CI   |
-| FSD conventions                    | 0 problems                                   | pass                           | `bun run arch:layers`           | pre-push, `verify`, CI   |
-| Dependency graph (cycles, orphans) | 0 violations                                 | pass, 250 modules, 849 edges   | `bun run arch:graph`            | pre-push, `verify`, CI   |
-| Dead code (files, exports, deps)   | 0 findings                                   | pass                           | `bun run deadcode`              | pre-push, `verify`, CI   |
-| Translations                       | every key in every language, and none unused | 176 messages, complete in 2    | `bun run i18n:check`            | `verify`, CI             |
-| Requirement traceability           | every requirement cited                      | 77 declared: 71 cited, 6 other | `bun run arch:trace`            | `verify`, CI             |
-| Type coverage                      | ≥ 99%                                        | 99.88% (51 911 of 51 969)      | `bun run types:coverage`        | `verify`, CI             |
-| Dependency vulnerabilities         | **0, at any severity**                       | 0, over 864 packages           | `bun run security:audit`        | pre-push, `verify`, CI   |
-| Test coverage, statements          | ≥ 90%                                        | 97.36%                         | `bun run test:coverage`         | CI                       |
-| Test coverage, branches            | ≥ 90%                                        | 93.64%                         | `bun run test:coverage`         | CI                       |
-| Test coverage, functions           | ≥ 90%                                        | 96.53%                         | `bun run test:coverage`         | CI                       |
-| Test coverage, lines               | ≥ 90%                                        | 97.43%                         | `bun run test:coverage`         | CI                       |
-| Test coverage, `model/`            | **100%**                                     | 100%                           | `bun run test:coverage`         | CI                       |
-| Mutation score, `model/`           | ≥ 85%                                        | 93.46%, 66 of 1039 survived    | `bun run test:mutation`         | scheduled CI             |
-| Initial bundle                     | ≤ 180 kB gzip                                | 176.73 kB                      | `bun run build && bun run size` | CI                       |
-| Accessibility (WCAG 2.1 AA)        | 0 axe violations, light and dark             | pass, 16 audits, chromium      | `bun run test:e2e`              | CI                       |
-| Cumulative layout shift            | < 0.1, cold and warm                         | pass, both, chromium           | `bun run test:e2e`              | CI                       |
-| No sideways scrolling at 375 px    | every screen                                 | pass, 7 screens, chromium      | `bun run test:e2e`              | CI                       |
+| Metric                             | Target                                       | Measured                       | Command                         | Enforced at                   |
+| ---------------------------------- | -------------------------------------------- | ------------------------------ | ------------------------------- | ----------------------------- |
+| Formatting                         | no deviation                                 | pass                           | `bun run format:check`          | pre-commit, `verify`, CI      |
+| Lint (type-aware)                  | 0 errors, 0 warnings                         | pass                           | `bun run lint`                  | pre-commit, `verify`, CI      |
+| Lint (ARIA and element ids)        | 0 errors                                     | pass, 121 files                | `bun run lint:a11y`             | `verify`, CI                  |
+| Colour contrast                    | every pair above its floor, in both schemes  | pass, 96 pairs                 | `bun run a11y:contrast`         | `verify`, CI                  |
+| TypeScript                         | 0 errors under full strictness               | pass                           | `bun run typecheck`             | pre-push, `verify`, CI        |
+| FSD conventions                    | 0 problems                                   | pass                           | `bun run arch:layers`           | pre-push, `verify`, CI        |
+| Dependency graph (cycles, orphans) | 0 violations                                 | pass, 250 modules, 849 edges   | `bun run arch:graph`            | pre-push, `verify`, CI        |
+| Dead code (files, exports, deps)   | 0 findings                                   | pass                           | `bun run deadcode`              | pre-push, `verify`, CI        |
+| Translations                       | every key in every language, and none unused | 176 messages, complete in 2    | `bun run i18n:check`            | `verify`, CI                  |
+| Requirement traceability           | every requirement cited                      | 80 declared: 71 cited, 9 other | `bun run arch:trace`            | `verify`, CI                  |
+| Type coverage                      | ≥ 99%                                        | 99.88% (51 911 of 51 969)      | `bun run types:coverage`        | `verify`, CI                  |
+| Dependency vulnerabilities         | **0, at any severity**                       | 0, over 864 packages           | `bun run security:audit`        | pre-push, `verify`, CI, daily |
+| New vulnerable packages            | none added, at any severity                  | —                              | dependency review               | CI, pull requests             |
+| Commit messages                    | Conventional Commits, every commit           | —                              | `bun commitlint`                | commit-msg, CI                |
+| Test coverage, statements          | ≥ 90%                                        | 97.36%                         | `bun run test:coverage`         | CI                            |
+| Test coverage, branches            | ≥ 90%                                        | 93.64%                         | `bun run test:coverage`         | CI                            |
+| Test coverage, functions           | ≥ 90%                                        | 96.53%                         | `bun run test:coverage`         | CI                            |
+| Test coverage, lines               | ≥ 90%                                        | 97.43%                         | `bun run test:coverage`         | CI                            |
+| Test coverage, `model/`            | **100%**                                     | 100%                           | `bun run test:coverage`         | CI                            |
+| Mutation score, `model/`           | ≥ 85%                                        | 93.46%, 66 of 1039 survived    | `bun run test:mutation`         | scheduled CI                  |
+| Initial bundle                     | ≤ 180 kB gzip                                | 176.73 kB                      | `bun run build && bun run size` | CI                            |
+| Accessibility (WCAG 2.1 AA)        | 0 axe violations, light and dark             | pass, 16 audits, chromium      | `bun run test:e2e`              | CI                            |
+| Cumulative layout shift            | < 0.1, cold and warm                         | pass, both, chromium           | `bun run test:e2e`              | CI                            |
+| No sideways scrolling at 375 px    | every screen                                 | pass, 7 screens, chromium      | `bun run test:e2e`              | CI                            |
 
 The last three rows are read off one local run, chromium alone over the 111
 scenarios `bddgen` expanded on this pass; the matrix is CI's job.
 
 **The traceability row is two numbers, not one.** `bun run arch:trace` prints
-`77 requirements, 71 cited by scenarios, 6 covered another way`, and the
-difference between those last two is the part worth reading. The six are listed
+`80 requirements, 71 cited by scenarios, 9 covered another way`, and the
+difference between those last two is the part worth reading. The nine are listed
 in the script's `UNCITED_BY_DESIGN` map with the reason a browser cannot observe
 them, each naming the test that can: `AUTH-10` counts token exchanges, which no
 screen shows, and `TEAM-3` is the rule that a reader cannot address another
 reader's storage key — a browser can neither forge a credential nor reach the
 deployed function, so `netlify/lib/handle-document.test.mts` and
-`netlify/lib/identity.test.mts` carry it instead. A single "77/77" hides that
-six requirements rest on a map an author can add to. The gate fails in both
+`netlify/lib/identity.test.mts` carry it instead. A single "80/80" hides that
+nine requirements rest on a map an author can add to. The gate fails in both
 directions, including on an entry naming a requirement that no longer exists, so
 the map cannot quietly outlive what it excuses.
 
@@ -99,7 +101,7 @@ gets back, and neither of them is where the two shapes meet.
 Above those, `bddgen` expands `features/acceptance/*.feature` into one Playwright
 spec per scenario, and `bun --bun bddgen && playwright test --list` is what
 counts them. On this pass that was 111 locally, which is chromium alone; CI runs
-three engines — chromium, webkit and a Pixel 7 viewport — for 333.
+three browsers — chromium, webkit and a Pixel 7 viewport — for 333.
 
 ## Two linters, on purpose
 
@@ -139,7 +141,7 @@ keep `model/` pure (`noRestrictedImports`, `noRestrictedGlobals`,
 What has no equivalent at all is the part that has been catching defects:
 
 - **`testing-library/*` — nothing.** Biome has no rule from that plugin, and
-  half the tests here run against a DOM — 742 of 1574. `no-node-access` is what
+  half the tests here run against a DOM — 793 of 1675. `no-node-access` is what
   stopped a test from walking the DOM, which is how the ARIA bug below came to
   light.
 - **`react-hooks/set-state-in-effect` — nothing.** Biome ships four rules from
@@ -153,8 +155,8 @@ subject to semantic versioning.
 The speed argument, **measured on 2026-08-22 and not since**: ESLint 33 s cold
 and **3.9 s warm with `--cache`**; Biome 2 s with the project scan, 300 ms
 without. Cold CI runs were 33 s against 2 s. Both the source and the suite have
-grown a long way since — a cold `bun run lint` over this branch took 51 s, and
-`bun run lint:a11y` 230 ms over 114 files — so treat the 2026-08-22 pair as the
+grown a long way since — a cold `bun run lint` over this branch took 51 s on
+2026-09-18, and `bun run lint:a11y` 230 ms over 114 files — so treat the 2026-08-22 pair as the
 shape of the trade rather than as current timings. A timing taken on a machine
 that is doing anything else says more about the machine than about either tool,
 which is why these are not refreshed in place. What has not moved is the shape:
@@ -195,8 +197,8 @@ Enforced per function and per file by `config/eslint/limits.js`.
 components we author in `shared/ui`, and `netlify/**/*.mts`. Everything else is
 out, and what is left out is left out for a reason:
 
-- `src/shared/ui/{button,card,input,label}.tsx` — the only named exclusion,
-  because these four are generated by the shadcn CLI and covering them would
+- `src/shared/ui/{button,card,collapsible,input,label,skeleton}.tsx` — the only
+  named exclusion, because these six are generated by the shadcn CLI and covering them would
   measure someone else's code. The list is explicit rather than a directory glob,
   so a component we write in `shared/ui` is still measured; `select-field.tsx`
   is.
@@ -205,7 +207,7 @@ out, and what is left out is left out for a reason:
 - `src/paraglide/**` and `src/app/routeTree.gen.ts` — generated output, likewise
   out by omission.
 
-**The serverless function is measured too**, at the global floor rather than the
+**The serverless functions are measured too**, at the global floor rather than the
 hundred-percent one — the include list names `netlify/**/*.mts`. The rules that
 hold the feature's security are pure decisions over a request and a document,
 and `handle-document.mts` sits at 98.3% of statements, with
@@ -326,9 +328,9 @@ linter — with coverage as the floor that stops whole paths going unexercised.
   between distinct rejections, or `index < binary.length` becoming `<=` in
   `id-token.ts` with nothing noticing. The survivors have not been triaged since the team work landed;
   `reports/mutation/index.html` lists every one with its location.
-- **Type coverage is 99.87%, and the shortfall is listed by name.**
+- **Type coverage is 99.88%, and the shortfall is listed by name.**
   `bun run types:coverage` prints every expression it cannot type — 59 of 47 703
-  at this revision — so read its output rather than a count written down here.
+  on 2026-09-18, 58 of 51 969 on this pass — so read its output rather than a count written down here.
   Twenty of the 59 are in shipped code, 35 in tests and test support, and four in
   tooling that ships nothing (`.size-limit.js`, `scripts/`, `config/`). Of the
   twenty, eight are assertions, and they are the ones worth knowing: branding a
@@ -378,19 +380,7 @@ linter — with coverage as the floor that stops whole paths going unexercised.
   through the real function. No browser can mint an assertion for somebody else,
   so it takes two real GitLab accounts against the deployed site. It belongs to
   `release-checklist.md`, and it is unticked.
-- **One acceptance scenario fails at this revision, and it is a claim about the
-  code rather than about the run.** "Withheld hours are added into the figures
-  rather than left out" expects Ana Carolina's row to total 9 hours for
-  2026-05; the cell reads `6.5h6.5 hours+2.5 h hidden`, which is the screen
-  saying the provider counted 2.5 hours it would not show and declining to say
-  which day they belong to. The arithmetic is right either way — 6.5 and 2.5 are
-  the two halves of the 9 — so what the scenario is holding is that the
-  per-column probe in `model/withheld.ts` places the withheld hour and the row is
-  rebuilt around it, which is the behaviour AGENTS.md § Decisions describes and
-  which this stub does not currently produce. The scenario was added on this
-  branch and has not passed yet; it is not a flake, and it survives being re-run
-  on its own at one worker.
-- **Three more scenarios failed the same run and were flakes.** "Insights shows
+- **Three scenarios failed one local run on 2026-09-18 and were flakes.** "Insights shows
   the month…", "A failure is explained and can be retried" and "Switching
   language changes the whole screen" all timed out waiting on an element, all
   three at four workers on a machine that was also building, and all three passed
@@ -405,7 +395,7 @@ linter — with coverage as the floor that stops whole paths going unexercised.
   "Found a nested root configuration" and audits nothing. `cleanTempDir` removes
   the sandboxes at the end of a run that finishes; one that is cancelled leaves
   them, and they are gitignored, so `git status` will not mention them either.
-  `rm -rf .stryker-tmp` is the fix. The 114-file figure in the table above was
+  `rm -rf .stryker-tmp` is the fix. The 114-file figure measured on 2026-09-18 was
   taken with those leftovers moved aside.
 - **No Lighthouse CI.** `@lhci/cli` carries a high-severity advisory with no
   fixed upstream version, which the zero-vulnerability policy forbids.
@@ -421,19 +411,20 @@ linter — with coverage as the floor that stops whole paths going unexercised.
   in AGENTS.md § Runtime. This bullet said "two" until 2026-09-18; the third has
   been there since 2026-08-31.
 - **CI installs with `--ignore-scripts`.** The `prepare` script installs git
-  hooks, which a runner has no use for and which fail outright in the `oven/bun`
-  image, since it ships no git. The first pipeline died there.
+  hooks, which a runner has no use for and which failed outright in the
+  `oven/bun` image GitLab ran, since it ships no git. The first pipeline died there.
 - **No `BUN_INSTALL_CACHE_DIR` pointing inside the checkout.** The second
   pipeline died because it did: every dependency was unpacked where
   `prettier --check .` walks, and one of them carries a config Prettier cannot
   resolve. GitLab cached `node_modules/`; GitHub Actions caches Bun's own
   download cache under the home directory, which is outside the checkout for
   the same reason.
-- **The shared runner needed no identity validation.** That was the one risk in
+- **GitLab's shared runner needed no identity validation.** That was the one risk in
   the plan only the account owner could clear, and it did not appear.
 - **Two more pipeline failures were the suite, not the code.** The dev server did
   not answer within Playwright's default minute in a cold container, so the
-  `webServer` timeout is three minutes under CI; and a runner has no `.env`, so
+  `webServer` timeout became three minutes — everywhere now, and for a cold
+  build ahead of `vite preview` rather than for the dev server; and a runner has no `.env`, so
   the e2e job sets a placeholder client id — the OAuth flow is stubbed, and what
   the suite needs is a configured app rather than a real application.
 
@@ -447,8 +438,9 @@ which is what left
 room inside the 400 compute minutes a month the Free plan allows.
 
 **CI moved to GitHub Actions on 2026-09-28**, with the repository and its whole
-history. The jobs are the same four plus the scheduled mutation run, in
-`.github/workflows/`. Three things changed with the move. The runtimes are the
+history. The jobs moved as they were — the same four plus the scheduled mutation
+run — into `.github/workflows/`, which has since gained the release and the
+pull-request and security workflows `CONTRIBUTING.md` describes. Three things changed with the move. The runtimes are the
 deploy's rather than an image's: Bun from `packageManager`, Node from the major
 `netlify.toml` pins, where GitLab ran a floating `oven/bun:1.4` and, for
 Stryker, Debian's Node. The mutation run is in a workflow of its own and
@@ -466,7 +458,7 @@ timings above were measured on GitLab.
   could serve inside a five-second expectation, and 25 scenarios failed for that
   reason alone, every one of them WebKit. Serving `dist/` costs one build per run
   and pays for it several times over. **Measured on 2026-08-24**, on one machine
-  and all three engines: 358s against the dev server at two workers, 128s against
+  and all three browsers: 358s against the dev server at two workers, 128s against
   the build at eight. The ceiling rose rather than vanished — at eight workers the
   WebKit keyboard walk failed once — so the worker count is Playwright's default
   locally and two in CI, which was the core count of GitLab's runner. The
@@ -474,7 +466,7 @@ timings above were measured on GitLab.
   minutes at four
   workers and lost three scenarios to it.
 - **A local run is chromium only; the matrix is CI's job.** A hundred-odd
-  scenarios in each of three engines is what a merge deserves, not what a change
+  scenarios in each of three browsers is what a merge deserves, not what a change
   in front of you deserves. `--project=webkit` when you want it.
 - **The initial-bundle figure was wrong until it was rewritten, and too low.** The
   budget globbed `dist/assets/index-*.js` plus the stylesheet — 2 of the 10 files
@@ -487,7 +479,7 @@ timings above were measured on GitLab.
   the old glob reported after the palette landed. Moving the signed-in header out
   of the root layout and into the `_authenticated` layout took it to 133.2 kB for
   real: the navigation, the colour-scheme control and their icons are in a route
-  chunk a signed-out reader never loads. It reads 174.55 kB today, inside the
+  chunk a signed-out reader never loads. It reads 176.73 kB on this pass, inside the
   180 kB budget, and the teams surface is what moved it.
 - **The acceptance fixture counts days in the reader's zone, not in UTC.** It used
   to place each entry at midday UTC on a day counted from UTC's today, and the
@@ -540,8 +532,8 @@ hours` found yesterday's three. Four scenarios, three browsers, twelve failures,
   28 seconds to 12 and `test:coverage` from 60 to 39 — **measured on 2026-08-24**,
   when the change landed and the component project held 62 files. Not re-measured
   since, and the comparison cannot be re-run without reverting the line; what can
-  be said is that the project is 70 files today and both commands still finish
-  inside a minute, at 56s and 43s. The three ways
+  be said is that the project was 70 files on 2026-09-18 and both commands still
+  finished inside a minute, at 56s and 43s. The three ways
   state could cross a file boundary were probed rather than assumed — a
   deliberately leaked spy, a storage key, a switched language and a `globalThis`
   value, all in a two-file experiment forced into one worker. Spies do not
