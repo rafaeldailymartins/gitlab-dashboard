@@ -31,7 +31,9 @@ took a total for something they could go and inspect would be wrong about it and
 would not know.
 
 With no group chosen those hours SHALL NOT be counted into any figure. They SHALL
-be declared beside the row they belong to, as hours missing from it (GROUP-19
+be declared beside the row they belong to, as whatever difference they make to
+its total in either direction — hours missing, or a figure that may be too high
+where a withheld correction would have lowered it (GROUP-19
 says why none is placed there), and the screen SHALL NOT claim that the figures
 include work this account cannot open — a sentence saying they do, above figures
 that do not, is the one statement on the screen a reader cannot check.
@@ -58,7 +60,8 @@ presented as a team with no hours and never as an empty roster.
 - **WHEN** a report is shown for a team and no group is chosen
 - **THEN** the screen states that the figures cover everywhere each person logged
 - **AND** states that hours on work this account cannot open are not counted in,
-  and that a row says how many are missing
+  and that a row notes any difference they make to its total, in either
+  direction
 
 #### Scenario: The reach is stated, with a group chosen
 

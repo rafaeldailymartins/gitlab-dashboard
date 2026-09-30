@@ -1,17 +1,17 @@
 ## 1. The caption says what the figures are (GROUP-1)
 
-- [ ] 1.1 Reword `team_table_caption_everywhere` in `messages/en.json` and `messages/pt-BR.json` so it no longer claims the unnarrowed figures include work this account cannot open, and says a row states how many hours are missing; verify with `bun run i18n:check`
-- [ ] 1.2 Move the "may include hours on work this account cannot open" step in `features/acceptance/read-a-teams-hours.feature` from the unnarrowed reach scenario to the narrowed one, add the unnarrowed "not counted in" step, and update `tests/e2e/steps/team-reach.ts`; verify the reach scenarios pass under `bun run test:e2e`
+- [ ] 1.1 Reword `team_table_caption_everywhere` in `messages/en.json` and `messages/pt-BR.json` so it no longer claims the unnarrowed figures include work this account cannot open, and says a person's total notes any difference those hours make, in either direction; verify with `bun run i18n:check`
+- [ ] 1.2 Move the "may include hours on work this account cannot open" step in `features/acceptance/read-a-teams-hours.feature` from the unnarrowed reach scenario to the narrowed one, add an unnarrowed "not counted in" step whose assertion matches that wording rather than the bare "cannot open" the current step accepts, and update `tests/e2e/steps/team-reach.ts`; verify the reach scenarios pass under `bun run test:e2e`
 
 ## 2. A dead remembered team is forgotten (GROUP-20)
 
-- [ ] 2.1 Add a pure helper in `pages/team-hours/lib/` deciding whether the addressed team is a remembered one that the loaded list no longer holds, with a unit test covering: remembered and gone, remembered and present, gone but not remembered (a sent link), list still loading, list failed; verify the test passes
-- [ ] 2.2 In `TeamHoursPage`, when the helper says so, move the address to `team: ''` through `onChange` with history replaced, so the route forgets the identifier and the bare address completes; verify with a component test that the page lands on the first team and that the remembered key is gone
+- [ ] 2.1 Add a pure helper in `pages/team-hours/lib/` deciding whether the addressed team is a remembered one that the loaded list no longer holds, with a unit test covering: remembered and gone, remembered and present, gone but not remembered (a sent link), no teams left, list still loading, list failed; verify the test passes
+- [ ] 2.2 Have the route pass the remembered identifier to `TeamHoursPage`, and in the page, when the helper says so, move the address to `team: ''` through `onChange` with history replaced, so the route forgets the identifier and the bare address completes; verify with a component test that the page lands on the first team and that the remembered key is gone
 - [ ] 2.3 Add the acceptance scenario "A remembered team that was deleted", citing `# Spec: team-timelog-report / GROUP-20`, with its steps; verify it passes and that `bun run arch:trace` is green
 
 ## 3. The reconnect notice offers what it says (AUTH-11)
 
-- [ ] 3.1 Add one message for the reconnect control in both catalogues, and render a button calling `signIn` with the current href in the team report's reconnect note and in the teams dialog's; verify with component tests that each note has the button and that pressing it asks to sign in with the current address as the destination
+- [ ] 3.1 Add one message for the reconnect control in both catalogues, give the test renderers in `tests/support/report.tsx` a `SessionProvider` over a fake manager, and render a button calling `signIn` with the router's current href in the team report's reconnect note and in the teams dialog's read-failure notice (not after a failed write, where a draft is on screen); verify with component tests that each note has the button and that pressing it asks to sign in with the current address as the destination
 - [ ] 3.2 Make the step behind "offers a fresh sign-in" in `features/acceptance/keep-a-team.feature` assert the button by role and name, not only the sentence; verify the scenario passes
 
 ## 4. A row is final on its own completeness (GROUP-7)
