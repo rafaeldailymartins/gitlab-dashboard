@@ -2,6 +2,8 @@ import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query'
 
 import type { IsoDate } from '@/shared/lib/date'
 
+import { NOT_PERSISTED } from '@/shared/api'
+
 import type {
   ColumnProbeQuery,
   MemberCursor,
@@ -11,7 +13,7 @@ import type {
 import type { Member } from '../model/types'
 import type { ReaderWindow } from '../model/window'
 
-import { BRIEFLY, GC_TIME, NOT_PERSISTED, STALE_TIME, TEAM_TIMELOGS_KEY } from './query-shape'
+import { BRIEFLY, GC_TIME, STALE_TIME, TEAM_TIMELOGS_KEY } from './query-shape'
 
 /** Which team, which month, how far it is narrowed, and the window it resolves to. */
 export interface HoursRequest {
@@ -34,8 +36,8 @@ const FIRST_ROUND: null | readonly MemberCursor[] = null
 /**
  * One person's period, column by column — where their withheld hours fall.
  *
- * Keyed by the person, by the filter and by the spans themselves rather than by
- * the month: the spans already carry the month, the granularity and the reader's
+ * Keyed by the person, by the filter and by the spans' outer instants and count
+ * rather than by the month: those already carry the month, the granularity and the reader's
  * zone, so a reader who switches to week columns or changes zone asks a
  * different question and gets a different answer rather than a stale one.
  *
