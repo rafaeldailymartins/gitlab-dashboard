@@ -10,7 +10,8 @@
   # Netlify picks Bun up from bun.lock; pinning the version keeps the CI build
   # and a local build on the same runtime.
   BUN_VERSION = "1.4.0"
-  # Still needed: Stryker and the Playwright run execute on Node.
+  # The functions run on the Node the build uses, so this pins their runtime,
+  # and `.github/actions/setup` installs the same major so CI tests on it.
   NODE_VERSION = "24"
   # Netlify runs `bun install` before the build command. Without these it would
   # resolve the lockfile again, and it would run the root `prepare` script,

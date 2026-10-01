@@ -19,7 +19,7 @@ const isCi = Boolean(process.env['CI'])
 /**
  * Chromium alone locally, all three in CI.
  *
- * A local run is for the change in front of you; 153 scenarios in three engines
+ * A local run is for the change in front of you; every scenario in three browsers
  * is for the merge. Nothing ships unverified — the pipeline runs the matrix —
  * and one engine is still a whole engine: `--project=webkit` when you want it.
  */
@@ -82,7 +82,7 @@ export default defineConfig({
    * with a record behind it. Locally, Playwright's default — one per two cores.
    *
    * The static server raised the ceiling rather than removing it: measured on
-   * this machine, all three engines took 358s against the dev server at two
+   * this machine, all three browsers took 358s against the dev server at two
    * workers and 128s against the build at eight, but at eight the WebKit
    * keyboard walk failed once. So the default stands, and the number that had to
    * be forced down is no longer forced.

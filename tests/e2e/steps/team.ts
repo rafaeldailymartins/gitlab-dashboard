@@ -39,7 +39,7 @@ const EVERYWHERE = /^(everywhere|em todo lugar)$/iu
 /** The combobox that narrows the figures, in either language. */
 const FILTER = /narrow to a group|restringir a um grupo/iu
 
-/** The native select that names the team, in either language. */
+/** The select that names the team, in either language. */
 const TEAM_PICKER = /^team$|^equipe$/iu
 
 /**

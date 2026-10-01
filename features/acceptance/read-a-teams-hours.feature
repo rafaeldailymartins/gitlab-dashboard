@@ -27,7 +27,7 @@ Feature: Reading a team's hours
   Scenario: The report says how far its figures reach
     When I open the report for my team in "2026-05"
     Then the screen says the figures cover everywhere these people logged
-    And the figures are said to include work this account cannot open
+    And hours on work this account cannot open are said not to be counted in
 
   # Spec: team-timelog-report / GROUP-1
   # Spec: team-timelog-report / GROUP-14
@@ -39,6 +39,7 @@ Feature: Reading a team's hours
     And the filter offers "squad-fiscal"
     When I choose "squad-fiscal" from the filter
     Then the screen says the figures cover "squad-fiscal" and its subgroups
+    And the figures are said to possibly include work this account cannot open
     And the address narrows to "invent-software/squad-fiscal"
     And the row for "Ana Carolina" totals "4.5" hours
 
@@ -154,6 +155,15 @@ Feature: Reading a team's hours
     And I switch the columns to weeks
     And I open the report with no team named
     Then the address names the team I chose
+
+  # Spec: team-timelog-report / GROUP-20
+  Scenario: A remembered team that was deleted
+    Given the team I chose last has since been deleted
+    When I open the report with no team named
+    Then the team shown is "Squad Fiscal"
+    And the screen does not say the team is not mine
+    When I open the report with no team named
+    Then the team shown is "Squad Fiscal"
 
   # Spec: team-timelog-report / GROUP-20
   Scenario: The group I narrowed to is not carried into the next visit

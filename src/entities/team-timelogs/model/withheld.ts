@@ -15,7 +15,7 @@ import { totalOf, totalsByColumn } from './grid'
  * `spentAt` and no gap where it used to be.
  */
 export interface WithheldDeclaration {
-  /** Declared totals by grid column key. Every column, or the answer is refused. */
+  /** Declared totals by grid column key. A missing column declares nothing. */
   readonly byColumn: ReadonlyMap<string, DeclaredTotals>
   /** The same person over the whole period, asked at the same instants. */
   readonly period: DeclaredTotals
@@ -184,7 +184,8 @@ function placedTotal(cells: readonly GridCell[], declaration: WithheldDeclaratio
  *   the probe never asked about answers nothing and fails here rather than
  *   silently reading as "nothing withheld".
  * - The period declares at least what the row draws. This also closes the hole
- *   where a username no longer resolves: the provider answers a count of zero,
+ *   where the provider will not resolve the person at all: the probe answers a
+ *   count of zero,
  *   which is otherwise indistinguishable from a clean month.
  */
 function tiles(row: GridRow, declaration: WithheldDeclaration): boolean {

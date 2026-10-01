@@ -35,10 +35,10 @@ interface MatrixFootProps {
 }
 
 /**
- * What the whole group logged, per column and in total.
+ * What the whole team logged, per column and in total.
  *
- * Sticky to the bottom of the scroll region, so the day a nobody logged stays
- * readable however far down a large group the reader has scrolled.
+ * Sticky to the bottom of the scroll region, so a day nobody logged stays
+ * readable however far down a large team the reader has scrolled.
  */
 export function MatrixFoot({
   columns,

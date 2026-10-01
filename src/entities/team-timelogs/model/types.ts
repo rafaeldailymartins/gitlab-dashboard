@@ -93,7 +93,10 @@ export interface SuggestedMember {
  * not — removes an entire class of withheld entry before it can happen.
  */
 export interface TeamTimelogEntry {
-  /** GitLab's global id, so two answers about the same page can be reconciled. */
+  /**
+   * GitLab's global id. Nothing in this slice reads it: one page is one document
+   * here, so there is no second answer to reconcile.
+   */
   readonly id: string
   /** Whole seconds. Negative values correct a mistaken entry. */
   readonly seconds: number

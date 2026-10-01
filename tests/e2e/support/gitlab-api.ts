@@ -99,7 +99,7 @@ async function answer(route: Route, hours: unknown): Promise<void> {
 /**
  * Whether this request is the signed-in person's own history.
  *
- * The operation name decides, not the query text: `GroupHoursPage` also contains
+ * The operation name decides, not the query text: `TeamHoursPage` also contains
  * the substring `timelogs`, and answering it with this payload would hand the
  * team screen the personal fixture — which parses, renders, and would make the
  * suite pass on entirely the wrong data.

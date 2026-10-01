@@ -19,13 +19,15 @@ export default defineConfig({
         // as vendored. Components we author in shared/ui are measured.
         'src/shared/ui/button.tsx',
         'src/shared/ui/card.tsx',
+        'src/shared/ui/collapsible.tsx',
         'src/shared/ui/input.tsx',
         'src/shared/ui/label.tsx',
+        'src/shared/ui/skeleton.tsx',
       ],
       include: [
-        // The function is authored here and carries logic, so it is measured.
-        // It is not `model/`, so it is held to the global floor rather than the
-        // hundred-percent one: its handler is I/O wiring.
+        // The functions are authored here and carry logic, so they are measured.
+        // They are not `model/`, so they are held to the global floor rather than
+        // the hundred-percent one: their handler is I/O wiring.
         'netlify/**/*.mts',
         'src/entities/**/*.{ts,tsx}',
         'src/features/**/*.{ts,tsx}',
@@ -105,7 +107,7 @@ export default defineConfig({
       },
       {
         /**
-         * The serverless function: Node, no DOM, no React — and no Netlify.
+         * The serverless functions: Node, no DOM, no React — and no Netlify.
          *
          * The blob store and the identity verifier are ports, so these tests
          * inject an in-memory store and a locally minted key pair rather than
@@ -156,8 +158,9 @@ export default defineConfig({
            * value written to `globalThis` in one file was read in the next.
            *
            * Which is survivable here for a structural reason rather than a lucky
-           * one: the tested slices hold no mutable module state (two Intl caches
-           * keyed by locale, one frozen Set), and the singletons that would be
+           * one: the tested slices hold no mutable module state (five Intl caches
+           * keyed by locale, one keyed by time zone, one Set nothing writes to),
+           * and the singletons that would be
            * dangerous — the query client, its persister, the app runtime — live
            * in `src/app/`, which has no tests and which no tested slice may
            * import, because the FSD boundary rule forbids importing the top

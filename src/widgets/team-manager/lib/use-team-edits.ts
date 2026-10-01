@@ -14,15 +14,16 @@ import { TEAMS_KEY, TeamsError, teamsQuery, useTeamsGateway } from '@/entities/t
  * branch every reader of this file has to rule out for themselves.
  */
 export type SaveState =
-  /** Somebody else changed the document; what is on screen is now theirs. */
+  /** The write did not land; the edits are still on screen to try again. */
   | { readonly failure: TeamsFailure; readonly kind: 'failed' }
+  /** Somebody else changed the document; what is on screen is now theirs. */
   | { readonly kind: 'changed-elsewhere' }
   /** Nothing to say: nothing edited yet, or the last thing edited is gone. */
   | { readonly kind: 'idle' }
   | { readonly kind: 'saving' }
 
 export interface TeamEdits {
-  /** Applies a change and saves it. Every edit is a save; there is no draft. */
+  /** Applies a change: a save here, and only an edit to the draft behind `useTeamDraft`. */
   readonly apply: (change: TeamsChange) => void
   /** Why the store would not say what teams this reader has, or null. */
   readonly failure: null | TeamsFailure
@@ -66,7 +67,9 @@ const NOTHING: TeamsDocument = { etag: null, teams: [] }
  * Saved on every edit rather than behind a button. A team is a short list built
  * by clicking names, and a screen that collected those clicks into an unsaved
  * draft would lose them to a closed tab — and would have to explain, on a screen
- * whose whole job is a list, what "unsaved" means.
+ * whose whole job is a list, what "unsaved" means. That argument lost:
+ * `use-team-draft.ts` collects the edits anyway and hands this hook one change
+ * per save, and says why. It is kept here as the case a reversal has to answer.
  *
  * Nothing is applied optimistically. The document carries a version, and a
  * write that loses the race is answered with the current document rather than

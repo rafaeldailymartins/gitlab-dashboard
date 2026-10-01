@@ -21,7 +21,7 @@ export function nowInstant(): string {
  * The four edits, bound to the team on screen.
  *
  * Here rather than inline in the markup: every one of them is the same shape —
- * apply a pure edit from the model to the whole list, then save — and four of
+ * apply a pure edit from the model to the whole list being edited — and four of
  * those inside a JSX tree buries the layout under them.
  *
  * Every one goes through `entities/teams`' own edit functions rather than

@@ -48,8 +48,8 @@ interface TeamManagerDialogProps {
  * their figures are about cost them their place and bought nothing: this surface
  * never had an address worth sending anybody, being one reader's private list.
  *
- * The trigger belongs to the caller. The report attaches it to the control that
- * names the team it acts on; settings puts it in a card. A trigger owned here
+ * The trigger belongs to the caller. The report puts it at the far end of its
+ * toolbar; settings puts it in a card. A trigger owned here
  * would be one button pretending to suit both.
  *
  * Nothing about which team is being edited lives in the address, for the same

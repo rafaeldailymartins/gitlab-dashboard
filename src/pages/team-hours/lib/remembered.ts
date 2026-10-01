@@ -7,7 +7,7 @@ const STORAGE_KEY = 'team-report-team'
  * The last team this reader looked at.
  *
  * Only this app's own identifier for it — never a name, never a colleague, never
- * a figure. `query-shape.ts` marks every answer on this screen `persist: false`
+ * a figure. `NOT_PERSISTED` marks every answer on this screen `persist: false`
  * because a team's hours and its people belong to somebody other than the
  * reader, and a shared machine must not keep them; an opaque identifier this app
  * minted is none of those things, and without it the reader picks their own team

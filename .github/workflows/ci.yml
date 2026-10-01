@@ -7,8 +7,9 @@
 # a push here can never cancel it. `CONTRIBUTING.md` describes the flow these
 # jobs enforce.
 #
-# Bun runs everything except the two tools that cannot: Stryker's plugin loader
-# and the Playwright run itself, both of which need Node. The Playwright image
+# Bun runs everything except the three that cannot: Stryker's plugin loader,
+# the Playwright run itself and the preview server it tests against, all of
+# which need Node. The Playwright image
 # ships Node and the browsers, so `e2e` runs inside it and installs Bun there;
 # the rest run on the runner through `.github/actions/setup`.
 
@@ -34,9 +35,10 @@ permissions:
   contents: read
 
 jobs:
-  # Format, lint, ARIA, types, FSD layers, the dependency graph, dead code, type
-  # coverage and `bun audit` — the whole fast gate, in one job, because any one
-  # of them failing means the same thing: do not merge this.
+  # Format, lint, ARIA, contrast, translations, types, FSD layers, the
+  # dependency graph, traceability, dead code, type coverage and `bun audit` —
+  # the whole fast gate, in one job, because any one of them failing means the
+  # same thing: do not merge this.
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 60

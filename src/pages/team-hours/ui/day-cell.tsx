@@ -45,8 +45,8 @@ interface DayCellProps {
    */
   readonly scoped: boolean
   /**
-   * True when the provider counted entries for this person in this window and
-   * handed none of them over for this cell's row.
+   * True when the provider counted entries for this person in this window that
+   * it did not hand over, and no column could be shown to hold them.
    *
    * An empty working day then means one thing the screen can rule out: the
    * reader is being shown less than the provider counted, so even "nothing

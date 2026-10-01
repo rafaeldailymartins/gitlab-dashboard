@@ -47,7 +47,7 @@
   "include": [
     "src",
     "tests",
-    // The serverless function. It is outside `src` on purpose — it runs on
+    // The serverless functions. They are outside `src` on purpose — they run on
     // Node, not in a browser — and a root folder is invisible to `tsc` until it
     // is named here.
     "netlify",

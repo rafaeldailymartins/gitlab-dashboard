@@ -22,7 +22,7 @@ commit-msg:
       run: bun commitlint --edit {1}
 
 # Compiling the messages first is what makes the group below safe to run in
-# parallel. `pretypecheck` would otherwise rewrite all 184 files in
+# parallel. `pretypecheck` would otherwise rewrite every generated file in
 # `src/paraglide/` while steiger, dependency-cruiser and knip are reading them —
 # the race `docs/qa/quality-metrics.md` records. Run once, up front, the group's
 # own `pre*` steps find the fingerprint current and do nothing.

@@ -41,7 +41,7 @@ export function shiftMonth(month: string, months: number): string {
  * An address is untrusted input — it may have been typed, or sent by somebody
  * else — so nothing here throws. A month that is not a month becomes the month
  * containing `today`, and an absent group becomes an empty one, which the screen
- * answers by asking the reader to choose. Failing instead would turn a mistyped
+ * reads as no narrowing at all. Failing instead would turn a mistyped
  * link into a blank screen with a stack trace behind it.
  */
 export function teamSearchFrom(search: Record<string, unknown>, today: IsoDate): TeamSearch {

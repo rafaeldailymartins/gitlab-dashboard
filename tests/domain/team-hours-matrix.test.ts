@@ -26,6 +26,7 @@ interface Slice {
   identity: MemberIdentity
   loadedThrough: string
   person: Person
+  settled: boolean
 }
 
 /** What a scenario has said so far, and the grid it describes. */
@@ -79,6 +80,7 @@ function gridOf(state: World): TeamGrid {
       identity: slice.identity,
       loadedThrough: isoDate(slice.loadedThrough),
       member: member(slice.person),
+      settled: slice.settled,
     })),
     period: MAY,
     reference: EIGHT_BY_FIVE,
@@ -154,6 +156,7 @@ function teamOf(list: string): Slice[] {
       identity: { kind: 'confirmed', person },
       loadedThrough: MAY.to,
       person,
+      settled: true,
     }
   })
 }
@@ -346,6 +349,14 @@ describeFeature(feature, ({ Scenario, ScenarioOutline }) => {
       And('the cell for Bruno on 2026-05-20 is "pending"', () => {
         expect(cellFor(state, 'Bruno', '2026-05-20')?.kind).toBe('pending')
       })
+
+      And("Ana's row total is final", () => {
+        expect(rowFor(state, 'Ana')?.settled).toBe(true)
+      })
+
+      And("Bruno's row total is still pending", () => {
+        expect(rowFor(state, 'Bruno')?.settled).toBe(false)
+      })
     },
   )
 
@@ -422,5 +433,9 @@ function readUpTo(state: World, name: string, date: string): void {
 
   if (slice) {
     slice.loadedThrough = date
+    // Read to the month's last day is a finished read in this table, which has
+    // no way to say "an entry on the padding day, and a cursor still left" —
+    // the one case where the two part, and the grid's own tests hold that one.
+    slice.settled = date === MAY.to
   }
 }

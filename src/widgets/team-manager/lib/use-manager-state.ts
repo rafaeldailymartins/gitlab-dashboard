@@ -50,11 +50,10 @@ type Pane =
  * the pane that asked, never from whether a team happens to be chosen: a reader
  * starting their second team always has a first one chosen behind the pane.
  *
- * Neither path is optimistic, and neither writes twice. A team built from a
- * group is minted already full, in one change: creating it first and adding
- * people as they arrive is two conditional writes, and the second can be refused
- * on its own — which would leave a team on the reader's list carrying the
- * group's name and none of its people.
+ * Neither path writes: both change the draft, and only Save reaches the store.
+ * A team built from a group is still minted already full, in one change, so
+ * there is never a draft holding a team that carries the group's name and none
+ * of its people.
  */
 export function useManagerState(edits: TeamDraft, seeding: Seeding): ManagerState {
   const [chosenId, setChosenId] = useState<null | string>(null)

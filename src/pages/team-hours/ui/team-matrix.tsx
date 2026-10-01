@@ -106,13 +106,7 @@ export function TeamMatrix({
         </thead>
         <tbody>
           {visible.map((row) => (
-            <MatrixRow
-              complete={report.complete}
-              key={row.member.id}
-              marks={marks}
-              row={row}
-              scoped={scoped}
-            />
+            <MatrixRow key={row.member.id} marks={marks} row={row} scoped={scoped} />
           ))}
         </tbody>
         <MatrixFoot
@@ -142,8 +136,8 @@ function captionOf(scope: 'unreadable' | GroupRef | null, team: string, month: s
  * A fixed table takes its widths from the first row, and the first row here is
  * the week bands — cells that span several columns and so say nothing about any
  * one of them. A `<colgroup>` is where a fixed layout is meant to be told, and
- * it is also what lets a Saturday be narrower than a Wednesday: two thin columns
- * every seven is what makes a month read as five weeks rather than as thirty-one
+ * it is also what lets a column nothing is expected of be narrower than a working
+ * one: under a five-day week, two thin columns every seven is what makes a month read as five weeks rather than as thirty-one
  * stripes.
  */
 function ColumnWidths({

@@ -1,7 +1,8 @@
-import { lazy, type ReactNode, Suspense, useEffect, useMemo, useState } from 'react'
+import { lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { GroupRef } from '@/entities/team-timelogs'
 
+import { SignInAgainButton } from '@/entities/sessions'
 import { m } from '@/shared/i18n'
 import { Button } from '@/shared/ui/button'
 import { Skeleton } from '@/shared/ui/skeleton'
@@ -11,6 +12,7 @@ import type { TeamSearch } from '../lib/search-params'
 
 import { addressAfterSave } from '../lib/address-after-save'
 import { chosenTeam, teamOf } from '../lib/chosen-team'
+import { forgetsRemembered } from '../lib/forget-remembered'
 import { legendShows } from '../lib/legend'
 import { type ScreenState, screenStateOf } from '../lib/state'
 import { useSavedTeams } from '../lib/use-saved-teams'
@@ -35,6 +37,36 @@ import { TeamMatrix } from './team-matrix'
 const TeamManagerDialog = lazy(async () =>
   loadTeamManager().then((module) => ({ default: module.TeamManagerDialog })),
 )
+
+/**
+ * Moves off a remembered team that no longer exists, in place of the address that
+ * named it, so Back does not return to it. The route forgets whatever the
+ * address becomes, so an empty team both clears the memory and completes as a
+ * bare address does (GROUP-20, GROUP-14). See `forgetsRemembered` for when.
+ */
+function useForgetDeadTeam({
+  onChange,
+  remembered,
+  saved,
+  team,
+}: {
+  readonly onChange: TeamHoursPageProps['onChange']
+  readonly remembered: string
+  readonly saved: ReturnType<typeof useSavedTeams>
+  readonly team: string
+}): void {
+  const forgets = forgetsRemembered(saved, team, remembered)
+  // Once per dead team: the caller's `onChange` is a new function every render,
+  // and the navigation it starts has not landed by the next one.
+  const forgotten = useRef('')
+
+  useEffect(() => {
+    if (forgets && forgotten.current !== team) {
+      forgotten.current = team
+      onChange({ team: '' }, { replace: true })
+    }
+  }, [forgets, onChange, team])
+}
 
 /**
  * Warms that chunk while the browser is idle, and gives up where there is no
@@ -66,6 +98,11 @@ const IDLE_TIMEOUT_MS = 4000
 /** The sync control carries no caveats on this screen. See where it is used. */
 const NO_NOTICES: readonly string[] = []
 
+/** How a change reaches the address: a new entry, or in place of this one. */
+interface AddressChange {
+  readonly replace?: boolean
+}
+
 interface BodyProps {
   readonly onManage: () => void
   readonly report: TeamHoursReport
@@ -74,7 +111,13 @@ interface BodyProps {
 }
 
 interface TeamHoursPageProps {
-  readonly onChange: (search: Partial<TeamSearch>) => void
+  readonly onChange: (search: Partial<TeamSearch>, how?: AddressChange) => void
+  /**
+   * The team the route completed a bare address with, or `''`. Only the route
+   * knows whether the address came from this reader's memory or from a link, and
+   * the difference decides whether an unknown team is forgotten or reported.
+   */
+  readonly remembered?: string
   readonly search: TeamSearch
 }
 
@@ -91,10 +134,11 @@ interface TeamHoursPageProps {
  * a page load and bought nothing. The dialog is mounted only once it has been
  * asked for, so a reader who never opens it never downloads it.
  */
-export function TeamHoursPage({ onChange, search }: TeamHoursPageProps) {
+export function TeamHoursPage({ onChange, remembered = '', search }: TeamHoursPageProps) {
   const saved = useSavedTeams()
 
   useWarmTeamManager()
+  useForgetDeadTeam({ onChange, remembered, saved, team: search.team })
 
   const [managing, setManaging] = useState(false)
   const choice = useMemo(() => chosenTeam(saved.teams, search.team), [saved.teams, search.team])
@@ -166,7 +210,7 @@ const BODY: Record<ScreenState['kind'], (props: BodyProps) => ReactNode> = {
   'empty-team': (props) => <Note action={props.onManage}>{m.team_empty_team()}</Note>,
   loading: () => <Skeleton className="h-96 w-full" />,
   'no-teams': (props) => <Note action={props.onManage}>{m.team_none_yet()}</Note>,
-  reconnect: () => <Note>{m.team_reconnect()}</Note>,
+  reconnect: () => <Note control={<SignInAgainButton />}>{m.team_reconnect()}</Note>,
   report: (props) => <Report {...props} />,
   'teams-unavailable': () => <Note>{m.team_store_unavailable()}</Note>,
   'unknown-team': (props) => <Note action={props.onManage}>{m.team_unknown_team()}</Note>,
@@ -203,9 +247,12 @@ function narrowed(scope: TeamHoursReport['scope']): boolean {
 function Note({
   action,
   children,
+  control,
 }: {
   readonly action?: () => void
   readonly children: ReactNode
+  /** A control other than the dialog's, for a note the dialog cannot solve. */
+  readonly control?: ReactNode
 }) {
   return (
     <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-card px-4 py-10 text-center">
@@ -215,6 +262,7 @@ function Note({
           {m.team_manage_link()}
         </Button>
       )}
+      {control}
     </div>
   )
 }

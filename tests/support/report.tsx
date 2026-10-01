@@ -12,6 +12,7 @@ import { render } from '@testing-library/react'
 import { vi } from 'vitest'
 
 import { PreferencesProvider, preferencesStore } from '@/entities/preferences'
+import { SessionProvider } from '@/entities/sessions'
 import {
   type ColumnProbeAnswer,
   type ColumnProbeQuery,
@@ -31,6 +32,8 @@ import { type TimelogGateway, TimelogGatewayProvider, type TimelogPage } from '@
 import { type ViewerGateway, ViewerGatewayProvider } from '@/entities/viewers'
 import { LocaleProvider } from '@/shared/i18n'
 import { type KeyValueStorage, memoryStorage } from '@/shared/lib/storage'
+
+import { fakeSessionManager } from './session'
 
 interface ReportRenderOptions {
   readonly gateway?: TimelogGateway
@@ -154,18 +157,24 @@ export function renderReport(ui: ReactNode, options: ReportRenderOptions = {}) {
   const viewer = options.viewer ?? fakeViewerGateway()
   const timelogs = options.timelogs ?? fakeTeamGateway()
   const teams = options.teams ?? fakeTeamsGateway()
+  // Signed in, as every screen that reads hours is. A surface that offers to
+  // authorise again needs the session, and a test can read what it was asked.
+  const session = fakeSessionManager({ hasSession: vi.fn(() => true) })
+  const navigateAway = vi.fn<(url: string) => void>()
 
   const inProviders = (screen: ReactNode) => (
     <QueryClientProvider client={client}>
       <PreferencesProvider store={store}>
         <LocaleProvider>
-          <TimelogGatewayProvider gateway={gateway}>
-            <TeamsGatewayProvider gateway={teams}>
-              <TeamTimelogGatewayProvider gateway={timelogs}>
-                <ViewerGatewayProvider gateway={viewer}>{screen}</ViewerGatewayProvider>
-              </TeamTimelogGatewayProvider>
-            </TeamsGatewayProvider>
-          </TimelogGatewayProvider>
+          <SessionProvider manager={session} navigateAway={navigateAway}>
+            <TimelogGatewayProvider gateway={gateway}>
+              <TeamsGatewayProvider gateway={teams}>
+                <TeamTimelogGatewayProvider gateway={timelogs}>
+                  <ViewerGatewayProvider gateway={viewer}>{screen}</ViewerGatewayProvider>
+                </TeamTimelogGatewayProvider>
+              </TeamsGatewayProvider>
+            </TimelogGatewayProvider>
+          </SessionProvider>
         </LocaleProvider>
       </PreferencesProvider>
     </QueryClientProvider>
@@ -177,10 +186,12 @@ export function renderReport(ui: ReactNode, options: ReportRenderOptions = {}) {
     ...view,
     client,
     gateway,
+    navigateAway,
     // Overrides the one from Testing Library, which would drop the providers.
     rerender: (next: ReactNode) => {
       view.rerender(inProviders(next))
     },
+    session,
     teams,
     timelogs,
     viewer,
@@ -208,15 +219,10 @@ export function renderRoutedReport(ui: ReactNode, options: ReportRenderOptions =
     getParentRoute: () => rootRoute,
     path: '/days/$date',
   })
-  const teamsRoute = createRoute({
-    component: () => <p>Teams screen</p>,
-    getParentRoute: () => rootRoute,
-    path: '/teams',
-  })
 
   const router = createRouter({
     history: createMemoryHistory({ initialEntries: ['/'] }),
-    routeTree: rootRoute.addChildren([indexRoute, dayRoute, teamsRoute]),
+    routeTree: rootRoute.addChildren([indexRoute, dayRoute]),
   })
 
   return { router, ...renderReport(<RouterProvider router={router} />, options) }

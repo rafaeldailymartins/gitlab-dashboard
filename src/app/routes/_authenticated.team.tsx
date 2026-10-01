@@ -57,9 +57,12 @@ export const Route = createFileRoute('/_authenticated/team')({
 
 function TeamRoute() {
   const search = Route.useSearch()
+  // Read once per render, after `beforeLoad` has used it: the page needs it to
+  // tell an address completed from memory from one somebody sent.
+  const remembered = rememberedTeam(persistentStorage())
   const navigate = useNavigate({ from: Route.fullPath })
   const gateway = useMemo(() => gitLabTeamTimelogGateway(apiClient()), [])
-  // The session is the identity: the teams store asks GitLab who is calling
+  // The session is the identity: the teams store verifies a token GitLab signed
   // rather than being handed a credential that reads GitLab.
   const teams = useMemo(() => httpTeamsGateway(sessionManager()), [])
 
@@ -67,8 +70,9 @@ function TeamRoute() {
     <TeamsGatewayProvider gateway={teams}>
       <TeamTimelogGatewayProvider gateway={gateway}>
         <TeamHoursPage
-          onChange={(next) => {
+          onChange={(next, how) => {
             void navigate({
+              replace: how?.replace ?? false,
               search: (current) => {
                 const moved = { ...current, ...next }
 
@@ -81,6 +85,7 @@ function TeamRoute() {
               },
             })
           }}
+          remembered={remembered}
           search={search}
         />
       </TeamTimelogGatewayProvider>
