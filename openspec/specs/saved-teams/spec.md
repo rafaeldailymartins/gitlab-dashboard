@@ -117,7 +117,6 @@ capability at a time.
 
 - **WHEN** the reader opens the team editor from the report, changes the team and
   saves
-- **AND** closes it
 - **THEN** they are on the same report, showing the same month, with the change
   in it
 
@@ -217,7 +216,8 @@ be written to storage, logged, or forwarded anywhere.
 
 ### Requirement: TEAM-4 — A change is reported as saved, or as not saved
 
-A change SHALL be reported as saved or as not saved, and a change that was not
+A change SHALL be reported as saved — the surface closing is that report — or as
+not saved, and a change that was not
 saved SHALL leave the stored team as it was rather than as the reader typed it. A
 configuration screen that accepts an edit and loses it is worse than one that
 refuses it.

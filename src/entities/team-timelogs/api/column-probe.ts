@@ -43,8 +43,8 @@ export async function readColumnProbe(
  * Each column's totals, read back by the position they were sent in.
  *
  * A column the provider would not answer for is left out of the map rather than
- * recorded as zero. `model/withheld.ts` refuses a declaration with a column
- * missing, which is what stops "we could not read this span" from being taken
+ * recorded as zero. `model/withheld.ts` refuses a declaration whose missing
+ * column would hide an entry, which is what stops "we could not read this span" from being taken
  * for "nothing was withheld in it".
  */
 function byColumnOf(

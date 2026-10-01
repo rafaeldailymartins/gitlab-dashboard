@@ -25,10 +25,10 @@ which is the mercy in it.
 
 ## Before merging
 
-- [ ] `bun run verify` — format, lint, ARIA, types, architecture, dead code, type
-      coverage, and zero dependency vulnerabilities at any severity.
+- [ ] `bun run verify` — format, lint, ARIA, contrast, translations, types,
+      architecture, traceability, dead code, type coverage, and zero dependency vulnerabilities at any severity.
 - [ ] `bun run test:coverage` — thresholds enforced.
-- [ ] `bun run test:e2e` — all three browsers.
+- [ ] `bun run test:e2e` — chromium locally; the pull request's `e2e` check runs all three browsers.
 - [ ] `bun run test:mutation` — the model layer, at or above 85.
 - [ ] `bun run build && bun run size` — inside the 180 kB gzip budget.
 - [ ] Every new `Scenario` carries a `# Spec: <capability> / <id>` comment, and
@@ -49,9 +49,10 @@ Applications**.
       order to learn a user id.
 - [ ] **`openid` is ticked before the bundle that asks for it is deployed.** A
       reader whose session predates the scope is not signed out: their refresh
-      token renews without an `id_token`, everything but their teams keeps
-      working, and the teams surface alone shows an inline notice asking them to
-      sign in again.
+      token renews without an `id_token`, their hours keep
+      working, the teams surface shows an inline notice asking them to sign in
+      again, and `/settings` says quietly that their settings are not reaching
+      their other devices.
 - [ ] Redirect URIs include every origin that will complete a sign-in:
 - [ ] `http://localhost:3000/auth/callback`, for development
 - [ ] the production Netlify URL plus `/auth/callback`
@@ -81,8 +82,8 @@ mean the same thing in two places.
       perfectly.
 - [ ] `VITE_GITLAB_CLIENT_ID` at function time is the same application the
       bundle signs in with. It is verified as the assertion's audience, so a
-      second application id here refuses every teams request while every other
-      screen keeps working.
+      second application id here refuses every request to either document
+      endpoint while every other screen keeps working.
 - [ ] `VITE_GITLAB_BASE_URL` at function time is the same instance. It is the
       issuer, and the key set is discovered from it and required to be on its
       own origin. Unset here but set at build time means the function is

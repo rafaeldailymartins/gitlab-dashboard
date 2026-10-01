@@ -300,5 +300,5 @@ screen's address is completed after it is opened.
 
 #### Scenario: A screen whose address carries choices
 
-- **WHEN** the open screen's address names a group and a month the link did not
+- **WHEN** the open screen's address names a team and a month the link did not
 - **THEN** its link is still marked as the current page

@@ -1,7 +1,7 @@
 /**
  * Ceilings that keep functions and files small enough to hold in your head.
- * Raising one of these numbers needs a reason recorded in the commit message,
- * not a silent edit.
+ * Raising one of these numbers needs a comment saying why, next to the
+ * change, not a silent edit.
  */
 /** Parameters kept only to document a signature are prefixed with _. */
 export const UNUSED_ARGUMENT_RULE = {

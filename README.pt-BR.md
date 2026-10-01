@@ -125,8 +125,8 @@ O [`AGENTS.md`](AGENTS.md) documenta a arquitetura e cada decisão por trás del
 ### 📋 Pré-requisitos
 
 - [Bun](https://bun.sh) 1.4 ou mais recente
-- [Node.js](https://nodejs.org) 24 ou mais recente (o Stryker e o Playwright
-  ainda rodam no Node)
+- [Node.js](https://nodejs.org) 24 ou mais recente (o Stryker, o Playwright e o
+  servidor de preview que ele testa ainda rodam no Node)
 
 ### 1. Crie uma aplicação OAuth no GitLab
 
@@ -176,15 +176,15 @@ pelo próprio servidor de desenvolvimento, sobre um armazenamento em memória.
 
 ## 🧪 Scripts
 
-| Comando                 | O que faz                                                                |
-| ----------------------- | ------------------------------------------------------------------------ |
-| `bun run dev`           | Servidor de desenvolvimento em http://localhost:3000                     |
-| `bun run verify`        | Todos os gates rápidos: formatação, lint, ARIA, contraste, i18n, tipos … |
-| `bun run test`          | Testes unitários, de componente, de domínio em Gherkin e dos endpoints   |
-| `bun run test:coverage` | Os mesmos, com os limites de cobertura aplicados                         |
-| `bun run test:e2e`      | A suíte de aceitação — Chromium localmente, três navegadores no CI       |
-| `bun run test:mutation` | Testes de mutação na camada de modelo                                    |
-| `bun run build`         | Build de produção em `dist/`, com a sua CSP                              |
+| Comando                 | O que faz                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| `bun run dev`           | Servidor de desenvolvimento em http://localhost:3000                                  |
+| `bun run verify`        | Todos os gates rápidos: formatação, lint, ARIA, contraste, i18n, tipos, arquitetura … |
+| `bun run test`          | Testes unitários, de componente, de domínio em Gherkin e dos endpoints                |
+| `bun run test:coverage` | Os mesmos, com os limites de cobertura aplicados                                      |
+| `bun run test:e2e`      | A suíte de aceitação — Chromium localmente, três navegadores no CI                    |
+| `bun run test:mutation` | Testes de mutação na camada de modelo                                                 |
+| `bun run build`         | Build de produção em `dist/`, com a sua CSP                                           |
 
 ## ✅ Gates de qualidade
 
@@ -192,17 +192,17 @@ Tudo abaixo quebra o build em vez de só avisar. Tudo roda em cada pull request
 no [GitHub Actions](https://github.com/rafaeldailymartins/gitlab-dashboard/actions),
 menos os testes de mutação, que rodam toda semana:
 
-| Gate                                   | Onde                                   |
-| -------------------------------------- | -------------------------------------- |
-| 90% de cobertura, **100% em `model/`** | `bun run test:coverage`                |
-| Score de mutação ≥ 85% em `model/`     | `bun run test:mutation`, semanal no CI |
-| Zero vulnerabilidades nas dependências | `bun audit`                            |
-| Nenhum pacote vulnerável novo          | dependency review, sobre o `bun.lock`  |
-| Bundle inicial de até 180 kB gzip      | `size-limit`                           |
-| Zero violações do axe, nos dois temas  | a suíte de aceitação                   |
-| Layout shift abaixo de 0,1             | a suíte de aceitação                   |
-| Sem rolagem lateral em 375 px          | a suíte de aceitação                   |
-| Todo requisito citado por um teste     | `bun run arch:trace`                   |
+| Gate                                       | Onde                                   |
+| ------------------------------------------ | -------------------------------------- |
+| 90% de cobertura, **100% em `model/`**     | `bun run test:coverage`                |
+| Score de mutação ≥ 85% em `model/`         | `bun run test:mutation`, semanal no CI |
+| Zero vulnerabilidades nas dependências     | `bun audit`                            |
+| Nenhum pacote vulnerável novo, sem exceção | dependency review, sobre o `bun.lock`  |
+| Bundle inicial de até 180 kB gzip          | `size-limit`                           |
+| Zero violações do axe, nos dois temas      | a suíte de aceitação                   |
+| Layout shift abaixo de 0,1                 | a suíte de aceitação                   |
+| Sem rolagem lateral em 375 px              | a suíte de aceitação                   |
+| Todo requisito citado por um teste         | `bun run arch:trace`                   |
 
 A pasta [`docs/qa/`](docs/qa/) tem o plano de testes, o roteiro de regressão
 manual, a matriz de navegadores, o procedimento com leitor de tela, o checklist
@@ -250,7 +250,8 @@ partir do `main`; a homologação, a partir do `staging`, em
 com equipes e jornadas próprias; e cada pull request ganha um deploy preview.
 
 1. Defina `VITE_GITLAB_CLIENT_ID` nas variáveis de ambiente do site, para todos
-   os contextos de deploy — as funções leem a mesma.
+   os contextos de deploy — as funções leem a mesma. Num GitLab próprio,
+   defina também `VITE_GITLAB_BASE_URL`; o padrão é `https://gitlab.com`.
 2. Adicione o `/auth/callback` de produção e o de staging às redirect URIs da
    aplicação OAuth.
 3. Marque o `openid` na aplicação antes do primeiro deploy que o solicita.

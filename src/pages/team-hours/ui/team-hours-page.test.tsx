@@ -2,11 +2,12 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { ANA, BRUNO, CAMILA, entry, member } from '~tests/support/gitlab-team-timelogs'
-import { fakeTeamGateway, fakeTeamsGateway, renderRoutedReport, SQUAD } from '~tests/support/report'
+import { fakeTeamGateway, fakeTeamsGateway, renderReport, SQUAD } from '~tests/support/report'
 
 import type { TeamHoursPage as PageType } from '@/entities/team-timelogs'
 import type { Team } from '@/entities/teams'
 
+import { TeamsError } from '@/entities/teams'
 import { memoryStorage } from '@/shared/lib/storage'
 
 import type { TeamSearch } from '../lib/search-params'
@@ -69,9 +70,7 @@ function page(
   teams = fakeTeamsGateway([FISCAL]),
 ) {
   const onChange = vi.fn<(next: Partial<TeamSearch>) => void>()
-  // Routed, because the screen links to the teams screen — and a link is what
-  // this app's answer to "you have no teams yet" is made of.
-  const view = renderRoutedReport(
+  const view = renderReport(
     <TeamHoursPage onChange={onChange} search={{ ...MAY, ...overrides }} />,
     { teams, timelogs },
   )
@@ -84,7 +83,7 @@ function pageUnder(dailyTarget: Record<number, number>) {
   const storage = memoryStorage()
 
   storage.write('preferences', JSON.stringify({ dailyTarget }))
-  renderRoutedReport(<TeamHoursPage onChange={vi.fn()} search={MAY} />, {
+  renderReport(<TeamHoursPage onChange={vi.fn()} search={MAY} />, {
     storage,
     teams: fakeTeamsGateway([FISCAL]),
     timelogs: loggedGateway(),
@@ -243,6 +242,55 @@ describe('choosing what to look at', () => {
     page({ team: '018f3b2c-7a41-7c9e-9f2d-000000000000' })
 
     expect(await screen.findByText(/not one of yours/i)).toBeInTheDocument()
+  })
+
+  // GROUP-20: the route redirected a bare address into the team this reader
+  // chose last, and it has since been deleted somewhere else.
+  it('forgets a remembered team that no longer exists, in place of its address', async () => {
+    const gone = '018f3b2c-7a41-7c9e-9f2d-000000000000'
+    const onChange = vi.fn()
+
+    renderReport(
+      <TeamHoursPage onChange={onChange} remembered={gone} search={{ ...MAY, team: gone }} />,
+      { teams: fakeTeamsGateway([FISCAL]), timelogs: loggedGateway() },
+    )
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith({ team: '' }, { replace: true })
+    })
+    expect(onChange).toHaveBeenCalledTimes(1)
+  })
+
+  // AUTH-11: a session granted before the identity scope is offered a fresh
+  // authorisation where the report would be, and brought back to this address.
+  it('offers to authorise again when the teams need an identity', async () => {
+    globalThis.history.replaceState(null, '', `/team?team=${FISCAL.id}&month=2026-05`)
+    const refusing = fakeTeamsGateway([FISCAL])
+
+    refusing.read.mockRejectedValue(new TeamsError({ kind: 'identity-unavailable' }))
+    const { session } = page({}, loggedGateway(), refusing)
+
+    await userEvent.click(await screen.findByRole('button', { name: /^sign in again$/iu }))
+
+    expect(session.startSignIn).toHaveBeenCalledWith(`/team?team=${FISCAL.id}&month=2026-05`)
+    expect(session.signOut).not.toHaveBeenCalled()
+  })
+
+  it('does not forget a team a link named that this reader never chose', async () => {
+    const theirs = '018f3b2c-7a41-7c9e-9f2d-000000000000'
+    const onChange = vi.fn()
+
+    renderReport(
+      <TeamHoursPage
+        onChange={onChange}
+        remembered={FISCAL.id}
+        search={{ ...MAY, team: theirs }}
+      />,
+      { teams: fakeTeamsGateway([FISCAL]), timelogs: loggedGateway() },
+    )
+
+    expect(await screen.findByText(/not one of yours/i)).toBeInTheDocument()
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   it('says there is nobody to report on when the team is empty', async () => {
@@ -482,6 +530,20 @@ describe('while the month is still being read', () => {
     await waitFor(() => {
       expect(totalCellOf(new RegExp(ANA.name).source)).toHaveTextContent('')
     })
+  })
+
+  // GROUP-7: Bruno's month fitted the first round, Ana's did not. His total is an
+  // answer already, and holding it behind hers put a pulsing bar beside cells
+  // that were already final.
+  it('shows a finished person’s total while somebody else is still being read', async () => {
+    page({}, readingGateway().gateway)
+
+    await screen.findByRole('rowheader', { name: new RegExp(ANA.name) })
+
+    await waitFor(() => {
+      expect(totalCellOf(new RegExp(BRUNO.name).source)).toHaveTextContent('0')
+    })
+    expect(totalCellOf(new RegExp(ANA.name).source)).toHaveTextContent('')
   })
 
   it('says only that it is fetching, and nothing about the figures', async () => {

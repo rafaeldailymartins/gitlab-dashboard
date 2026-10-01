@@ -74,12 +74,12 @@ active language, and dates SHALL be formatted in the configured time zone.
 ### Requirement: I18N-5 — No user-facing text is hardcoded
 
 User-facing text SHALL come only from the translation catalogues, and a missing
-translation SHALL fail the build rather than reach a reader.
+translation SHALL fail verification rather than reach a reader.
 
 #### Scenario: A missing translation
 
 - **WHEN** a string exists in English but not in Brazilian Portuguese
-- **THEN** the build fails and names the missing entry
+- **THEN** verification fails and names the missing entry, before anything ships
 
 #### Scenario: An untranslated literal in the interface
 

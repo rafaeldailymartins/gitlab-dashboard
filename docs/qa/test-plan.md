@@ -108,14 +108,14 @@ test.
 
 ### 5. Acceptance, in real browsers
 
-`features/acceptance/*.feature`, run by `playwright-bdd` across chromium, webkit
-and a Pixel 7 viewport, with `axe-core` assertions on every route in both colour
+`features/acceptance/*.feature`, run by `playwright-bdd` — in CI across chromium,
+webkit and a Pixel 7 viewport, locally in chromium alone — with `axe-core` assertions on every route in both colour
 schemes. The OAuth flow runs against a stubbed authorize endpoint, so no
 credential is needed; the GraphQL endpoint is stubbed with fixed figures, so the
-suite asserts on numbers rather than on the presence of a number. The teams
-endpoint is stubbed through `page.route` too, and not for convenience: the suite
+suite asserts on numbers rather than on the presence of a number. The teams and
+preferences endpoints are stubbed through `page.route` too, and not for convenience: the suite
 builds and serves `dist/` through `vite preview`, so there is nothing behind
-that path to answer.
+those paths to answer.
 
 **Responsible for:** the reader's actual experience — signing in and out, reading
 the week, opening a day, keeping a team and reporting on it, scoping that report
@@ -167,7 +167,7 @@ cannot reach at all: level 4 holds them.
 ## Running them
 
 ```bash
-bun run verify        # format, lint, ARIA, types, architecture, dead code, audit
+bun run verify        # format, lint, ARIA, contrast, translations, types, architecture, traceability, dead code, type coverage, audit
 bun run test          # levels 1 to 4
 bun run test:coverage # the same, with the thresholds enforced
 bun run test:e2e      # level 5

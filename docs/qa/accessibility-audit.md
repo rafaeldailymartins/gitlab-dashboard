@@ -104,16 +104,17 @@ same cell read twice.
     the two claims apart. A cell still saying "anywhere" under a named group
     is a statement about somebody's whole month made from a measurement of one
     group.
-16. Find a Saturday. It should say nothing beyond its column heading —
+16. Find a day whose target in Settings is zero — a Saturday, on the default
+    schedule. It should say nothing beyond its column heading —
     absence of expectation is not a fact worth announcing thirty-one times.
 17. Read a row for somebody GitLab would not resolve: an account that has
     since been blocked or deleted, or one this reader cannot see. The row
     header should give the name the reader last saw and then "GitLab did not
     recognise @<handle>", and every cell in it should say "Nothing is known
     about this person." rather than an absence — a dash there would read as a
-    month they did not work. `grep -rn unresolved features/` returns nothing,
-    so no scenario in any browser reaches this state and this step is its only
-    coverage.
+    month they did not work. The GROUP-21 scenario in
+    `read-a-teams-hours.feature` reaches this state and reads both sentences off
+    the page; how a screen reader announces them is this step's alone.
 18. Activate the Person and Total headings. The ordering should be audible, and
     should change when the same heading is activated again.
 19. Confirm no data cell is a tab stop: Tab from the last control should leave
@@ -154,11 +155,11 @@ behind it is part of what is being tested.
     state. Arrow keys do nothing and no tab panel should be announced. Both are
     deliberate — a tablist owes the reader arrow-key navigation and a panel per
     tab, and what is beside it is one pane that changes its contents.
-25. Add somebody, then remove them. Each change should be announced politely,
-    "Saving…" and then "Saved.", with the cursor left where it was: the reader
-    is in the middle of clicking names, and ten additions must not be ten
-    interruptions. Confirm the announcement arrives on the **first** change of
-    the visit. The region is in the document from the start, empty, for exactly
+25. Add somebody, then remove them: neither should be announced. Block the
+    teams endpoint and press Save. It should be announced politely, "Saving…"
+    and then that the change could not be saved, with the cursor left where it
+    was. Confirm the announcement arrives on the **first** save of the
+    visit. The region is in the document from the start, empty, for exactly
     this — one added at the moment it has something to say has not been watched,
     and that first announcement is the one that goes missing.
 26. Work both ways of putting people on a team. From a group: press "New team",
@@ -198,16 +199,16 @@ behind it is part of what is being tested.
 
 ## Colour and contrast
 
-32. In both colour schemes, check the chart tokens against their card: the
+33. In both colour schemes, check the chart tokens against their card: the
     lightest heatmap band, the target line and the smallest bar. The contrast
     gate measures all of it against both card surfaces on every `verify`, so
     this step is looking for what a ratio cannot see: a band that
     passes its floor and still reads as the one above it, or a mark that clears
     3:1 and still disappears into the page.
-33. Turn on the operating system's high-contrast or forced-colours mode. Nothing
+34. Turn on the operating system's high-contrast or forced-colours mode. Nothing
     should become invisible; bars may lose their fill, which is why every figure
     is also written out.
-34. Simulate protanopia and deuteranopia on `/insights`, `/team` and the teams
+35. Simulate protanopia and deuteranopia on `/insights`, `/team` and the teams
     dialog. The project split should still be readable — it always is, because
     each row is labelled. On the team report, a day above the reference should
     still be distinguishable from one that met it: the bar crosses a dashed rule,
@@ -215,12 +216,12 @@ behind it is part of what is being tested.
     being edited is a filled row among unfilled ones; the fill is the only thing
     in there carrying a state, so confirm what survives the simulation is the
     weight change the pressed row also carries.
-35. Read the sign-in screen's left panel in both colour schemes. It is the one
+36. Read the sign-in screen's left panel in both colour schemes. It is the one
     large branded surface in the app, and its decorative week is `aria-hidden`,
     which means axe's `color-contrast` rule skips those labels entirely. This
     step is their only automated-coverage gap: the weekday labels and the
     positioning line have to be legible on the panel, not just present.
-36. Set a weekday target low enough to meet, and read the brass seal on the met
+37. Set a weekday target low enough to meet, and read the brass seal on the met
     figure. `--seal` is the one interface colour axe has never evaluated: no
     fixture day in the acceptance suite reaches its target, so the state that
     uses it never renders in a browser under test. Its ratios are held by

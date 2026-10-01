@@ -3,7 +3,7 @@
  * submission API.
  *
  * GitHub's dependency graph reads `package.json` and not `bun.lock`: it listed
- * the seventy-odd packages this project names and none of the twelve hundred
+ * the seventy-odd packages this project names and none of the thirteen hundred
  * they bring in. So Dependabot alerts and the `dependency-review` check were
  * blind to exactly the packages `bun audit` keeps finding advisories in —
  * fast-uri's two high ones were transitive. Submitting the lockfile is what

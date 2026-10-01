@@ -165,8 +165,8 @@ When('I add {string} from the search results', async ({ page }, name: string) =>
   const add = new RegExp(`^(add|adicionar) ${name}$`, 'iu')
 
   await searchResults(page).getByRole('button', { name: add }).click()
-  // The list re-renders without them once the store has the change; waiting for
-  // that is what keeps the next step from racing the write it depends on.
+  // The list re-renders with them once the draft has the change; waiting for
+  // that is what keeps the next step from racing the render it depends on.
   await expect(members(page).getByText(name, { exact: true })).toBeVisible()
 })
 
@@ -183,7 +183,7 @@ When('I close my teams', async ({ page }) => {
   await expect(dialog(page)).toHaveCount(0)
 })
 
-/** Tries to close, which is refused while anything is unsaved. */
+/** Tries to close, which asks first while anything is unsaved. */
 When('I try to close my teams', async ({ page }) => {
   await dialog(page)
     .getByRole('button', { name: /^close$|^fechar$/iu })

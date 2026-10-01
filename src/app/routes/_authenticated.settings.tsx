@@ -20,7 +20,7 @@ export const Route = createFileRoute('/_authenticated/settings')({ component: Se
 
 function SettingsRoute() {
   const gateway = useMemo(() => gitLabTeamTimelogGateway(apiClient()), [])
-  // The session is the identity: the teams store asks GitLab who is calling
+  // The session is the identity: the teams store verifies a token GitLab signed
   // rather than being handed a credential that reads GitLab.
   const teams = useMemo(() => httpTeamsGateway(sessionManager()), [])
 

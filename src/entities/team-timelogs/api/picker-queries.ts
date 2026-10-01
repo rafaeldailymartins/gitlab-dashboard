@@ -1,8 +1,10 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query'
 
+import { NOT_PERSISTED } from '@/shared/api'
+
 import type { SuggestionQuery, TeamTimelogGateway } from '../model/ports'
 
-import { GC_TIME, NOT_PERSISTED, STALE_TIME, TEAM_TIMELOGS_KEY } from './query-shape'
+import { GC_TIME, STALE_TIME, TEAM_TIMELOGS_KEY } from './query-shape'
 
 /**
  * The group an address names, resolved to what the provider's filter takes.

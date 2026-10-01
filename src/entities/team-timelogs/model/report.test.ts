@@ -250,4 +250,15 @@ describe('teamReportFrom, each person’s own frontier', () => {
     expect(report.grid.rows[0]?.cells.every((cell) => cell.kind !== 'pending')).toBe(true)
     expect(report.grid.rows[1]?.cells.every((cell) => cell.kind === 'pending')).toBe(true)
   })
+
+  // GROUP-7: a finished row's total is final while the report is not.
+  it('settles each row on its own read, not on the report’s', () => {
+    const report = teamReportFrom(
+      [page(hours(ANA), hours(BRUNO, { nextCursor: 'MQ' }))],
+      options({ members: [member(ANA), member(BRUNO)] }),
+    )
+
+    expect(report.complete).toBe(false)
+    expect(report.grid.rows.map((row) => row.settled)).toEqual([true, false])
+  })
 })

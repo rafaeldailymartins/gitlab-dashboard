@@ -115,7 +115,7 @@ rulesets forbid deleting them.
   package: fix it on a branch into `staging`, or as a hotfix if it cannot wait.
 - **GitHub's dependency graph is given `bun.lock`.** It reads only
   `package.json` on its own, which names seventy-odd packages out of the
-  twelve hundred installed, so `dependency-graph.yml` submits the locked tree
+  thirteen hundred installed, so `dependency-graph.yml` submits the locked tree
   on every push to `staging` and `main`. That is what lets Dependabot alerts
   see a transitive advisory, and what `dependency-review` compares a pull
   request against.

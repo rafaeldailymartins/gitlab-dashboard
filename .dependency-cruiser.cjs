@@ -40,7 +40,7 @@ module.exports = {
     },
     {
       comment:
-        'Application code must not import a devDependency; it would be missing from a production install. The serverless function counts as application code: Netlify bundles it from the same node_modules, and CI never bundles it at all — so a dependency in the wrong section fails the deploy rather than the pipeline, which is exactly the failure this rule exists to move earlier.',
+        'Application code must not import a devDependency; it would be missing from a production install. The serverless functions count as application code: Netlify bundles them from the same node_modules, and CI never bundles them at all — so a dependency in the wrong section fails the deploy rather than the pipeline, which is exactly the failure this rule exists to move earlier.',
       from: { path: '^(src|netlify)/', pathNot: ['[.]test[.](mts|tsx?)$'] },
       name: 'not-to-dev-dep',
       severity: 'error',

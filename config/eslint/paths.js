@@ -18,7 +18,7 @@ export const UNTYPED_TOOLING_FILES = ['eslint.config.js', 'steiger.config.ts']
 
 export const TEST_FILES = [
   '**/*.test.ts',
-  // The serverless function's tests. The glob predates the extension, and
+  // The serverless functions' tests. The glob predates the extension, and
   // without it a function test is held to the source ceilings on file and
   // function length that every other test file is exempt from.
   '**/*.test.mts',

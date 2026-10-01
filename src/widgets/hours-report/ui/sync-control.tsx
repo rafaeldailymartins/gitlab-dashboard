@@ -15,6 +15,14 @@ interface SyncControlProps {
   readonly status: SyncStatus
 }
 
+/** The part of a report this control needs. Any report satisfies it. */
+interface SyncStatus {
+  readonly failure: GraphQLFailure | null
+  readonly sync: () => void
+  readonly syncedAt: Date | null
+  readonly syncing: boolean
+}
+
 /**
  * When the hours on screen last came from GitLab, and the way to ask again.
  *
@@ -28,14 +36,6 @@ interface SyncControlProps {
  * row, does not move under the reader's pointer when the state changes: the
  * text grows leftwards into empty space instead.
  */
-/** The part of a report this control needs. Any report satisfies it. */
-interface SyncStatus {
-  readonly failure: GraphQLFailure | null
-  readonly sync: () => void
-  readonly syncedAt: Date | null
-  readonly syncing: boolean
-}
-
 export function SyncControl({ notices, status }: SyncControlProps) {
   const { preferences } = usePreferences()
   const { locale } = useActiveLocale()

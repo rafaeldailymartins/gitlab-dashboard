@@ -67,6 +67,7 @@ function placedGrid(state: State): TeamGrid {
         identity: { kind: 'confirmed', person: ANA },
         loadedThrough: MAY.to,
         member: member(ANA),
+        settled: true,
       },
     ],
     period: MAY,
