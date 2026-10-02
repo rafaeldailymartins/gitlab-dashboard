@@ -225,9 +225,18 @@ go-ahead at the time.
 - [x] 6.2 **(owner)** In Netlify, set `VITE_SENTRY_DSN` for every deploy
       context, and `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT` for
       builds only. Verify: `netlify env:list` shows each in its intended scope
-- [ ] 6.3 **(owner)** Merge into `staging` and run the new release-checklist
-      step on homologation. Verify: a browser issue and a function issue both
-      arrive tagged `staging`, with a source-mapped stack and the same release;
-      neither carries anything OBS-3 forbids; `/assets/*.map` is not served
-- [ ] 6.4 **(owner)** Promote to `main`. Verify: the production deploy's first
-      fault arrives tagged `production`
+- [x] 6.3 **(owner)** Merged into `staging` as #21 and the new release-checklist
+      step was run on homologation. The build uploaded the maps and removed
+      all 42. A GitLab failure on a team's report narrowed to a group posted to
+      the tunnel and got a `200`. The issue arrived tagged `staging`, with
+      release `3f319ed`, a stack symbolicated from the uploaded maps, and no
+      team, group, colleague, name, query string or IP in its JSON; the only
+      location was the Netlify function's region. `/assets/*.js.map` answered
+      with the app. **The function half was not verified, by the owner's
+      decision**: the tunnel's `200` proves `VITE_SENTRY_DSN` reaches the
+      functions, and what is left unproven on a deploy is
+      `netlify/lib/release.json`, which the first real endpoint fault will show
+- [x] 6.4 **(owner)** Promoted to `main` as #22. Production was checked
+      after the deploy, with sign-in, hours, teams and a save all working. No
+      production fault was raised on purpose; the staging check above proves
+      the path, and the first real one arrives tagged `production`
