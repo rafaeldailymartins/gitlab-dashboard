@@ -1,5 +1,8 @@
-import { QueryClient } from '@tanstack/react-query'
+import { QueryCache, QueryClient } from '@tanstack/react-query'
 
+import type { Fault } from './fault'
+
+import { faultOf } from './fault'
 import { GraphQLRequestError } from './graphql'
 
 const MINUTE = 60 * 1000
@@ -16,7 +19,12 @@ const CACHE_TIME = 24 * HOUR
 
 const MAX_RETRIES = 2
 
-export function createQueryClient(): QueryClient {
+export interface QueryClientOptions {
+  /** Told of a query that failed for good, when the failure is a fault (OBS-1). */
+  readonly onFault?: (fault: Fault) => void
+}
+
+export function createQueryClient(options?: QueryClientOptions): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
@@ -25,6 +33,15 @@ export function createQueryClient(): QueryClient {
         staleTime: STALE_TIME,
       },
     },
+    queryCache: new QueryCache({
+      onError: (error, query) => {
+        const fault = query.meta?.['reportFaults'] === false ? null : faultOf(error)
+
+        if (fault !== null) {
+          options?.onFault?.(fault)
+        }
+      },
+    }),
   })
 }
 

@@ -78,15 +78,16 @@ in [`AGENTS.md`](AGENTS.md), with the quality gates below enforced in CI.
 
 ## 🧱 Tech stack
 
-| Area          | Choice                                                                   |
-| ------------- | ------------------------------------------------------------------------ |
-| UI            | React 19, TypeScript, Tailwind CSS v4, shadcn/ui on Base UI              |
-| Routing, data | TanStack Router (file-based SPA routes) and TanStack Query               |
-| Build         | Vite, with a Content-Security-Policy written after the build             |
-| i18n          | Paraglide JS — English and Brazilian Portuguese                          |
-| Backend       | Two Netlify Functions over Netlify Blobs, `jose` verifying GitLab tokens |
-| Tooling       | Bun as package manager, script runner and runtime                        |
-| Architecture  | Feature-Sliced Design outside, Clean Architecture inside each slice      |
+| Area          | Choice                                                                     |
+| ------------- | -------------------------------------------------------------------------- |
+| UI            | React 19, TypeScript, Tailwind CSS v4, shadcn/ui on Base UI                |
+| Routing, data | TanStack Router (file-based SPA routes) and TanStack Query                 |
+| Build         | Vite, with a Content-Security-Policy written after the build               |
+| i18n          | Paraglide JS — English and Brazilian Portuguese                            |
+| Backend       | Three Netlify Functions over Netlify Blobs, `jose` verifying GitLab tokens |
+| Monitoring    | Sentry, EU region, errors only, through a tunnel on this origin            |
+| Tooling       | Bun as package manager, script runner and runtime                          |
+| Architecture  | Feature-Sliced Design outside, Clean Architecture inside each slice        |
 
 ## 🏗️ How it works
 
@@ -96,7 +97,8 @@ Browser (static files on a CDN)
   ├── token / refresh  ──> gitlab.com/oauth/token      (no client secret)
   ├── hours            ──> gitlab.com/api/graphql      (Bearer, CORS allows it)
   ├── teams            ──> /.netlify/functions/teams        (id_token, same origin)
-  └── settings         ──> /.netlify/functions/preferences  (id_token, same origin)
+  ├── settings         ──> /.netlify/functions/preferences  (id_token, same origin)
+  └── faults           ──> /.netlify/functions/monitor      (same origin) ──> Sentry, EU
 ```
 
 - **The browser talks to GitLab's GraphQL API directly.** No hours pass through
@@ -112,6 +114,10 @@ Browser (static files on a CDN)
 - **Two serverless functions keep what has to follow you**: your teams and your
   working schedule, so the same team and the same targets are there on the laptop
   and on the phone.
+- **A fault reaches the author, and nothing about you goes with it.** An error
+  nothing caught, a route that failed and a GitLab request that could not be
+  answered are reported to Sentry, rebuilt out of what locates the fault and
+  nothing else. The code that sends them is fetched after the page is drawn.
 
 [`AGENTS.md`](AGENTS.md) documents the architecture and every decision behind it.
 
@@ -227,6 +233,12 @@ describes, rather than in a public issue.
 - **A strict Content-Security-Policy** — `default-src 'none'`, `connect-src`
   limited to this origin and your GitLab — with the hash of the one inline
   script, written by `bun run csp` into `dist/_headers`.
+- **Fault reports carry nothing personal.** A report is rebuilt from an
+  allowlist — the error's class and stack, the screen's path, the release, the
+  deploy, the browser — and a property test plants generated names, emails,
+  team names, group paths and tokens in every field and finds none of them
+  afterwards. Reports leave through a function on this origin, so the policy
+  above is unchanged and Sentry never sees your address.
 
 > [!NOTE]
 > **What the host can see.** Netlify Blobs holds each document as it was
@@ -234,11 +246,17 @@ describes, rather than in a public issue.
 > colleagues you put on them — and your daily targets and time zone. No hours
 > are ever stored there, but whoever can reach the site's blob store can see
 > which colleagues you grouped together.
+>
+> **What the error tracker can see.** When reporting is configured, Sentry holds
+> each fault report in its EU region for its plan's retention: the error's
+> class, its stack, the path of the screen, the release, the deploy and the
+> browser. No name, username, email, token, team, group, hour or address is in
+> one.
 
 ## ☁️ Deployment
 
 The app deploys to [Netlify](https://www.netlify.com/) as static files plus the
-two functions in `netlify/functions/`. Production is built from `main`;
+three functions in `netlify/functions/`. Production is built from `main`;
 homologation from `staging`, at
 [staging--gitlabdashboard.netlify.app](https://staging--gitlabdashboard.netlify.app/),
 with teams and schedules of its own; and every pull request gets a deploy
@@ -250,8 +268,16 @@ preview.
 2. Add production's and staging's `/auth/callback` to the OAuth application's
    redirect URIs.
 3. Tick `openid` on the application before the first deploy that asks for it.
+4. Optionally, report faults to Sentry. Create the organisation in the **EU
+   (Frankfurt) region**, which cannot be changed afterwards, and a JavaScript
+   project. In the project's settings, turn on "Prevent storing of IP
+   addresses" and spike protection, and set a rate limit on its DSN. Then set
+   `VITE_SENTRY_DSN` for every deploy context (the functions read the same one),
+   and `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT` for builds only,
+   so the source maps are uploaded and never served. Without the DSN nothing is
+   reported and the reporting code is not even built.
 
-Those three fail at sign-in rather than at build time.
+The first three fail at sign-in rather than at build time.
 [`docs/qa/release-checklist.md`](docs/qa/release-checklist.md) is the full pass.
 
 ## 🤝 Contributing

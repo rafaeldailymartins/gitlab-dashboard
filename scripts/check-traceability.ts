@@ -54,6 +54,14 @@ const UNCITED_BY_DESIGN = new Map([
     'A missing translation fails `bun run i18n:check`, which names the key and the language. A hardcoded literal is caught in review — no browser can tell a literal from a translation that happens to match.',
   ],
   [
+    'OBS-2',
+    "A document endpoint's fault reports leave from a function, and the acceptance suite serves a static `dist/` that runs none. `netlify/lib/handle-document.reporting.test.mts` and `netlify/lib/document-endpoint.reporting.test.mts` inject a recording reporter and prove each `503` reports its reason and document, every refusal caused by the request reports nothing, an exception is reported and thrown again, and no answer changes either way.",
+  ],
+  [
+    'OBS-8',
+    '`scripts/drop-source-maps.ts` runs inside `bun run build` and fails it if any `.map` is left in `dist/` or any chunk still names one, so a build that would publish a map does not finish. A browser cannot tell a missing map from a preview server falling back to the page.',
+  ],
+  [
     'PREF-5',
     'An inline script sets the theme before the bundle loads; a flash is a visual property no assertion can see.',
   ],

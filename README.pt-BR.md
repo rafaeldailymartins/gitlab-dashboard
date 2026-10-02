@@ -88,7 +88,8 @@ no CI.
 | Rotas e dados | TanStack Router (rotas de SPA por arquivo) e TanStack Query                      |
 | Build         | Vite, com uma Content-Security-Policy gerada depois do build                     |
 | i18n          | Paraglide JS — inglês e português do Brasil                                      |
-| Backend       | Duas Netlify Functions sobre Netlify Blobs, com `jose` verificando tokens GitLab |
+| Backend       | Três Netlify Functions sobre Netlify Blobs, com `jose` verificando tokens GitLab |
+| Monitoramento | Sentry, região UE, só erros, por um túnel nesta origem                           |
 | Ferramentas   | Bun como gerenciador de pacotes, executor de scripts e runtime                   |
 | Arquitetura   | Feature-Sliced Design por fora, Clean Architecture dentro de cada slice          |
 
@@ -100,7 +101,8 @@ Navegador (arquivos estáticos numa CDN)
   ├── token / refresh  ──> gitlab.com/oauth/token      (sem client secret)
   ├── horas            ──> gitlab.com/api/graphql      (Bearer, o CORS permite)
   ├── equipes          ──> /.netlify/functions/teams        (id_token, mesma origem)
-  └── configurações    ──> /.netlify/functions/preferences  (id_token, mesma origem)
+  ├── configurações    ──> /.netlify/functions/preferences  (id_token, mesma origem)
+  └── falhas           ──> /.netlify/functions/monitor      (mesma origem) ──> Sentry, UE
 ```
 
 - **O navegador fala direto com a API GraphQL do GitLab.** Nenhuma hora passa por
@@ -116,6 +118,10 @@ Navegador (arquivos estáticos numa CDN)
 - **Duas funções serverless guardam o que precisa acompanhar você**: as suas
   equipes e a sua jornada, para que a mesma equipe e as mesmas metas estejam no
   notebook e no celular.
+- **Uma falha chega ao autor, e nada sobre você vai junto.** Um erro que nada
+  capturou, uma rota que falhou e uma requisição ao GitLab que não pôde ser
+  respondida são reportados ao Sentry, reconstruídos só com o que localiza a
+  falha. O código que os envia é buscado depois que a página aparece.
 
 O [`AGENTS.md`](AGENTS.md) documenta a arquitetura e cada decisão por trás dela
 (em inglês).
@@ -233,6 +239,13 @@ Encontrou uma vulnerabilidade? Reporte de forma privada, como descreve o
 - **Uma Content-Security-Policy estrita** — `default-src 'none'`, `connect-src`
   limitado a esta origem e ao seu GitLab — com o hash do único script inline,
   escrita pelo `bun run csp` em `dist/_headers`.
+- **Relatórios de falha não carregam nada pessoal.** Um relatório é
+  reconstruído a partir de uma lista de campos permitidos — a classe e a stack do
+  erro, o caminho da tela, a release, o deploy, o navegador — e um teste de
+  propriedade planta nomes, e-mails, nomes de equipe, caminhos de grupo e tokens
+  gerados em todos os campos e não encontra nenhum depois. Os relatórios saem
+  por uma função nesta origem, então a política acima não muda e o Sentry nunca
+  vê o seu endereço.
 
 > [!NOTE]
 > **O que o provedor consegue ver.** O Netlify Blobs guarda cada documento como
@@ -240,11 +253,17 @@ Encontrou uma vulnerabilidade? Reporte de forma privada, como descreve o
 > dos colegas que você colocou nelas — e as suas metas diárias e fuso horário. Nenhuma
 > hora é guardada lá, mas quem tiver acesso ao blob store do site consegue ver
 > quais colegas você agrupou.
+>
+> **O que o rastreador de erros consegue ver.** Quando o relato está
+> configurado, o Sentry guarda cada relatório de falha na sua região UE pelo
+> período do plano: a classe do erro, a stack, o caminho da tela, a release, o
+> deploy e o navegador. Nenhum nome, username, e-mail, token, equipe, grupo,
+> hora ou endereço está nele.
 
 ## ☁️ Deploy
 
 A aplicação é publicada no [Netlify](https://www.netlify.com/) como arquivos
-estáticos mais as duas funções em `netlify/functions/`. Produção é gerada a
+estáticos mais as três funções em `netlify/functions/`. Produção é gerada a
 partir do `main`; a homologação, a partir do `staging`, em
 [staging--gitlabdashboard.netlify.app](https://staging--gitlabdashboard.netlify.app/),
 com equipes e jornadas próprias; e cada pull request ganha um deploy preview.
@@ -255,8 +274,16 @@ com equipes e jornadas próprias; e cada pull request ganha um deploy preview.
 2. Adicione o `/auth/callback` de produção e o de staging às redirect URIs da
    aplicação OAuth.
 3. Marque o `openid` na aplicação antes do primeiro deploy que o solicita.
+4. Opcionalmente, reporte falhas ao Sentry. Crie a organização na **região UE
+   (Frankfurt)**, que não pode ser trocada depois, e um projeto JavaScript. Nas
+   configurações do projeto, ligue "Prevent storing of IP addresses" e a spike
+   protection, e defina um rate limit no DSN. Depois defina `VITE_SENTRY_DSN`
+   para todos os contextos de deploy (as funções leem a mesma), e
+   `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` e `SENTRY_PROJECT` só para o build, para
+   que os source maps sejam enviados e nunca servidos. Sem o DSN nada é
+   reportado e o código de relato nem entra no build.
 
-Esses três falham no login, não no build. O
+Os três primeiros falham no login, não no build. O
 [`docs/qa/release-checklist.md`](docs/qa/release-checklist.md) é o roteiro
 completo.
 
