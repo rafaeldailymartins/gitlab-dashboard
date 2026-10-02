@@ -3,5 +3,6 @@ export { graphQLClient, GraphQLRequestError } from './graphql'
 export type { GraphQLAnswer, GraphQLClient, GraphQLFailure } from './graphql'
 export { NOT_PERSISTED } from './not-persisted'
 export { queryCachePersister } from './query-cache-persister'
-
 export { createQueryClient } from './query-client'
+
+export { REPORTED_BY_ITS_ENDPOINT } from './reported-by-its-endpoint'
