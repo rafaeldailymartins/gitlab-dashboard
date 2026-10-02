@@ -11,6 +11,8 @@ export default {
     'src/app/routes/**/*.tsx',
     // The serverless functions: entry points nothing imports, reached by URL.
     'netlify/functions/**/*.mts',
+    // Build and gate tooling, run by npm scripts and importing what it runs.
+    'scripts/*.ts',
     'steiger.config.ts',
     'tests/**/*.ts',
     'tests/**/*.tsx',
@@ -23,5 +25,7 @@ export default {
     // Command-line tools, invoked from npm scripts rather than imported.
     '@fission-ai/openspec',
   ],
-  project: ['src/**/*.{ts,tsx}', 'netlify/**/*.mts', 'tests/**/*.{ts,tsx}'],
+  // `config/` because `vite.config.ts` reaches it, and an export only the
+  // development middleware uses is still used.
+  project: ['src/**/*.{ts,tsx}', 'netlify/**/*.mts', 'config/**/*.ts', 'tests/**/*.{ts,tsx}'],
 } satisfies KnipConfig
