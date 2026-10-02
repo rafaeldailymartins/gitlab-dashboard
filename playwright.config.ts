@@ -66,6 +66,20 @@ export default defineConfig({
      */
     command: `bun run build && node ./node_modules/vite/bin/vite.js preview --port ${String(ACCEPTANCE_PORT)} --strictPort`,
     /**
+     * Built as a homologation deploy of a commit called `acceptance`, reporting
+     * faults to a project that does not exist. The DSN only has to be present
+     * for the reporting chunk to be compiled in; nothing can reach it, because
+     * the browser posts to this origin's tunnel and the scenarios that care
+     * route that and record what arrives (`tests/e2e/support/monitor-api.ts`).
+     * Every other scenario's reports reach a preview server that answers them
+     * with nothing, which is a tracker being down — OBS-6 says that is silent.
+     */
+    env: {
+      COMMIT_REF: 'acceptance',
+      CONTEXT: 'branch-deploy',
+      VITE_SENTRY_DSN: 'https://public@o0.ingest.example.invalid/1',
+    },
+    /**
      * Never reused. A preview server left running from an earlier run serves an
      * earlier build, and a suite that passes against yesterday's bundle is worse
      * than a slow one.
