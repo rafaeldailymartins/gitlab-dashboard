@@ -67,7 +67,9 @@ src/
                 configuration read — it hands out the client rather than a third
                 gateway, so a screen most readers never open keeps its adapter
                 out of the bundle everybody downloads;
-                `lib/query.ts` builds the cache and its persister. The
+                `lib/query.ts` builds the cache and its persister;
+                `lib/monitoring.ts` holds faults from the first load and fetches
+                `lib/monitoring-sdk.ts`, which sends them, when the page is idle. The
                 signed-in header lives in `routes/_authenticated.tsx`, so the
                 guard that proves there is a session is the same thing that
                 decides the chrome exists.
@@ -113,23 +115,28 @@ src/
     teams/        the lists of people the reader keeps — the document, its
                   gateway to the endpoint below, and every edit a team can take
   shared/       ui (shadcn plus ours), api (the GraphQL client, the query client,
-                the cache persister, the never-persisted mark and the
-                document-version header), lib, i18n, config
-netlify/        the two document endpoints: `functions/{teams,preferences}.mts`
-                name a document and nothing else, and `lib/` holds everything
-                worth testing — the endpoint body they share, the handler under
-                it and its credential rules, each document's own shape, the
-                identity verifier and the configuration it reads, the store each
-                deploy is given, the blob store and the in-memory one the
-                tests and `bun run dev` use
+                the cache persister, the never-persisted mark, the
+                reported-by-its-endpoint mark, which failures are faults, and the
+                document-version header), lib (including the scrub every fault
+                report is rebuilt by), i18n, config
+netlify/        the two document endpoints and the fault-reporting tunnel:
+                `functions/{teams,preferences,monitor}.mts` name a document or a
+                project and nothing else, and `lib/` holds everything worth
+                testing — the endpoint body they share, the handler under it and
+                its credential rules, each document's own shape, the identity
+                verifier and the configuration it reads, the store each deploy is
+                given, the blob store and the in-memory one the tests and
+                `bun run dev` use, the tunnel, and the reporter the endpoints
+                tell their faults to
 config/         eslint/ (the layer, purity and limit rules) and
                 vite/api-dev.ts, which serves that same handler under
                 `bun run dev` in a few dozen lines rather than a platform emulator
 scripts/        build and gate tooling: the CSP writer, the traceability check,
                 the contrast measurement, the translation-parity check, the
-                lockfile snapshot GitHub's dependency review reads, and the
-                message compiler, which every `pre*` script calls and which
-                rebuilds only when the catalogues change
+                lockfile snapshot GitHub's dependency review reads, the source-map
+                upload and removal every build ends with, and the message
+                compiler, which every `pre*` script calls and which rebuilds only
+                when the catalogues change
 ```
 
 `model/` and `api/` are FSD's own segment names; they carry the Clean
@@ -947,6 +954,52 @@ one without reading the reason will reintroduce a bug that is already fixed.
   under one store for the same reason the deployed ones share one — a suffix that
   was not distinct would have the two documents overwriting each other, and each
   would look perfectly well-formed on its own.
+- **Faults go to Sentry, in its EU region, through a function on this origin,
+  and a report is rebuilt rather than cleaned.** Four constraints chose the tool
+  and every one of them is still load-bearing: an initial load at 178 kB of a
+  180 kB budget, a policy whose `connect-src` is this origin and GitLab, a
+  screen full of other people's names and hours, and `bun audit` at zero.
+  Measured on errors-only configurations, Sentry's browser client is 21 kB,
+  Grafana Faro 40 kB without tree-shaking, PostHog 51–102 kB, and
+  OpenTelemetry has no error grouping at all; Sentry's SDK is also the protocol
+  Bugsink, GlitchTip and Better Stack accept, so leaving costs a DSN.
+  **The reporting code is never in the first load.** `monitoring.ts` listens to
+  the window and holds up to ten faults; `monitoring-sdk.ts` is a dynamic import
+  on `requestIdleCallback`, falling back to `load`, never a timer. A build with
+  no DSN defines it as `""` and the bundler drops the import with the branch, so
+  the chunk is not even emitted.
+  **A report is rebuilt from an allowlist** in `shared/lib/scrub.ts`, never
+  cleaned of fields somebody thought of. Sentry 11 replaced `sendDefaultPii`
+  with `dataCollection`, whose defaults collect identities, headers, cookies,
+  bodies and GraphQL variables; the client is told to collect none of it, but
+  the rebuild is what `scrub.properties.test.ts` proves, by planting generated
+  personal values in every field. A message survives only for the app's own
+  classes and three engine ones — a `SyntaxError` from `JSON.parse` quotes the
+  body it could not read — and `faultOf` hands over a copy of a refusal without
+  GitLab's messages. `netlify/lib/scrub.mts` is the same rule for the
+  functions, held to the browser's by a contract test, for the reason the
+  version header is.
+  **The tunnel takes no credential.** A fault on `/login` or the callback is the
+  one that locks somebody out, and it happens before there is a credential. A
+  DSN is public anyway; what the tunnel adds is invocations, so every refusal
+  happens before it fetches anything and the browser stops at twenty reports a
+  page. There is no `rateLimit` on it because this plan has none.
+  **Route errors are reported from `createRoot`, not the router.** TanStack
+  Router calls `defaultOnCatch` only beside an error component; with none, its
+  global boundary draws the error and tells nobody. React's `onCaughtError`
+  sees it, loader errors included, and nothing drawn changes.
+  **The functions use `@sentry/core/server`, not `@sentry/node`**, which is an
+  OpenTelemetry instrumentation tree whose automatic half needs a flag a
+  function cannot pass. A `503` is an `EndpointFault` made where the endpoint
+  gave up, so each site groups on its own, with the store's error — whose
+  message can quote the reader's key — as its scrubbed `cause`. The release is
+  `netlify/lib/release.json`, written by the build command, because a function
+  is not given `COMMIT_REF` at run time.
+  **`@sentry/vite-plugin` was installed, measured and removed.** Its debug-ID
+  snippet in every chunk took the initial load to 181.43 kB. The maps are
+  uploaded by `sentry-cli` under the release and paired by file name, then
+  deleted; `build.sourcemap` is `'hidden'` and `drop-source-maps.ts` fails the
+  build if a chunk still names one, so no build serves a map.
 - **The accessibility sweep waits for the page to stop moving, and the contrast
   gate names the panel every dialog is painted on.** Two halves of one failure.
   `toBeVisible()` is satisfied by a box on screen and says nothing about

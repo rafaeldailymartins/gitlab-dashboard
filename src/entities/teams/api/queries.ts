@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query'
 
-import { NOT_PERSISTED } from '@/shared/api'
+import { NOT_PERSISTED, REPORTED_BY_ITS_ENDPOINT } from '@/shared/api'
 
 import type { TeamsGateway } from '../model/ports'
 
@@ -23,7 +23,7 @@ const MINUTE = 60 * 1000
 export function teamsQuery(gateway: TeamsGateway) {
   return queryOptions({
     gcTime: 30 * MINUTE,
-    meta: NOT_PERSISTED,
+    meta: { ...NOT_PERSISTED, ...REPORTED_BY_ITS_ENDPOINT },
     queryFn: ({ signal }) => gateway.read(signal),
     queryKey: TEAMS_KEY,
     refetchOnWindowFocus: false,

@@ -96,6 +96,25 @@ mean the same thing in two places.
       unauthenticated flood never reaches Netlify Blobs. Invocations are still
       metered, and the notification is what tells you they are climbing.
 
+## Fault reporting
+
+Optional, and it fails quietly in every direction: a deploy with nothing
+configured reports nothing, which looks exactly like a deploy where nothing went
+wrong.
+
+- [ ] The Sentry organisation's settings show the **EU** data storage location.
+      It is chosen at creation and cannot be changed; a US organisation made by
+      mistake is deleted, not migrated.
+- [ ] The project has "Prevent storing of IP addresses" on, server-side data
+      scrubbing on, spike protection on, and a rate limit on its DSN key.
+- [ ] `VITE_SENTRY_DSN` is in scope for **Builds and Functions**, in every deploy
+      context. Scoped to builds alone, the browser reports and the tunnel
+      answers `404` to every report; scoped to functions alone, the reporting
+      code is not even built.
+- [ ] `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT` are in scope for
+      **Builds** only. The deploy log says the maps were uploaded; "No
+      SENTRY_AUTH_TOKEN" there means stacks will arrive minified.
+
 ## On staging
 
 `https://staging--gitlabdashboard.netlify.app`, after the change has merged into
@@ -188,6 +207,20 @@ in a test file. `docs/qa/test-plan.md` delegates them here by name.
       nothing the request carried — the second one by appending a constant the
       function module chooses — so no browser can ask for somebody else's, which
       is exactly why no browser test can prove it either.
+- [ ] **A fault reaches the tracker, readable and about nobody.** On staging,
+      open a team's report narrowed to a group, block `gitlab.com` in the
+      browser's network panel and sync, so the request fails for good. The issue
+      arrives in Sentry tagged `staging`, with the commit as its release and a
+      stack that reads as the source — file names and lines from `src/`, not
+      from `assets/index-*.js`. Then make one document endpoint answer `503`
+      (a deploy preview with `VITE_GITLAB_CLIENT_ID` unscoped from Functions
+      does it) and check its issue carries the **same release**. Neither issue
+      may hold the team's name, the group's path, a colleague, your name, an
+      address's query string or your IP address: the acceptance suite proves
+      what the browser sends, and only this proves what the tracker kept.
+- [ ] **No map is served.** Request any `/assets/*.js.map` on staging: it is not
+      a source map. The SPA rewrite answers with the page, which is why this is
+      checked by hand and the build refuses to finish with a map in it.
 
 ## After promoting to production
 
@@ -208,6 +241,9 @@ in a test file. `docs/qa/test-plan.md` delegates them here by name.
       per-origin, so production has its own and this is the first time it is
       exercised there.
 - [ ] Sign out, and confirm IndexedDB and the refresh token are gone.
+- [ ] If reporting is configured, the deploy's first fault arrives in Sentry
+      tagged `production`. Nothing to wait for if none happens; the staging
+      check above is the one that proves the path.
 - [ ] The release for the merge is on the releases page, with its version and
       its notes. A merge whose checks failed publishes none. A merge with no CI
       run at all is a push GitHub never delivered —
@@ -284,6 +320,12 @@ against an application that still has `openid` ticked is fine — GitLab only
 requires the request to be a subset of what the application carries. The reverse
 is an outage. So a rollback never unticks `openid`, and if the scope has to come
 off the application, the bundle that asks for it comes off first.
+
+**Fault reporting is the one thing a rollback does not need.** To stop it,
+unset `VITE_SENTRY_DSN` and redeploy: the bundle stops building the reporting
+code and the tunnel answers `404`. Rolling back past the release that added it
+removes the tunnel with it. Neither direction touches a reader's documents, and
+reports already in Sentry stay there for its retention.
 
 On the reader's device nothing changed: a refresh token and a query cache, both
 of which a newer bundle reads and an older one ignores. The team report is not

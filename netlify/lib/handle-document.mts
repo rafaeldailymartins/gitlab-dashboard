@@ -1,6 +1,8 @@
 import type { DocumentStore, StoredRecord } from './document-store.mjs'
 import type { Identity } from './identity.mjs'
 
+import { EndpointFault } from './endpoint-fault.mjs'
+
 /**
  * One reader's document, kept behind a credential.
  *
@@ -50,6 +52,12 @@ export interface DocumentKind {
 
 export interface HandlerDependencies {
   readonly document: DocumentKind
+  /**
+   * Told of every `503`, with why (OBS-2). Never of a refusal the request itself
+   * caused — a missing credential, a stale version, a body too large — because
+   * those are this endpoint working. Reporting changes no answer.
+   */
+  readonly report?: (fault: EndpointFault) => void
   readonly store: DocumentStore
   readonly verify: (token: string) => Promise<Identity>
 }
@@ -66,9 +74,10 @@ const UNSUPPORTED_TYPE = 415
 const PRECONDITION_REQUIRED = 428
 const UNAVAILABLE = 503
 
-interface WriteTarget {
+interface Target {
   readonly document: DocumentKind
   readonly key: string
+  readonly report: ((fault: EndpointFault) => void) | undefined
   readonly store: DocumentStore
 }
 
@@ -96,16 +105,14 @@ export async function handleDocument(
 
   if (!identity.ok) {
     return identity.reason === 'unavailable'
-      ? failure(UNAVAILABLE, 'identity-unavailable')
+      ? unavailable(new EndpointFault('identity-unavailable'), dependencies.report)
       : failure(UNAUTHENTICATED, 'unauthenticated')
   }
 
-  const { document, store } = dependencies
-  const key = `v1/${identity.sub}${document.suffix}`
+  const { document, report, store } = dependencies
+  const target = { document, key: `v1/${identity.sub}${document.suffix}`, report, store }
 
-  return request.method === 'GET'
-    ? read(key, store, document)
-    : write(request, { document, key, store })
+  return request.method === 'GET' ? read(target) : write(request, target)
 }
 
 /**
@@ -224,13 +231,15 @@ function preconditionOf(request: Request): null | { expected: null | string } {
 }
 
 /** What the stored text says, or an empty document for a reader with none. */
-function read(key: string, store: DocumentStore, kind: DocumentKind): Promise<Response> {
+function read({ document: kind, key, report, store }: Target): Promise<Response> {
   return store
     .read(key)
     .then((record) =>
       record === null ? answer(OK, kind.empty) : answer(OK, storedOf(record, kind), record.etag),
     )
-    .catch(() => failure(UNAVAILABLE, 'store-unavailable'))
+    .catch((error: unknown) =>
+      unavailable(new EndpointFault('store-unavailable', { cause: error }), report),
+    )
 }
 
 /**
@@ -245,7 +254,17 @@ function storedOf(record: StoredRecord, kind: DocumentKind): unknown {
   return parsed.ok ? parsed.document : kind.empty
 }
 
-async function write(request: Request, { document, key, store }: WriteTarget): Promise<Response> {
+/** A `503` carrying why, told to whoever is listening first. */
+function unavailable(fault: EndpointFault, report: Target['report']): Response {
+  report?.(fault)
+
+  return failure(UNAVAILABLE, fault.reason)
+}
+
+async function write(
+  request: Request,
+  { document, key, report, store }: Target,
+): Promise<Response> {
   if (!(request.headers.get('content-type') ?? '').startsWith('application/json')) {
     return failure(UNSUPPORTED_TYPE, 'unsupported-media-type')
   }
@@ -276,7 +295,7 @@ async function write(request: Request, { document, key, store }: WriteTarget): P
     return result.ok
       ? answer(OK, parsed.document, result.etag)
       : await conflict(key, store, document)
-  } catch {
-    return failure(UNAVAILABLE, 'store-unavailable')
+  } catch (error) {
+    return unavailable(new EndpointFault('store-unavailable', { cause: error }), report)
   }
 }

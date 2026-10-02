@@ -3,7 +3,13 @@
   # `.github/workflows/deployments.yml` knows when a push has gone live, since
   # Netlify tells GitHub about deploy previews and nothing else. Only a Netlify
   # build sets `COMMIT_REF`, so it is written here rather than by `bun run build`.
-  command = 'bun run build && printf "%s\n" "$COMMIT_REF" > dist/commit.txt'
+  #
+  # `netlify/lib/release.json` is the same commit for the functions, which are
+  # bundled after this command and cannot read `COMMIT_REF` at run time: it is
+  # how a function's fault reports the release the bundle's do (OBS-7). The
+  # file in the repository carries an empty commit; this overwrites it on the
+  # build agent only.
+  command = 'bun run build && printf "%s\n" "$COMMIT_REF" > dist/commit.txt && printf "{ \"commit\": \"%s\" }\n" "$COMMIT_REF" > netlify/lib/release.json'
   publish = "dist"
 
 [build.environment]
