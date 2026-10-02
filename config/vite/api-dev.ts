@@ -5,6 +5,7 @@ import type { DocumentKind } from '../../netlify/lib/handle-document.mjs'
 
 import { documentEndpoint } from '../../netlify/lib/document-endpoint.mjs'
 import { memoryDocumentStore } from '../../netlify/lib/document-store.mjs'
+import { SILENT_REPORTER } from '../../netlify/lib/fault-reporter.mjs'
 import { PREFERENCES_DOCUMENT } from '../../netlify/lib/preferences-document.mjs'
 import { TEAMS_DOCUMENT } from '../../netlify/lib/teams-document.mjs'
 
@@ -70,7 +71,13 @@ export function apiDevEndpoints(): Plugin {
     apply: 'serve',
     configureServer(server) {
       for (const { document, path } of ENDPOINTS) {
-        const endpoint = documentEndpoint({ document, store: () => store })
+        // A local run reports nothing, whatever `.env` holds: a developer's
+        // broken store is not a fault in anybody's deploy.
+        const endpoint = documentEndpoint({
+          document,
+          reporter: () => SILENT_REPORTER,
+          store: () => store,
+        })
 
         server.middlewares.use(path, (request, response, next) => {
           void respond({ endpoint, incoming: request, outgoing: response, path }).catch(next)

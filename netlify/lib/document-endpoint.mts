@@ -1,9 +1,14 @@
+import type { Environment } from './deploy-environment.mjs'
 import type { DocumentStore } from './document-store.mjs'
+import type { Invocation, Report } from './endpoint-reporting.mjs'
+import type { FaultReporter } from './fault-reporter.mjs'
 import type { DocumentKind } from './handle-document.mjs'
 import type { Identity, VerifierOptions } from './identity.mjs'
 import type { StoreName } from './store-name.mjs'
 
 import { blobDocumentStore } from './blob-store.mjs'
+import { EndpointFault } from './endpoint-fault.mjs'
+import { deployedReporter, withReporting } from './endpoint-reporting.mjs'
 import { gitLabConfig } from './gitlab.mjs'
 import { handleDocument } from './handle-document.mjs'
 import { providerKeys, verifyIdentity } from './identity.mjs'
@@ -13,20 +18,10 @@ export interface EndpointOptions {
   readonly document: DocumentKind
   /** Injected in tests; the real one discovers the provider's published keys. */
   readonly keys?: (baseUrl: string) => Promise<Keys | null>
+  /** Injected in tests; the real one reports to the project the bundle reports to. */
+  readonly reporter?: (environment: Environment) => FaultReporter
   /** Injected in tests; the real one throws outside a Netlify environment. */
   readonly store?: (name: StoreName) => DocumentStore
-}
-
-/**
- * The one part of what the platform hands a function that this endpoint reads.
- *
- * Structural rather than the platform's own `Context`, so that the development
- * middleware and the tests can say which deploy they stand for without faking
- * the rest of it. Every field is optional because a deploy that leaves them out
- * is exactly the case `storeNameFor` refuses.
- */
-interface Invocation {
-  readonly deploy?: { readonly context?: unknown }
 }
 
 type Keys = VerifierOptions['keys']
@@ -53,27 +48,27 @@ type Keys = VerifierOptions['keys']
 export function documentEndpoint({
   document,
   keys = providerKeys,
+  reporter = deployedReporter,
   store = blobDocumentStore,
 }: EndpointOptions): (request: Request, invocation: Invocation) => Promise<Response> {
   const discovery = keyCache(keys)
-
-  return async (request, invocation) => {
+  const serve = async (request: Request, invocation: Invocation, report: Report) => {
     const name = storeNameFor(invocation.deploy?.context)
 
     if (name === null) {
-      return storeUnavailable()
+      return storeUnavailable(report)
     }
 
     const config = gitLabConfig(process.env)
 
     if (config === null) {
-      return unavailable()
+      return unavailable(report)
     }
 
     const discovered = await discovery(config.baseUrl)
 
     if (discovered === null) {
-      return unavailable()
+      return unavailable(report)
     }
 
     const options: VerifierOptions = {
@@ -84,10 +79,15 @@ export function documentEndpoint({
 
     return handleDocument(request, {
       document,
+      report,
       store: store(name),
       verify: (token): Promise<Identity> => verifyIdentity(token, options),
     })
   }
+
+  // The suffix is a constant the function module chose, so the name a report
+  // gives the document is one too: `teams` or `preferences`.
+  return withReporting(serve, { document: document.suffix.slice(1), reporter })
 }
 
 /**
@@ -127,7 +127,9 @@ function keyCache(
  * already says that for a `503`. A different word in the body, because to
  * whoever reads the log it is nothing to do with identity.
  */
-function storeUnavailable(): Response {
+function storeUnavailable(report: Report): Response {
+  report(new EndpointFault('store-unavailable'))
+
   return Response.json(
     { error: 'store-unavailable' },
     { headers: { 'cache-control': 'no-store' }, status: 503 },
@@ -135,7 +137,9 @@ function storeUnavailable(): Response {
 }
 
 /** Says only that identity could not be established, never why. */
-function unavailable(): Response {
+function unavailable(report: Report): Response {
+  report(new EndpointFault('identity-unavailable'))
+
   return Response.json(
     { error: 'identity-unavailable' },
     { headers: { 'cache-control': 'no-store' }, status: 503 },
