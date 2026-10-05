@@ -25,7 +25,7 @@ function day(date: string, hours: number): DayTotal {
 }
 
 function strip(days: DayTotal[] = [], onSelect = vi.fn()) {
-  return <WeekStrip days={days} loading={false} onSelect={onSelect} today={FRIDAY} />
+  return <WeekStrip day={FRIDAY} days={days} loading={false} onSelect={onSelect} today={FRIDAY} />
 }
 
 describe('WeekStrip', () => {
@@ -70,7 +70,7 @@ describe('WeekStrip', () => {
   })
 
   it('draws a skeleton rather than seven empty bars before anything has loaded', () => {
-    renderReport(<WeekStrip days={[]} loading onSelect={vi.fn()} today={FRIDAY} />)
+    renderReport(<WeekStrip day={FRIDAY} days={[]} loading onSelect={vi.fn()} today={FRIDAY} />)
 
     expect(screen.queryAllByRole('button')).toHaveLength(0)
   })

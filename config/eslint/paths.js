@@ -44,6 +44,9 @@ export const E2E_STEP_RULES = { 'playwright/no-standalone-expect': 'off' }
  */
 export const VENDORED_UI_FILES = [
   'src/shared/ui/button.tsx',
+  // One generated function maps every DayPicker part to a class: long by
+  // construction, and split up it would no longer diff against the generator.
+  'src/shared/ui/calendar.tsx',
   'src/shared/ui/card.tsx',
   'src/shared/ui/collapsible.tsx',
   'src/shared/ui/input.tsx',

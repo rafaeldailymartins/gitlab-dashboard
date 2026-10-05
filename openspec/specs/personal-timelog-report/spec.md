@@ -56,8 +56,10 @@ unsettled rather than as final, and retrieval SHALL continue until it is settled
 The provider is not asked for a period: it filters by UTC calendar date, while a
 day here is a day in the configured time zone, so a total it reported would
 disagree with the days on screen by the hours logged on the boundary days.
-Because history is read newest first, the periods this dashboard summarises —
-today, this week, this month — are answered by the first response.
+Because history is read newest first, the periods this dashboard summarises for
+today — today, this week, this month — are answered by the first response. The
+periods of an earlier day the reader chose are answered once retrieval passes
+the earlier of the start of that day's week and the start of its month.
 
 #### Scenario: Totals accumulate without compounding rounding
 
@@ -78,6 +80,18 @@ today, this week, this month — are answered by the first response.
 - **THEN** its total is reported as unsettled while older entries are still
   being retrieved
 - **AND** it becomes settled once retrieval passes the start of the period
+
+#### Scenario: The periods of a chosen day
+
+- **WHEN** the periods of a Wednesday are named
+- **THEN** the day is that Wednesday, the week runs from the Monday before it to
+  the Sunday after it, and the month is the calendar month containing it
+
+#### Scenario: A week that began in the month before
+
+- **WHEN** the chosen day falls in a week that began in the previous month
+- **THEN** retrieval continues until it passes the start of that week, not only
+  the start of the month
 
 ### Requirement: REPORT-4 — A day is a day in the person's time zone
 

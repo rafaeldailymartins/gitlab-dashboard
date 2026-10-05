@@ -20,6 +20,7 @@ const DATE_STYLES = {
   dayWithWeekday: { day: 'numeric', month: 'long', weekday: 'long' },
   full: { day: 'numeric', month: 'long', weekday: 'long', year: 'numeric' },
   long: { day: 'numeric', month: 'long', year: 'numeric' },
+  medium: { day: 'numeric', month: 'short', year: 'numeric' },
   month: { month: 'long', year: 'numeric' },
   short: { day: 'numeric', month: 'short' },
   weekdayLong: { weekday: 'long' },
@@ -85,6 +86,17 @@ export function formatList(items: readonly string[], locale: string): string {
  */
 export function formatLongDate(date: IsoDate, locale: string): string {
   return formatDate(date, locale, 'long')
+}
+
+/**
+ * A calendar date short enough for a control, with its year — `Aug 21, 2026`,
+ * `21 de ago. de 2026`.
+ *
+ * For a day the reader picks, which may be any year back: the short form leaves
+ * the year out because it is only used for recent dates.
+ */
+export function formatMediumDate(date: IsoDate, locale: string): string {
+  return formatDate(date, locale, 'medium')
 }
 
 /** A month and its year, as a heading — `August 2026`, `agosto de 2026`. */

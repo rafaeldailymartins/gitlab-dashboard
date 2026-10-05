@@ -20,6 +20,8 @@ interface DayFeedProps {
   /** True while an older page is on its way. */
   readonly appending: boolean
   readonly days: readonly DayTotal[]
+  /** What to say when the history holds nothing, once it is known to hold nothing. */
+  readonly empty: string
   /** True when nothing has loaded yet, as opposed to nothing existing. */
   readonly loading: boolean
   readonly onLoadOlder: () => void
@@ -36,7 +38,14 @@ interface DayFeedProps {
  * work items, and a measured list whose items change height is exactly where a
  * virtualiser makes the list jump — the one thing UI-3 forbids.
  */
-export function DayFeed({ appending, days, loading, onLoadOlder, reachedBeginning }: DayFeedProps) {
+export function DayFeed({
+  appending,
+  days,
+  empty,
+  loading,
+  onLoadOlder,
+  reachedBeginning,
+}: DayFeedProps) {
   const headingId = useId()
 
   return (
@@ -45,9 +54,13 @@ export function DayFeed({ appending, days, loading, onLoadOlder, reachedBeginnin
         {m.day_feed_title()}
       </h2>
       <div className="overflow-hidden rounded-lg border bg-card">
-        <FeedBody days={days} loading={loading} />
+        <FeedBody
+          days={days}
+          empty={empty}
+          loading={loading || (days.length === 0 && !reachedBeginning)}
+        />
       </div>
-      {loading || days.length === 0 ? null : (
+      {loading || (days.length === 0 && reachedBeginning) ? null : (
         <FeedFooter
           appending={appending}
           onLoadOlder={onLoadOlder}
@@ -58,7 +71,15 @@ export function DayFeed({ appending, days, loading, onLoadOlder, reachedBeginnin
   )
 }
 
-function FeedBody({ days, loading }: Pick<DayFeedProps, 'days' | 'loading'>) {
+/**
+ * The rows, or what stands in for them.
+ *
+ * A feed that begins at a day the reader chose can be empty only because
+ * nothing at or before that day has been read yet. That is loading, not
+ * nothing logged, so it draws the loading rows and leaves the footer below to
+ * read further back.
+ */
+function FeedBody({ days, empty, loading }: Pick<DayFeedProps, 'days' | 'empty' | 'loading'>) {
   const { preferences } = usePreferences()
 
   if (loading) {
@@ -72,9 +93,7 @@ function FeedBody({ days, loading }: Pick<DayFeedProps, 'days' | 'loading'>) {
   }
 
   if (days.length === 0) {
-    return (
-      <p className="px-4 py-8 text-center text-sm text-muted-foreground">{m.day_feed_empty()}</p>
-    )
+    return <p className="px-4 py-8 text-center text-sm text-muted-foreground">{empty}</p>
   }
 
   const scale = feedScale(days, preferences.dailyTarget)
@@ -103,7 +122,7 @@ function FeedFooter({
   appending,
   onLoadOlder,
   reachedBeginning,
-}: Omit<DayFeedProps, 'days' | 'loading'>) {
+}: Omit<DayFeedProps, 'days' | 'empty' | 'loading'>) {
   const sentinel = useApproach(onLoadOlder, !reachedBeginning && !appending)
 
   // Not a live region: the report notice above is the page's one, and two of

@@ -26,7 +26,8 @@ this pass.
 | Translations                         | every key in every language, and none unused | 176 messages, complete in 2    | `bun run i18n:check`            | `verify`, CI                  |
 | Requirement traceability             | every requirement cited                      | 80 declared: 71 cited, 9 other | `bun run arch:trace`            | `verify`, CI                  |
 | Type coverage                        | ≥ 99%                                        | 99.88% (51 911 of 51 969)      | `bun run types:coverage`        | `verify`, CI                  |
-| Dependency vulnerabilities           | **0, at any severity**                       | 0, over 864 packages           | `bun run security:audit`        | pre-push, `verify`, CI, daily |
+| Production vulnerabilities           | **0, at any severity, no exceptions**        | 0, over 92 packages            | `bun run security:audit`        | pre-push, `verify`, CI, daily |
+| Tooling vulnerabilities              | 0 not accounted for in `accepted.ts`         | 1 accepted, over 887 packages  | `bun run security:audit`        | pre-push, `verify`, CI, daily |
 | New vulnerable packages              | none added, at any severity                  | —                              | dependency review               | CI, pull requests             |
 | Commit messages                      | Conventional Commits, every commit           | —                              | `bun commitlint`                | commit-msg, CI                |
 | Test coverage, statements            | ≥ 90%                                        | 97.36%                         | `bun run test:coverage`         | CI                            |

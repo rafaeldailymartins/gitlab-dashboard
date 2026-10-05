@@ -5,15 +5,13 @@ import { usePreferences } from '@/entities/preferences'
 import {
   type DayTotal,
   myTimelogsQuery,
-  periodSummary,
+  periodSummaries,
   type PeriodSummary,
   reportFrom,
   useTimelogGateway,
 } from '@/entities/timelogs'
 import { type GraphQLFailure, GraphQLRequestError } from '@/shared/api'
-import { addDays, endOfMonth, startOfMonth, startOfWeek, toIsoDate } from '@/shared/lib/date'
-
-const LAST_DAY_OF_WEEK = 6
+import { type IsoDate, toIsoDate } from '@/shared/lib/date'
 
 /** What the query reports for `dataUpdatedAt` before a response has ever arrived. */
 const NEVER = 0
@@ -23,6 +21,8 @@ export interface HoursReport {
   readonly appending: boolean
   /** True when the provider has nothing older than what is loaded. */
   readonly complete: boolean
+  /** The day the report was asked about. */
+  readonly day: PeriodSummary
   readonly days: readonly DayTotal[]
   /** Set when the last request failed. Figures already on screen stay. */
   readonly failure: GraphQLFailure | null
@@ -30,6 +30,7 @@ export interface HoursReport {
   readonly hasFigures: boolean
   /** Asks for the page before the oldest day loaded. */
   readonly loadOlder: () => void
+  /** The calendar month containing the day the report was asked about. */
   readonly month: PeriodSummary
   /** Asks GitLab for the loaded history again, and is also how a failure is retried. */
   readonly sync: () => void
@@ -41,7 +42,6 @@ export interface HoursReport {
   readonly syncedAt: Date | null
   /** True while any request over the history is in flight, first or later. */
   readonly syncing: boolean
-  readonly today: PeriodSummary
   /**
    * Entries GitLab withheld that nothing recovered.
    *
@@ -50,49 +50,56 @@ export interface HoursReport {
    * improves however many pages are read.
    */
   readonly unread: number
+  /** The Monday-to-Sunday week containing the day the report was asked about. */
   readonly week: PeriodSummary
   /** Entries counted with no project, because GitLab would not resolve it. */
   readonly withoutProject: number
 }
 
 /**
- * The reader's hours, grouped in their own time zone.
+ * The reader's hours, grouped in their own time zone, summarised around `day`.
  *
- * The query carries no period: history arrives newest first, so today, this
- * week and this month are answered by the first page, and older days extend the
- * same cache entry instead of starting a new one.
+ * `day` is today unless a screen asks about another. The query carries no
+ * period either way: history arrives newest first, so today's periods are
+ * answered by the first page, and an earlier day's are answered by reading on
+ * until history passes the start of its week and of its month. Older days extend
+ * the same cache entry instead of starting a new one, so moving between days
+ * never asks GitLab for anything already read.
  */
-export function useHoursReport(): HoursReport {
+export function useHoursReport(day?: IsoDate): HoursReport {
   const { preferences } = usePreferences()
   const query = useInfiniteQuery(myTimelogsQuery(useTimelogGateway()))
   const { timeZone } = preferences
+  const anchor = day ?? toIsoDate(new Date(), timeZone)
 
   const report = useMemo(
     () => reportFrom(query.data?.pages ?? [], timeZone),
     [query.data, timeZone],
   )
-  const periods = useMemo(() => summarise(report, timeZone), [report, timeZone])
+  const periods = useMemo(() => periodSummaries(report, anchor), [report, anchor])
 
-  const unsettled = !periods.month.settled && query.hasNextPage
+  const unsettled = !periods.settled && query.hasNextPage
 
-  useSettleMonth(unsettled ? report.days.length : null, query.fetchNextPage)
+  useSettlePeriods(unsettled ? report.days.length : null, query.fetchNextPage)
 
   return {
-    ...periods,
     appending: query.isFetchingNextPage,
     complete: report.complete,
+    day: periods.day,
     days: report.days,
     failure: failureOf(query.error),
     hasFigures: query.data !== undefined,
     loadOlder: () => {
       void query.fetchNextPage()
     },
+    month: periods.month,
     sync: () => {
       void query.refetch()
     },
     syncedAt: query.dataUpdatedAt === NEVER ? null : new Date(query.dataUpdatedAt),
     syncing: query.isFetching,
     unread: report.unread,
+    week: periods.week,
     withoutProject: report.withoutProject,
   }
 }
@@ -105,25 +112,15 @@ function failureOf(error: Error | null): GraphQLFailure | null {
   return error instanceof GraphQLRequestError ? error.failure : { kind: 'unavailable' }
 }
 
-function summarise(report: ReturnType<typeof reportFrom>, timeZone: string) {
-  const today = toIsoDate(new Date(), timeZone)
-  const weekStart = startOfWeek(today)
-
-  return {
-    month: periodSummary(report, { from: startOfMonth(today), to: endOfMonth(today) }),
-    today: periodSummary(report, { from: today, to: today }),
-    week: periodSummary(report, { from: weekStart, to: addDays(weekStart, LAST_DAY_OF_WEEK) }),
-  }
-}
-
 /**
- * Keeps loading while the month total is still a floor rather than an answer.
+ * Keeps loading while a period of the day is still a floor rather than an answer.
  *
- * A page holds a hundred entries, which is a season of ordinary logging, so this
- * only fires for someone who logs many times a day — for whom a month total
- * that silently understated itself would be the worst outcome.
+ * For today a page holds a hundred entries, which is a season of ordinary
+ * logging, so this only fires for someone who logs many times a day — for whom
+ * a month total that silently understated itself would be the worst outcome.
+ * For a day the reader chose further back it is what reads history back to it.
  */
-function useSettleMonth(loadedDays: null | number, loadOlder: () => Promise<unknown>): void {
+function useSettlePeriods(loadedDays: null | number, loadOlder: () => Promise<unknown>): void {
   // The day count is in the dependencies, not just the unsettled flag: a month
   // spanning three pages has to ask again after each one, and a boolean that
   // stayed true would leave the effect thinking nothing had changed.
