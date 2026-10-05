@@ -40,11 +40,11 @@ in [`AGENTS.md`](AGENTS.md), with the quality gates below enforced in CI.
 
 ## 📸 Screenshots
 
-**Dashboard** — today, this week and this month, the week day by day, and your history
+**Dashboard** — today, this week and this month, the week day by day, and your history, or all of it as of any day you pick
 
 ![Dashboard](docs/screenshots/dashboard.en.png)
 
-**Insights** — the month heatmap, hours by project and what took the time
+**Insights** — a month's heatmap, hours by project and what took the time, for this month or any month before it
 
 ![Insights](docs/screenshots/insights.en.png)
 
@@ -57,11 +57,16 @@ in [`AGENTS.md`](AGENTS.md), with the quality gates below enforced in CI.
 - 🏠 **Dashboard** — hours for today, this week and this month, each against the
   target you set for those weekdays; a bar per day of the current week with the
   target on the same scale; and your whole history, newest day first, each day
-  opening into the issues and merge requests it went into.
+  opening into the issues and merge requests it went into. Step back a day or
+  pick any date and the whole screen is read as of it: that day, its week, its
+  month, and the history before it.
 - 📅 **A day on its own address** — `/days/2026-08-21` can be linked and
   reloaded, with every work item and its hours.
 - 📈 **Insights** — a square per day of the month, hours split by project, and a
-  sortable table of what took the time.
+  sortable table of what took the time, for this month or any month before it.
+- 🔗 **Dates in the address** — `/?date=2026-08-21` and `/insights?month=2026-08`
+  survive a reload and can be sent to somebody; an address with no date always
+  means today.
 - 👥 **A team's month** — the people on a team down the side, the days (or
   weeks) across the top, and each cell measured against your working schedule.
   Everybody you chose keeps a row, including somebody who logged nothing. An
@@ -196,7 +201,7 @@ except mutation testing, which runs weekly:
 | ---------------------------------- | ------------------------------------- |
 | 90% coverage, **100% on `model/`** | `bun run test:coverage`               |
 | Mutation score ≥ 85% on `model/`   | `bun run test:mutation`, weekly in CI |
-| Zero dependency vulnerabilities    | `bun audit`                           |
+| Zero vulnerabilities in production | `bun run security:audit`              |
 | No new vulnerable package, at all  | dependency review, over `bun.lock`    |
 | 180 kB gzip initial bundle         | `size-limit`                          |
 | Zero axe violations, both themes   | the acceptance suite                  |

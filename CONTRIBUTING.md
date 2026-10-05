@@ -113,6 +113,11 @@ rulesets forbid deleting them.
   advisories are published between pull requests and Dependabot cannot raise
   security updates for Bun. A red run is a new advisory against a locked
   package: fix it on a branch into `staging`, or as a hotfix if it cannot wait.
+  The audit is two tiers (`scripts/check-audit.ts`): a production dependency
+  may carry no advisory at all, and a tooling one may only when no release
+  fixes it and `scripts/audit/accepted.ts` records why it cannot reach a reader.
+  An accepted entry fails the run once the advisory is gone, so it is deleted,
+  and once its review is ninety days old, so somebody checks it again.
 - **GitHub's dependency graph is given `bun.lock`.** It reads only
   `package.json` on its own, which names seventy-odd packages out of the
   thirteen hundred installed, so `dependency-graph.yml` submits the locked tree
