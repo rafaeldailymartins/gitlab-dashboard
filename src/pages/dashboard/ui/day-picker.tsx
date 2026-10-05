@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronDown } from 'lucide-react'
+import { CalendarDays } from 'lucide-react'
 import { useRef, useState } from 'react'
 
 import { m, useActiveLocale } from '@/shared/i18n'
@@ -58,7 +58,7 @@ export function DayPicker({ className, day, onChoose, today }: DayPickerProps) {
         className={cn(
           buttonVariants({ size: 'sm', variant: 'ghost' }),
           className,
-          'tabular justify-start font-normal',
+          'tabular justify-center font-normal',
         )}
       >
         <CalendarDays aria-hidden className="text-muted-foreground" />
@@ -66,7 +66,6 @@ export function DayPicker({ className, day, onChoose, today }: DayPickerProps) {
           <span className="sr-only">{`${m.dashboard_day_field()}: `}</span>
           {formatMediumDate(day, locale)}
         </span>
-        <ChevronDown aria-hidden className="ms-auto text-muted-foreground" />
       </PopoverTrigger>
       {/* Focus lands on the day shown, which is where the arrow keys start from,
           rather than on the first control in the panel — the previous-month
