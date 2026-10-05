@@ -13,7 +13,12 @@ When('I pick today out of the week strip', async ({ page }) => {
 })
 
 When('I open the newest day of the feed', async ({ page }) => {
-  await page.getByRole('button', { expanded: false }).nth(NEWEST_DAY).click()
+  // Scoped to the feed: the day picker above it is a collapsed button too.
+  await page
+    .getByRole('region', { name: /^(history|histórico)$/iu })
+    .getByRole('button', { expanded: false })
+    .nth(NEWEST_DAY)
+    .click()
 })
 
 When('I reload the day screen for {word}', async ({ page }, date: string) => {

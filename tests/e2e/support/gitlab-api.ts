@@ -47,6 +47,23 @@ const UNREADABLE_ENTRY_ERROR = {
   path: ['currentUser', 'timelogs', 'nodes', WITHHELD_INDEX, 'timeSpent'],
 }
 
+/** How many days before today the fixture's oldest entry was logged, and its hours. */
+const DAYS_AGO_OLDEST = 40
+const HOURS_OLDEST = 4
+
+/**
+ * The calendar day `daysAgo` before the reader's today, as `YYYY-MM-DD`.
+ *
+ * Counted in the reader's zone for the reason `middayLocal` gives, and exported
+ * so a step naming "forty days ago" names the same day the fixture logged on.
+ */
+export function readerDay(daysAgo: number): string {
+  const local = new Date(Date.now() - ZONE_OFFSET_MS)
+  local.setUTCDate(local.getUTCDate() - daysAgo)
+
+  return local.toISOString().slice(0, DATE_LENGTH)
+}
+
 /** The name the fixture signs in as. `features/acceptance/*` greet it. */
 export const VIEWER_NAME = 'Ada Lovelace'
 
@@ -119,12 +136,9 @@ function isPersonalHours(route: Route): boolean {
  * no daylight saving since 2019, which is what makes a fixed offset honest here.
  */
 function middayLocal(daysAgo: number): string {
-  const local = new Date(Date.now() - ZONE_OFFSET_MS)
-  local.setUTCDate(local.getUTCDate() - daysAgo)
-
   // Midday in a zone three hours behind UTC, so the entry sits mid-afternoon
   // UTC and lands on the same calendar day whichever side of it is read.
-  return `${local.toISOString().slice(0, DATE_LENGTH)}T15:00:00.000Z`
+  return `${readerDay(daysAgo)}T15:00:00.000Z`
 }
 
 function node(daysAgo: number, hours: number, iid: number) {
@@ -149,7 +163,11 @@ function node(daysAgo: number, hours: number, iid: number) {
  * the other.
  */
 function nodes() {
-  return [node(0, LOGGED_TODAY, 153), node(1, HOURS_YESTERDAY, 129), node(40, 4, 128)]
+  return [
+    node(0, LOGGED_TODAY, 153),
+    node(1, HOURS_YESTERDAY, 129),
+    node(DAYS_AGO_OLDEST, HOURS_OLDEST, 128),
+  ]
 }
 
 function onePage(entries: unknown[]) {
