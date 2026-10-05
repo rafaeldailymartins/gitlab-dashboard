@@ -21,6 +21,7 @@ function reportWith(overrides: Partial<HoursReport> = {}): HoursReport {
   return {
     appending: false,
     complete: true,
+    day: NOTHING,
     days: [],
     failure: null,
     hasFigures: true,
@@ -29,7 +30,7 @@ function reportWith(overrides: Partial<HoursReport> = {}): HoursReport {
     sync: vi.fn(),
     syncedAt: NOW,
     syncing: false,
-    today: NOTHING,
+
     unread: 0,
     week: NOTHING,
     withoutProject: 0,

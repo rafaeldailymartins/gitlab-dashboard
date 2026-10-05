@@ -124,6 +124,42 @@ describe('DayDetailPage', () => {
     expect(screen.getByText('0 hours')).toBeInTheDocument()
   })
 
+  it('reads history back to a day older than the first page', async () => {
+    const gateway = fakeGateway([
+      { entries: [entry('2026-08-20', 3600, 128)], nextCursor: 'older' },
+      { entries: [entry('2026-07-10', 7200, 127)], nextCursor: 'older-still' },
+      { entries: [entry('2026-06-29', 3600, 126)], nextCursor: null },
+    ])
+
+    renderRoutedReport(<DayDetailPage date={isoDate('2026-07-10')} />, { gateway })
+
+    await waitFor(() => {
+      expect(screen.getByText('2 hours')).toBeInTheDocument()
+    })
+    expect(gateway.myTimelogs).toHaveBeenCalledTimes(3)
+  })
+
+  it('shows an old day as loading, not as empty, until it is read', async () => {
+    const gateway = {
+      myTimelogs: vi
+        .fn()
+        .mockResolvedValueOnce({ entries: [entry('2026-08-20', 3600, 128)], nextCursor: 'older' })
+        .mockReturnValueOnce(
+          new Promise(() => {
+            // Never answers: the day stays unread.
+          }),
+        ),
+    }
+
+    renderRoutedReport(<DayDetailPage date={isoDate('2026-07-10')} />, { gateway })
+
+    await waitFor(() => {
+      expect(gateway.myTimelogs).toHaveBeenCalledTimes(2)
+    })
+    expect(screen.queryByText(/No time logged on this day/i)).not.toBeInTheDocument()
+    expect(screen.queryByText('0 hours')).not.toBeInTheDocument()
+  })
+
   it('offers the way back to the dashboard', async () => {
     renderRoutedReport(<DayDetailPage date={isoDate('2026-08-20')} />)
 
@@ -139,7 +175,7 @@ describe('DayDetailPage', () => {
     renderRoutedReport(<DayDetailPage date={isoDate('2026-08-22')} />)
 
     await waitFor(() => {
-      expect(screen.getByText(/no target today/i)).toBeInTheDocument()
+      expect(screen.getByText(/no target/i)).toBeInTheDocument()
     })
   })
 })
