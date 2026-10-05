@@ -6,6 +6,7 @@ import {
   formatFullDate,
   formatHours,
   formatList,
+  formatMediumDate,
   formatShortDate,
   formatSpokenHours,
   formatTimeOfDay,
@@ -116,6 +117,13 @@ describe('shortWeekdayName', () => {
 
   it('is shorter than the full name', () => {
     expect(shortWeekdayName(3, PT).length).toBeLessThan(weekdayName(3, PT).length)
+  })
+})
+
+describe('formatMediumDate', () => {
+  it('abbreviates the month and keeps the year', () => {
+    expect(formatMediumDate(isoDate('2026-08-21'), EN)).toBe('21 Aug 2026')
+    expect(formatMediumDate(isoDate('2026-08-21'), PT)).toBe('21 de ago. de 2026')
   })
 })
 

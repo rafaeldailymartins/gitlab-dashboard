@@ -5,7 +5,9 @@
 # Bun, so this is the alarm — a red run here reaches the owner by email.
 #
 # A failure is a new advisory against a locked package. Fix it like any change,
-# into `staging` — or as a `hotfix/*` when it cannot wait for a promotion.
+# into `staging` — or as a `hotfix/*` when it cannot wait for a promotion. A
+# tooling advisory with no release to fix it may instead be accepted in
+# `scripts/audit/accepted.ts`, with its reason; a production one never can.
 
 name: Audit
 

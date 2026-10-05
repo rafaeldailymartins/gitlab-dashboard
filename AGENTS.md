@@ -75,9 +75,11 @@ src/
                 decides the chrome exists.
   pages/        screen composition. A block with one consumer lives here rather
                 than in widgets/, which is what steiger requires.
-    dashboard/    the KPI row, the week strip, the day feed and their derivations
+    dashboard/    the KPI row, the week strip, the day feed and their derivations,
+                  and the day control
     day-detail/   one day, addressable
-    insights/     the month heatmap, the project split, the top-items table
+    insights/     the month heatmap, the project split, the top-items table, and
+                  the month control
     settings/     the preference fields, and the card that opens the teams dialog
     team-hours/   a team’s month as a person × day matrix, its toolbar, its
                   group filter and its notices
@@ -159,7 +161,7 @@ adapter. Both linters recognise them, which custom names like `domain/` and
 | Every colour pair stays above its contrast floor, in both schemes                                                                   | `scripts/check-contrast.ts` (`bun run a11y:contrast`)        |
 | Every message exists in every language                                                                                              | `scripts/check-messages.ts` (`bun run i18n:check`)           |
 | ≥ 99% of expressions carry a real type                                                                                              | `type-coverage`                                              |
-| Zero dependency vulnerabilities, at any severity                                                                                    | `bun audit`                                                  |
+| Zero advisories in production dependencies, at any severity; none in tooling that `scripts/audit/accepted.ts` does not account for  | `scripts/check-audit.ts` (`bun run security:audit`)          |
 | Named exports only                                                                                                                  | `no-restricted-exports`                                      |
 
 When a gate fails, fix the cause. Raising a ceiling or adding an ignore entry
@@ -187,6 +189,60 @@ one without reading the reason will reintroduce a bug that is already fixed.
   does not reach past the period's start is a floor, not an answer, and the query
   keeps loading until it is. Presenting a floor as final would understate the
   reader's hours.
+- **The dashboard and insights read a day or a month from the address, and an
+  address naming none is never completed.** `/?date=YYYY-MM-DD` and
+  `/insights?month=YYYY-MM`, both optional. The team screen redirects an address
+  with no team to the remembered one; these deliberately do not, because their
+  default is "now" and writing today's date into the address would freeze a
+  bookmark on the day it was saved. Absence is a value of its own and keeps
+  meaning today after midnight, and choosing today navigates back to the bare
+  address, so "now" has one address rather than two. A date after today is
+  clamped by the page, not the route: which day is today depends on the
+  reader's zone, which only React knows, and resolving it in UTC there would
+  turn a São Paulo evening's real today into "tomorrow". Neither choice is
+  remembered across visits, for the group filter's reason: the default is the
+  honest answer, and a remembered past date would greet the reader with last
+  month's figures under a heading they would have to read to notice.
+  **The two parsers live in `shared/lib/address.ts`, not beside the pages.** A
+  route's `validateSearch` is not code-split, so whatever it imports is in the
+  bundle every reader downloads. Imported from `@/pages/dashboard` and
+  `@/pages/insights` they took both pages with them — measured, the initial
+  load went from 178.19 kB to 200.69 kB against a 180 kB budget. From `shared`
+  it is 178.62 kB.
+  **The day is picked from a calendar popover, not a date input.**
+  `pages/dashboard/ui/day-picker.tsx`, over `shared/ui/calendar.tsx`
+  (`@daypicker/react`) in `shared/ui/popover.tsx`. It shipped first as the
+  platform's `<input type="date">`, and that was reversed on two counts: the
+  native field writes the date in the _browser's_ locale, so an English screen
+  on a Brazilian machine read 02/10/2026, and it drew an operating-system
+  control in the middle of the app's own, which is the drift `popup.ts` exists
+  to stop. The trigger names the day through `Intl` in the app's language, and
+  every label the calendar announces comes from Paraglide — its defaults are
+  date-fns' English. It also removed a debounce the native field needed: typed
+  into, a date input reports a complete date after every segment, so the year
+  2025 passed through `0002` on the way, and each one was an instruction to read
+  the reader's history back to it. A click is one complete choice.
+  The calendar is told every day is UTC midnight and reads its answer back with
+  `toIsoDate(date, 'UTC')`, so a picked square is a calendar date and no instant
+  crosses a zone on the way in or out. The picker is `lazy()` for the reason the
+  team screen's pickers are: the dashboard is the first screen, the budget has
+  two kilobytes left, and the popup machinery hoists into the entry when
+  imported eagerly. The month on insights is a stepper because
+  `<input type="month">` is a plain text box on desktop Firefox and Safari. The
+  controls that would go past today are disabled with `focusableWhenDisabled`,
+  so a keyboard reader stepping forward onto today keeps focus on the button
+  that took them there.
+- **A chosen day's periods settle on the week as well as the month.**
+  `periodSummaries` in `entities/timelogs/model/periods.ts`, read by
+  `useHoursReport(day)`, which keeps fetching older pages until both are
+  settled. The month alone was what it waited on before, and that was already
+  short for today: on 2 October 2026 the week began on 28 September, so a first
+  page reaching back to the 30th settled October and left the week a floor
+  saying "still loading" with nothing loading. One history and one query key
+  still serve every day; an earlier period is the same cut over another range,
+  read further back. The week strip, the insights sections and the day screen
+  each wait on their own period being settled — a week, a month or a day not yet
+  reached would otherwise draw as one with nothing logged, which UI-7 forbids.
 - **The day feed uses `content-visibility: auto`, not a virtualiser.**
   `@tanstack/react-virtual` was installed, tried and removed: rows expand into
   their work items, and a measured list whose items change height is exactly
@@ -1031,6 +1087,26 @@ one without reading the reason will reintroduce a bug that is already fixed.
   `color-contrast (4 nodes)` and name none of them, which is unreadable from a
   CI log by somebody who cannot open the page. It carries each failing
   element's selector and the two colours axe compared.
+- **The audit is two tiers, and only one of them can be excused.**
+  `scripts/check-audit.ts`. It was `bun audit` at zero over the whole tree,
+  and that held until an advisory arrived with no fix and no way to a reader:
+  `braces`, a stack exhaustion from deeply nested glob patterns, installed only
+  by the linters and the spec tooling, which expand patterns this repository
+  writes. Every gate went red with nothing anybody could do, on every branch at
+  once, and a gate that is red for no action teaches people to stop reading
+  it. So: `bun audit --prod` — the 92 packages a reader's browser or the
+  functions load — stays at zero at any severity with no exceptions at all. The
+  rest may carry an advisory only if `scripts/audit/accepted.ts` names it with
+  the reason it cannot reach a reader and the day that was checked. The list
+  cannot rot quietly: an entry the audit no longer reports fails the gate until
+  it is deleted, and one reviewed more than ninety days ago fails it until
+  somebody looks again. An upgrade is always the first answer; an entry is for
+  when there is no release to upgrade to.
+  `--prod` is not in `bun audit --help`, so the gate does not trust it: the
+  production run must check strictly fewer packages than the whole tree, or it
+  fails as having stopped filtering. Raising the production tier's floor, or
+  letting `accepted.ts` excuse a production package, is the change this
+  paragraph exists to stop.
 - **Two linters.** ESLint carries the type-aware, React and testing-library
   rules; Biome carries the ARIA rules and the unique-id rule. Replacing ESLint
   with Biome was measured twice and rejected — `docs/qa/quality-metrics.md` has

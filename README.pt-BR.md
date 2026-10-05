@@ -42,11 +42,11 @@ no CI.
 
 ## 📸 Screenshots
 
-**Painel** — hoje, esta semana e este mês, a semana dia a dia e o seu histórico
+**Painel** — hoje, esta semana e este mês, a semana dia a dia e o seu histórico, ou tudo isso a partir de qualquer dia que você escolher
 
 ![Painel](docs/screenshots/dashboard.pt-BR.png)
 
-**Análises** — o mapa de calor do mês, as horas por projeto e no que o tempo foi
+**Análises** — o mapa de calor de um mês, as horas por projeto e no que o tempo foi, do mês atual ou de qualquer mês anterior
 
 ![Análises](docs/screenshots/insights.pt-BR.png)
 
@@ -60,11 +60,17 @@ no CI.
   meta que você definiu para aqueles dias da semana; uma barra por dia da semana
   atual, com a meta na mesma escala; e todo o seu histórico, do dia mais recente
   para o mais antigo, cada dia abrindo nas issues e merge requests em que as
-  horas foram lançadas.
+  horas foram lançadas. Volte um dia ou escolha qualquer data e a tela inteira
+  passa a ser lida a partir dela: aquele dia, a semana dele, o mês dele e o
+  histórico anterior.
 - 📅 **Um dia com endereço próprio** — `/days/2026-08-21` pode ser compartilhado
   e recarregado, com cada item de trabalho e suas horas.
 - 📈 **Análises** — um quadrado por dia do mês, as horas divididas por projeto e
-  uma tabela ordenável mostrando no que o tempo foi.
+  uma tabela ordenável mostrando no que o tempo foi, do mês atual ou de qualquer
+  mês anterior.
+- 🔗 **Datas no endereço** — `/?date=2026-08-21` e `/insights?month=2026-08`
+  sobrevivem a um recarregamento e podem ser enviados a alguém; um endereço sem
+  data sempre significa hoje.
 - 👥 **O mês de uma equipe** — as pessoas de uma equipe nas linhas, os dias (ou as
   semanas) nas colunas, e cada célula medida contra a sua jornada de trabalho.
   Todo mundo que você escolheu mantém a sua linha, inclusive quem não lançou
@@ -202,7 +208,7 @@ menos os testes de mutação, que rodam toda semana:
 | ------------------------------------------ | -------------------------------------- |
 | 90% de cobertura, **100% em `model/`**     | `bun run test:coverage`                |
 | Score de mutação ≥ 85% em `model/`         | `bun run test:mutation`, semanal no CI |
-| Zero vulnerabilidades nas dependências     | `bun audit`                            |
+| Zero vulnerabilidades em produção          | `bun run security:audit`               |
 | Nenhum pacote vulnerável novo, sem exceção | dependency review, sobre o `bun.lock`  |
 | Bundle inicial de até 180 kB gzip          | `size-limit`                           |
 | Zero violações do axe, nos dois temas      | a suíte de aceitação                   |

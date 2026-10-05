@@ -17,12 +17,14 @@ import { WorkItemList } from './work-item-list'
  * It reads from the same cache entry as the dashboard, so arriving here from the
  * week strip costs no request. Reloading the address does: the whole history is
  * fetched newest first and this day is cut out of it, which is also what makes a
- * day with nothing logged answerable rather than merely empty.
+ * day with nothing logged answerable rather than merely empty. A day older than
+ * the first page is read back to, and shown as loading until it is: before
+ * then, nothing loaded for it is not the same as nothing logged.
  */
 export function DayDetailPage({ date }: { readonly date: IsoDate }) {
   const { locale } = useActiveLocale()
   const { preferences } = usePreferences()
-  const report = useHoursReport()
+  const report = useHoursReport(date)
 
   const day = report.days.find((loaded) => loaded.date === date)
   const target = targetForDate(preferences.dailyTarget, date)
@@ -46,7 +48,7 @@ export function DayDetailPage({ date }: { readonly date: IsoDate }) {
         <SyncControl notices={withheldNotices(report)} status={report} />
       </header>
 
-      {report.hasFigures ? (
+      {report.hasFigures && report.day.settled ? (
         <>
           <p className="flex items-baseline gap-1.5">
             <HourFigure

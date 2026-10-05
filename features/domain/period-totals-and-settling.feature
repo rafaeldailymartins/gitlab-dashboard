@@ -36,3 +36,18 @@ Feature: Period totals, and knowing when one is final
     Given a first page with 2 hours on 2026-08-20 and a second with 1 hour on the same day
     When the report is read
     Then it has one day of 3 hours
+
+  # Spec: personal-timelog-report / REPORT-3
+  Scenario: The periods of a chosen day
+    When the periods of 2026-08-19 are named
+    Then the day is 2026-08-19
+    And the week runs from 2026-08-17 to 2026-08-23
+    And the month runs from 2026-08-01 to 2026-08-31
+
+  # Spec: personal-timelog-report / REPORT-3
+  Scenario: A week that began in the month before is settled past its own start
+    Given a loaded page with 2 hours on 2026-10-02 and 3 hours on 2026-09-30
+    And there is older history still to load
+    When the periods of 2026-10-02 are totalled
+    Then the month is settled
+    But the periods are not settled

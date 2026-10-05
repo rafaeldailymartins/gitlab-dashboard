@@ -4,6 +4,12 @@ import { expect } from 'vitest'
 import type { TimelogPage } from '@/entities/timelogs/model/ports'
 import type { TimelogEntry } from '@/entities/timelogs/model/types'
 
+import {
+  type Periods,
+  periodsOf,
+  periodSummaries,
+  type PeriodSummaries,
+} from '@/entities/timelogs/model/periods'
 import { periodSummary, reportFrom, type TimelogReport } from '@/entities/timelogs/model/report'
 import { isoDate } from '@/shared/lib/date'
 
@@ -149,4 +155,52 @@ describeFeature(feature, ({ Scenario }) => {
       expect(report?.days.at(0)?.hours).toBe(3)
     })
   })
+
+  Scenario('The periods of a chosen day', ({ And, Then, When }) => {
+    let periods: null | Periods = null
+
+    When('the periods of 2026-08-19 are named', () => {
+      periods = periodsOf(isoDate('2026-08-19'))
+    })
+
+    Then('the day is 2026-08-19', () => {
+      expect(periods?.day).toEqual({ from: '2026-08-19', to: '2026-08-19' })
+    })
+
+    And('the week runs from 2026-08-17 to 2026-08-23', () => {
+      expect(periods?.week).toEqual({ from: '2026-08-17', to: '2026-08-23' })
+    })
+
+    And('the month runs from 2026-08-01 to 2026-08-31', () => {
+      expect(periods?.month).toEqual({ from: '2026-08-01', to: '2026-08-31' })
+    })
+  })
+
+  Scenario(
+    'A week that began in the month before is settled past its own start',
+    ({ And, But, Given, Then, When }) => {
+      let pages: TimelogPage[] = []
+      let summaries: null | PeriodSummaries = null
+
+      Given('a loaded page with 2 hours on 2026-10-02 and 3 hours on 2026-09-30', () => {
+        pages = [page([entry(2, '2026-10-02'), entry(3, '2026-09-30')])]
+      })
+
+      And('there is older history still to load', () => {
+        pages = pointingAt(pages, 'older')
+      })
+
+      When('the periods of 2026-10-02 are totalled', () => {
+        summaries = periodSummaries(reportFrom(pages, ZONE), isoDate('2026-10-02'))
+      })
+
+      Then('the month is settled', () => {
+        expect(summaries?.month.settled).toBe(true)
+      })
+
+      But('the periods are not settled', () => {
+        expect(summaries?.settled).toBe(false)
+      })
+    },
+  )
 })

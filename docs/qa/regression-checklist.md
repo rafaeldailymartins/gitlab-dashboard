@@ -40,6 +40,30 @@ Work through it on staging, signed out, in a private window: a deploy preview ha
 - [ ] `/insights` shows a square for every day of the month, with working days
       that hold nothing visibly distinct from days that hold time.
 
+## Another day, another month
+
+- [ ] Step the dashboard back a day. The heading, the three figures, the week
+      strip and the first row of the history all move to it, and the address
+      gains `?date=`.
+- [ ] Open the day picker and pick a date two months back. The panel closes,
+      the figures say they are still loading until that month is read, and the
+      week strip waits rather than drawing seven empty days.
+- [ ] The picker's button names the day in the app's language, with its year,
+      whatever language the browser itself is in. Its calendar's month, weekdays
+      and the arrows' names are in the app's language too.
+- [ ] Open the picker with the keyboard: focus lands on the day shown, the
+      arrow keys move between days, Enter picks one and Escape closes without
+      changing anything.
+- [ ] Nothing after today can be chosen: the next-day control and "Back to
+      today" are dimmed on today and still reachable by Tab, days after today
+      are dimmed in the calendar, and it will not page past this month.
+- [ ] Reload an address carrying `?date=`. The same day is on screen.
+- [ ] Leave a dashboard with no `?date=` open past midnight and reload: it is
+      the new day, not the one the tab was opened on.
+- [ ] On `/insights`, step back a month and forward again. The heatmap, the
+      split and the table follow, and arriving on the current month drops
+      `?month=` from the address.
+
 ## Coming back
 
 - [ ] Reload. The figures appear before the network panel shows a GraphQL
