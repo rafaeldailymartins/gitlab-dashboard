@@ -25,12 +25,23 @@ export interface WeekDay {
   readonly weekday: Weekday
 }
 
+/** Which week to draw, and which day of any week is today. */
+interface WeekOf {
+  /** Any day of the week to draw. */
+  readonly day: IsoDate
+  readonly today: IsoDate
+}
+
 /**
- * The seven days of the week `today` falls in.
+ * The seven days of the week `at.day` falls in.
  *
  * Days with nothing logged are present with zero hours rather than missing: an
  * unlogged Wednesday is the most useful thing this strip can show, and a gap
  * would read as a rendering fault instead.
+ *
+ * Today is marked only when it is in the week drawn. A week the reader chose
+ * further back has no today in it, and marking the chosen day instead would
+ * give one mark two meanings.
  *
  * Bars are scaled against the tallest of the week's hours *and* targets, so a
  * day above target stays inside the strip and a quiet week is not stretched to
@@ -39,15 +50,15 @@ export interface WeekDay {
 export function weekDays(
   days: readonly DayTotal[],
   dailyTarget: DailyTarget,
-  today: IsoDate,
+  at: WeekOf,
 ): WeekDay[] {
-  const start = startOfWeek(today)
+  const start = startOfWeek(at.day)
   const hoursByDate = new Map(days.map((day) => [day.date, day.hours]))
 
   const columns = datesBetween(start, addDays(start, LAST_DAY_OF_WEEK)).map((date) => ({
     date,
     hours: hoursByDate.get(date) ?? 0,
-    isToday: date === today,
+    isToday: date === at.today,
     targetHours: targetForDate(dailyTarget, date),
     weekday: weekdayOf(date),
   }))

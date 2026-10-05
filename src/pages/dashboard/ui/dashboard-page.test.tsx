@@ -18,6 +18,9 @@ import { DashboardPage } from './dashboard-page'
 /** A Friday, so the week under test runs Monday the 17th to Sunday the 23rd. */
 const NOW = new Date('2026-08-21T15:00:00Z')
 
+/** The address naming no day, which is today. */
+const AS_OF_TODAY = { chosen: null, onChoose: vi.fn() }
+
 const PROJECT = {
   fullPath: 'invent-software/invent-apps-2/squad-fiscal/inventariofiscal',
   name: 'invent.fiscal.inventariofiscal',
@@ -84,7 +87,7 @@ describe('DashboardPage', () => {
       },
     ])
 
-    renderReport(<DashboardPage />, { gateway })
+    renderReport(<DashboardPage {...AS_OF_TODAY} />, { gateway })
 
     await waitFor(() => {
       expect(figure('Today').getByRole('definition')).toHaveTextContent('6.7')
@@ -94,7 +97,9 @@ describe('DashboardPage', () => {
   })
 
   it('reads a period with nothing logged as zero rather than as missing', async () => {
-    renderReport(<DashboardPage />, { gateway: fakeGateway([{ entries: [], nextCursor: null }]) })
+    renderReport(<DashboardPage {...AS_OF_TODAY} />, {
+      gateway: fakeGateway([{ entries: [], nextCursor: null }]),
+    })
 
     await waitFor(() => {
       expect(figure('Today').getByRole('definition')).toHaveTextContent('0')
@@ -111,7 +116,7 @@ describe('DashboardPage', () => {
       },
     ])
 
-    renderReport(<DashboardPage />, {
+    renderReport(<DashboardPage {...AS_OF_TODAY} />, {
       gateway,
       storage: withPreferences({ timeZone: 'America/Sao_Paulo' }),
     })
@@ -123,7 +128,7 @@ describe('DashboardPage', () => {
   })
 
   it('shows the target each period is measured against', async () => {
-    renderReport(<DashboardPage />)
+    renderReport(<DashboardPage {...AS_OF_TODAY} />)
 
     // Eight hours a day on the five weekdays of this week, and 21 weekdays in
     // August 2026.
@@ -140,7 +145,7 @@ describe('DashboardPage', () => {
       { entries: [entry('2026-08-20', 3600)], nextCursor: 'older-still' },
     ])
 
-    renderReport(<DashboardPage />, { gateway })
+    renderReport(<DashboardPage {...AS_OF_TODAY} />, { gateway })
 
     await waitFor(() => {
       expect(screen.getAllByText(/still loading/i).length).toBeGreaterThan(0)
@@ -154,7 +159,7 @@ describe('DashboardPage', () => {
       { entries: [entry('2026-07-25', 3600)], nextCursor: null },
     ])
 
-    renderReport(<DashboardPage />, { gateway })
+    renderReport(<DashboardPage {...AS_OF_TODAY} />, { gateway })
 
     await waitFor(() => {
       expect(figure('This month').getByRole('definition')).toHaveTextContent('2')
@@ -163,7 +168,7 @@ describe('DashboardPage', () => {
   })
 
   it('says when the hours arrived once the report has settled', async () => {
-    renderReport(<DashboardPage />)
+    renderReport(<DashboardPage {...AS_OF_TODAY} />)
 
     await waitFor(() => {
       expect(screen.getByRole('status')).toHaveTextContent(/updated at \d{1,2}:\d{2}/i)
@@ -173,7 +178,7 @@ describe('DashboardPage', () => {
   it('reports an unreachable GitLab with a way to try again', async () => {
     const gateway = failingGateway(new GraphQLRequestError({ kind: 'unavailable' }))
 
-    renderReport(<DashboardPage />, { gateway })
+    renderReport(<DashboardPage {...AS_OF_TODAY} />, { gateway })
 
     await waitFor(() => {
       expect(screen.getByRole('status')).toHaveTextContent(/could not be reached/i)
@@ -184,7 +189,7 @@ describe('DashboardPage', () => {
   it('asks the reader to sign in again when the credential is refused', async () => {
     const gateway = failingGateway(new GraphQLRequestError({ kind: 'unauthorized' }))
 
-    renderReport(<DashboardPage />, { gateway })
+    renderReport(<DashboardPage {...AS_OF_TODAY} />, { gateway })
 
     await waitFor(() => {
       expect(screen.getByRole('status')).toHaveTextContent(/no longer accepts/i)
@@ -194,7 +199,7 @@ describe('DashboardPage', () => {
   it('re-requests the report when the reader tries again', async () => {
     const gateway = failingGateway(new GraphQLRequestError({ kind: 'unavailable' }))
 
-    renderReport(<DashboardPage />, { gateway })
+    renderReport(<DashboardPage {...AS_OF_TODAY} />, { gateway })
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /sync with gitlab/i })).toBeInTheDocument()
@@ -209,7 +214,7 @@ describe('DashboardPage', () => {
   it('reports a request GitLab understood and refused', async () => {
     const refused = new GraphQLRequestError({ kind: 'rejected', messages: ['No such field'] })
 
-    renderReport(<DashboardPage />, { gateway: failingGateway(refused) })
+    renderReport(<DashboardPage {...AS_OF_TODAY} />, { gateway: failingGateway(refused) })
 
     await waitFor(() => {
       expect(screen.getByRole('status')).toHaveTextContent(/refused the request/i)
@@ -217,7 +222,9 @@ describe('DashboardPage', () => {
   })
 
   it('treats a failure it cannot classify as GitLab being unreachable', async () => {
-    renderReport(<DashboardPage />, { gateway: failingGateway(new Error('Load failed')) })
+    renderReport(<DashboardPage {...AS_OF_TODAY} />, {
+      gateway: failingGateway(new Error('Load failed')),
+    })
 
     await waitFor(() => {
       expect(screen.getByRole('status')).toHaveTextContent(/could not be reached/i)
@@ -231,7 +238,7 @@ describe('DashboardPage', () => {
   ])('reads $expected against an eight-hour target', async ({ expected, seconds }) => {
     const gateway = fakeGateway([{ entries: [entry('2026-08-21', seconds)], nextCursor: null }])
 
-    renderReport(<DashboardPage />, { gateway })
+    renderReport(<DashboardPage {...AS_OF_TODAY} />, { gateway })
 
     await waitFor(() => {
       expect(figure('Today').getByRole('definition')).toHaveTextContent(expected)
@@ -244,16 +251,16 @@ describe('DashboardPage', () => {
     const storage = withPreferences({ dailyTarget: { 1: 8, 2: 8, 3: 8, 4: 8, 5: 0, 6: 0, 7: 0 } })
     const gateway = fakeGateway([{ entries: [entry('2026-08-21', 3600)], nextCursor: null }])
 
-    renderReport(<DashboardPage />, { gateway, storage })
+    renderReport(<DashboardPage {...AS_OF_TODAY} />, { gateway, storage })
 
     await waitFor(() => {
-      expect(figure('Today').getByRole('definition')).toHaveTextContent('no target today')
+      expect(figure('Today').getByRole('definition')).toHaveTextContent('no target')
     })
   })
   it('shows the week strip, the feed and the summary together', async () => {
     const gateway = fakeGateway([{ entries: [entry('2026-08-21', 24_120)], nextCursor: null }])
 
-    renderRoutedReport(<DashboardPage />, { gateway })
+    renderRoutedReport(<DashboardPage {...AS_OF_TODAY} />, { gateway })
 
     await waitFor(() => {
       expect(figure('Today').getByRole('definition')).toHaveTextContent('6.7')
@@ -263,7 +270,7 @@ describe('DashboardPage', () => {
   })
 
   it('opens the day a reader picks out of the week strip', async () => {
-    const { router } = renderRoutedReport(<DashboardPage />)
+    const { router } = renderRoutedReport(<DashboardPage {...AS_OF_TODAY} />)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Wed/i })).toBeInTheDocument()
@@ -281,12 +288,18 @@ describe('DashboardPage', () => {
       },
     ])
 
-    renderRoutedReport(<DashboardPage />, { gateway })
+    renderRoutedReport(<DashboardPage {...AS_OF_TODAY} />, { gateway })
 
     await waitFor(() => {
-      expect(screen.getAllByRole('button', { expanded: false })).toHaveLength(2)
+      expect(
+        within(screen.getByRole('region', { name: 'History' })).getAllByRole('button', {
+          expanded: false,
+        }),
+      ).toHaveLength(2)
     })
-    const rows = screen.getAllByRole('button', { expanded: false })
+    const rows = within(screen.getByRole('region', { name: 'History' })).getAllByRole('button', {
+      expanded: false,
+    })
 
     expect(rows.at(0)).toHaveTextContent('21')
     expect(rows.at(1)).toHaveTextContent('19')
@@ -298,7 +311,7 @@ describe('DashboardPage', () => {
       { entries: [entry('2026-07-20', 3600)], nextCursor: null },
     ])
 
-    renderRoutedReport(<DashboardPage />, { gateway })
+    renderRoutedReport(<DashboardPage {...AS_OF_TODAY} />, { gateway })
 
     await waitFor(() => {
       expect(gateway.myTimelogs.mock.calls.length).toBeGreaterThan(1)
@@ -311,7 +324,7 @@ describe('DashboardPage', () => {
       { entries: [entry('2026-06-30', 3600)], nextCursor: null },
     ])
 
-    renderRoutedReport(<DashboardPage />, { gateway })
+    renderRoutedReport(<DashboardPage {...AS_OF_TODAY} />, { gateway })
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Load older days/i })).toBeInTheDocument()
@@ -332,7 +345,7 @@ describe('DashboardPage', () => {
         .mockReturnValueOnce(inFlight.promise),
     }
 
-    const { client } = renderReport(<DashboardPage />, { gateway })
+    const { client } = renderReport(<DashboardPage {...AS_OF_TODAY} />, { gateway })
 
     await waitFor(() => {
       expect(figure('Today').getByRole('definition')).toHaveTextContent('1')
@@ -369,7 +382,7 @@ describe('a page GitLab withheld entries from', () => {
       { entries: [entry('2026-07-25', 3600)], nextCursor: 'older', recovered: 0, withheld: 1 },
     ])
 
-    renderReport(<DashboardPage />, { gateway })
+    renderReport(<DashboardPage {...AS_OF_TODAY} />, { gateway })
 
     await waitFor(() => {
       expect(screen.getByRole('status')).toHaveTextContent(/could not read: 1/i)
@@ -387,7 +400,7 @@ describe('a page GitLab withheld entries from', () => {
       },
     ])
 
-    renderReport(<DashboardPage />, { gateway })
+    renderReport(<DashboardPage {...AS_OF_TODAY} />, { gateway })
 
     await waitFor(() => {
       expect(figure('Today').getByRole('definition')).toHaveTextContent('3')

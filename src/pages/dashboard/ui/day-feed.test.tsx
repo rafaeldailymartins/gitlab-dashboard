@@ -45,6 +45,7 @@ function feed(days: DayTotal[], overrides: Partial<Parameters<typeof DayFeed>[0]
     <DayFeed
       appending={false}
       days={days}
+      empty="No time logged in GitLab yet."
       loading={false}
       onLoadOlder={vi.fn()}
       reachedBeginning

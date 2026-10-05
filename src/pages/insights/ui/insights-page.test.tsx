@@ -12,6 +12,9 @@ import { InsightsPage } from './insights-page'
 /** A Saturday. August 2026 starts on a Saturday and holds 21 weekdays. */
 const NOW = new Date('2026-08-22T15:00:00Z')
 
+/** The address naming no month, which is the current one. */
+const THIS_MONTH = { chosen: null, onChoose: vi.fn() }
+
 const FISCAL = {
   fullPath: 'invent-software/invent-apps-2/squad-fiscal/inventariofiscal',
   name: 'inventariofiscal',
@@ -77,7 +80,7 @@ describe('InsightsPage', () => {
   it('names the month it is showing, and what was logged in it', async () => {
     const gateway = gatewayWith([entry({ day: '2026-08-20', hours: 6.7, iid: 128 })])
 
-    renderReport(<InsightsPage />, { gateway, storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { gateway, storage: inUtc() })
 
     await waitFor(() => {
       expect(screen.getByText(/6\.7 h logged this month/)).toBeInTheDocument()
@@ -88,7 +91,7 @@ describe('InsightsPage', () => {
   it('tells a day with time from a working day without it', async () => {
     const gateway = gatewayWith([entry({ day: '2026-08-20', hours: 6.7, iid: 128 })])
 
-    renderReport(<InsightsPage />, { gateway, storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { gateway, storage: inUtc() })
 
     await waitFor(() => {
       expect(screen.getByText(/August 20, 2026: 6\.7 hours/)).toBeInTheDocument()
@@ -102,7 +105,7 @@ describe('InsightsPage', () => {
   it('says nothing of the sort about a weekend with nothing logged', async () => {
     const gateway = gatewayWith([entry({ day: '2026-08-20', hours: 6.7, iid: 128 })])
 
-    renderReport(<InsightsPage />, { gateway, storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { gateway, storage: inUtc() })
 
     await waitFor(() => {
       expect(screen.getByText(/^Sunday, August 23, 2026: 0 hours$/)).toBeInTheDocument()
@@ -112,7 +115,7 @@ describe('InsightsPage', () => {
   it('leaves the days of another month out of the grid', async () => {
     const gateway = gatewayWith([entry({ day: '2026-07-20', hours: 8, iid: 128 })])
 
-    renderReport(<InsightsPage />, { gateway, storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { gateway, storage: inUtc() })
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
@@ -126,7 +129,7 @@ describe('InsightsPage', () => {
       entry({ day: '2026-08-19', hours: 6, iid: 34, project: WEB }),
     ])
 
-    renderReport(<InsightsPage />, { gateway, storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { gateway, storage: inUtc() })
 
     await waitFor(() => {
       expect(section(/Hours by project/).getAllByRole('listitem')).toHaveLength(2)
@@ -143,7 +146,7 @@ describe('InsightsPage', () => {
       entry({ day: '2026-08-19', hours: 6, iid: 34, project: WEB }),
     ])
 
-    renderReport(<InsightsPage />, { gateway, storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { gateway, storage: inUtc() })
 
     await waitFor(() => {
       expect(section(/Hours by project/).getByText('6 hours')).toBeInTheDocument()
@@ -158,7 +161,7 @@ describe('InsightsPage', () => {
       entry({ day: '2026-08-19', hours: 6, iid: 128 }),
     ])
 
-    renderReport(<InsightsPage />, { gateway, storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { gateway, storage: inUtc() })
 
     await waitFor(() => {
       expect(section(/What took the time/).getAllByRole('row')).toHaveLength(3)
@@ -175,7 +178,7 @@ describe('InsightsPage', () => {
       entry({ day: '2026-08-19', hours: 2, iid: 127 }),
     ])
 
-    renderReport(<InsightsPage />, { gateway, storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { gateway, storage: inUtc() })
 
     await waitFor(() => {
       expect(
@@ -198,7 +201,7 @@ describe('InsightsPage', () => {
       entry({ day: '2026-08-19', hours: 6, iid: 128 }),
     ])
 
-    renderReport(<InsightsPage />, { gateway, storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { gateway, storage: inUtc() })
 
     await waitFor(() => {
       expect(
@@ -220,7 +223,7 @@ describe('InsightsPage', () => {
       entry({ day: '2026-08-19', hours: 6, iid: 128 }),
     ])
 
-    renderReport(<InsightsPage />, { gateway, storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { gateway, storage: inUtc() })
 
     await waitFor(() => {
       expect(section(/What took the time/).getAllByRole('row')).toHaveLength(2)
@@ -235,7 +238,7 @@ describe('InsightsPage', () => {
   it('links a work item back to GitLab', async () => {
     const gateway = gatewayWith([entry({ day: '2026-08-20', hours: 2, iid: 128 })])
 
-    renderReport(<InsightsPage />, { gateway, storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { gateway, storage: inUtc() })
 
     await waitFor(() => {
       expect(
@@ -247,7 +250,7 @@ describe('InsightsPage', () => {
   it('shows unattributed time as its own row', async () => {
     const gateway = gatewayWith([entry({ day: '2026-08-20', hours: 2, iid: null })])
 
-    renderReport(<InsightsPage />, { gateway, storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { gateway, storage: inUtc() })
 
     await waitFor(() => {
       expect(
@@ -262,7 +265,7 @@ describe('InsightsPage', () => {
       entry({ day: '2026-08-19', hours: 2, iid: 128 }),
     ])
 
-    renderReport(<InsightsPage />, { gateway, storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { gateway, storage: inUtc() })
 
     await waitFor(() => {
       expect(
@@ -283,15 +286,15 @@ describe('InsightsPage', () => {
   it('says a month with nothing logged is empty rather than showing blank frames', async () => {
     const gateway = gatewayWith([entry({ day: '2026-07-20', hours: 8, iid: 128 })])
 
-    renderReport(<InsightsPage />, { gateway, storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { gateway, storage: inUtc() })
 
     await waitFor(() => {
-      expect(screen.getAllByText(/Nothing logged in this month yet/)).toHaveLength(2)
+      expect(screen.getAllByText(/Nothing logged in this month/)).toHaveLength(2)
     })
   })
 
   it('waits rather than claiming an empty month before anything has loaded', () => {
-    renderReport(<InsightsPage />, { storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { storage: inUtc() })
 
     expect(screen.queryByRole('region')).not.toBeInTheDocument()
   })
@@ -308,7 +311,7 @@ describe('InsightsPage', () => {
       ),
     )
 
-    renderReport(<InsightsPage />, { gateway, storage: inUtc() })
+    renderReport(<InsightsPage {...THIS_MONTH} />, { gateway, storage: inUtc() })
 
     await waitFor(() => {
       expect(section(/Hours by project/).getByText(/1 other projects/)).toBeInTheDocument()
@@ -322,7 +325,7 @@ describe('a project the reader cannot read', () => {
   const withheld = { day: '2026-08-20', hours: 2, iid: null, project: null }
 
   it('is named as one group in the split by project', async () => {
-    renderReport(<InsightsPage />, {
+    renderReport(<InsightsPage {...THIS_MONTH} />, {
       gateway: gatewayWith([entry(withheld), entry({ ...withheld, hours: 1 })]),
       storage: inUtc(),
     })
@@ -334,7 +337,7 @@ describe('a project the reader cannot read', () => {
   })
 
   it('is named in the table of what took the time', async () => {
-    renderReport(<InsightsPage />, {
+    renderReport(<InsightsPage {...THIS_MONTH} />, {
       gateway: gatewayWith([entry(withheld)]),
       storage: inUtc(),
     })

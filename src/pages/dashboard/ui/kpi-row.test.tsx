@@ -21,10 +21,11 @@ function figure(label: string) {
 function row(overrides: Partial<Parameters<typeof KpiRow>[0]> = {}) {
   return (
     <KpiRow
+      day={FRIDAY}
+      dayTotal={summary(6.7)}
       loading={false}
       month={summary(120)}
       today={FRIDAY}
-      todayTotal={summary(6.7)}
       week={summary(32)}
       {...overrides}
     />
@@ -63,7 +64,7 @@ describe('KpiRow', () => {
   })
 
   it('reads a period with nothing logged as zero rather than as missing', () => {
-    renderReport(row({ month: summary(0), todayTotal: summary(0), week: summary(0) }))
+    renderReport(row({ dayTotal: summary(0), month: summary(0), week: summary(0) }))
 
     expect(figure('Today').getByRole('definition')).toHaveTextContent('0')
     expect(figure('Today').getByRole('definition')).toHaveTextContent('8 h to go')
@@ -90,6 +91,6 @@ describe('KpiRow', () => {
   it('says a period has no target instead of inventing a percentage', () => {
     renderReport(row(), { storage: withoutTargets() })
 
-    expect(figure('Today').getByRole('definition')).toHaveTextContent('no target today')
+    expect(figure('Today').getByRole('definition')).toHaveTextContent('no target')
   })
 })
