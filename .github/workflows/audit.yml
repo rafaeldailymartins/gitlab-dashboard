@@ -1,8 +1,16 @@
-# `bun audit` every day against what production runs, because advisories are
+# `bun audit` every week against what production runs, because advisories are
 # published between pull requests. The gate in `verify` only speaks when a pull
 # request happens to run it: fast-uri's two high advisories were found that way,
 # in the middle of unrelated work. Dependabot cannot raise security updates for
 # Bun, so this is the alarm — a red run here reaches the owner by email.
+#
+# Weekly, not daily, and on Monday morning beside Dependabot's own run, so the
+# week's dependency work arrives at once. It ran every day until 2026-10-09: a
+# red run repeats its email until the fix reaches `main`, which is a promotion
+# away, and the failure that began on 2026-10-06 had sent three by the time its
+# fix landed. What this gives up is up to six days before an advisory is noticed
+# by this alarm; a pull request opened in the meantime still meets it in
+# `verify`.
 #
 # A failure is a new advisory against a locked package. Fix it like any change,
 # into `staging` — or as a `hotfix/*` when it cannot wait for a promotion. A
@@ -13,8 +21,8 @@ name: Audit
 
 on:
   schedule:
-    # Every day at 06:00 in São Paulo.
-    - cron: '0 9 * * *'
+    # Mondays at 06:00 in São Paulo, when Dependabot opens its pull requests.
+    - cron: '0 9 * * 1'
   workflow_dispatch:
 
 permissions:
