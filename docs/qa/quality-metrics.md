@@ -28,6 +28,7 @@ this pass.
 | Type coverage                        | ≥ 99%                                        | 99.88% (51 911 of 51 969)      | `bun run types:coverage`        | `verify`, CI                   |
 | Production vulnerabilities           | **0, at any severity, no exceptions**        | 0, over 92 packages            | `bun run security:audit`        | pre-push, `verify`, CI, weekly |
 | Tooling vulnerabilities              | 0 not accounted for in `accepted.ts`         | 1 accepted, over 887 packages  | `bun run security:audit`        | pre-push, `verify`, CI, weekly |
+| Dependency patches applied           | each one to the version installed            | 1 patch, Vite 8.3.3            | `bun run patches:check`         | `verify`, CI                   |
 | New vulnerable packages              | none added, at any severity                  | —                              | dependency review               | CI, pull requests              |
 | Commit messages                      | Conventional Commits, every commit           | —                              | `bun commitlint`                | commit-msg, CI                 |
 | Test coverage, statements            | ≥ 90%                                        | 97.36%                         | `bun run test:coverage`         | CI                             |

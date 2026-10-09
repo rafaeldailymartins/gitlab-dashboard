@@ -36,8 +36,9 @@
     "allowUnreachableCode": false,
 
     /* Module resolution. `node` types are here for the build tooling only; an
-       ESLint rule forbids importing `node:*` from application code. */
-    "baseUrl": ".",
+       ESLint rule forbids importing `node:*` from application code. No
+       `baseUrl`: TypeScript 6 deprecates it, and the paths below resolve from
+       this file without one. */
     "paths": {
       "@/*": ["./src/*"],
       "~tests/*": ["./tests/*"]
