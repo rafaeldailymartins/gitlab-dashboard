@@ -12,19 +12,20 @@ Paraglide. The one exception is `README.pt-BR.md`, the Portuguese translation of
 
 ## Commands
 
-| Command                           | What it does                                                                                                                              |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `bun run dev`                     | Dev server on http://localhost:3000, with both document endpoints served by `config/vite/api-dev.ts`                                      |
-| `bun run verify`                  | Every fast gate: format, lint, ARIA, contrast, translations, types, architecture, traceability, dead code, type coverage, vulnerabilities |
-| `bun run test`                    | Unit, component, Gherkin domain and serverless-function tests (`domain` + `functions` + `ui` Vitest projects)                             |
-| `bun run test:coverage`           | Same, with coverage thresholds enforced                                                                                                   |
-| `bun run test:e2e`                | Builds, serves `dist/`, runs Playwright over `features/acceptance/*.feature` — chromium locally, three browsers in CI                     |
-| `bun run test:mutation`           | Stryker mutation testing on the model layer                                                                                               |
-| `bun run build` && `bun run size` | Production build, its Content-Security-Policy, and the 180 kB gzip budget                                                                 |
-| `bun run arch:trace`              | Every scenario cites a requirement, and every requirement is cited                                                                        |
-| `bun run lint:a11y`               | Biome, ARIA rules and unique element ids only                                                                                             |
-| `bun run a11y:contrast`           | Every colour pair that has to stay legible, measured against both schemes                                                                 |
-| `bun run i18n:check`              | Every message exists in every language, and no message exists in only one                                                                 |
+| Command                           | What it does                                                                                                                                       |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run dev`                     | Dev server on http://localhost:3000, with both document endpoints served by `config/vite/api-dev.ts`                                               |
+| `bun run verify`                  | Every fast gate: format, lint, ARIA, contrast, translations, types, architecture, traceability, dead code, type coverage, vulnerabilities, patches |
+| `bun run test`                    | Unit, component, Gherkin domain and serverless-function tests (`domain` + `functions` + `ui` Vitest projects)                                      |
+| `bun run test:coverage`           | Same, with coverage thresholds enforced                                                                                                            |
+| `bun run test:e2e`                | Builds, serves `dist/`, runs Playwright over `features/acceptance/*.feature` — chromium locally, three browsers in CI                              |
+| `bun run test:mutation`           | Stryker mutation testing on the model layer                                                                                                        |
+| `bun run build` && `bun run size` | Production build, its Content-Security-Policy, and the 180 kB gzip budget                                                                          |
+| `bun run arch:trace`              | Every scenario cites a requirement, and every requirement is cited                                                                                 |
+| `bun run lint:a11y`               | Biome, ARIA rules and unique element ids only                                                                                                      |
+| `bun run a11y:contrast`           | Every colour pair that has to stay legible, measured against both schemes                                                                          |
+| `bun run i18n:check`              | Every message exists in every language, and no message exists in only one                                                                          |
+| `bun run patches:check`           | Every patch in `patches/` is for the version installed, since Bun skips one that is not without a word                                             |
 
 Run `bun run verify && bun run test` before calling any change finished.
 
@@ -162,6 +163,7 @@ adapter. Both linters recognise them, which custom names like `domain/` and
 | Every message exists in every language                                                                                              | `scripts/check-messages.ts` (`bun run i18n:check`)           |
 | ≥ 99% of expressions carry a real type                                                                                              | `type-coverage`                                              |
 | Zero advisories in production dependencies, at any severity; none in tooling that `scripts/audit/accepted.ts` does not account for  | `scripts/check-audit.ts` (`bun run security:audit`)          |
+| Every patch applies to the version installed                                                                                        | `scripts/check-patches.ts` (`bun run patches:check`)         |
 | Named exports only                                                                                                                  | `no-restricted-exports`                                      |
 
 When a gate fails, fix the cause. Raising a ceiling or adding an ignore entry
@@ -480,7 +482,7 @@ that exercise those screens, reads the file first.
   fails as having stopped filtering. Raising the production tier's floor, or
   letting `accepted.ts` excuse a production package, is the change this
   paragraph exists to stop.
-- **Vite is patched, by one line, in `patches/vite@8.2.2.patch`.** Before it
+- **Vite is patched, by one line, in `patches/vite@8.3.3.patch`.** Before it
   binds, `bun run dev` probes port 3000 on the wildcard addresses with a bare
   `net.Server` and closes it — and `close()` waits for every connection the
   probe accepted. A tab left open on the app is a client polling that port
@@ -490,8 +492,14 @@ that exercise those screens, reads the file first.
   listening; with nothing connected it was 5s. That was the dev server that was
   "sometimes slow". The patch hands the probe a handler that destroys what it
   accepts — the tab's ping fails and retries a second later against the real
-  server. Still present in 8.3.2. Upgrading Vite makes `bun install` fail on the
-  patch, which is the moment to check whether it is still needed.
+  server. Still present in 8.3.3, for which it was recreated.
+  **Upgrading Vite does not fail anything on its own.** This paragraph used to
+  say `bun install` would, and it does not: Bun applies a patch to exactly the
+  version its key names and skips it without a word otherwise. Dependabot's
+  move from 8.2.2 to 8.3.3 dropped it that way, with `--frozen-lockfile` content
+  and every gate green. `scripts/check-patches.ts` (`bun run patches:check`, in
+  `verify`) is what fails now, naming the patch — the moment to check whether
+  the fix is still needed, and to recreate it with `bun patch vite` if it is.
 - **The compiled messages have one writer per folder.** `src/paraglide/` is
   `locale-modules`, written byte for byte alike by `scripts/compile-messages.ts`
   and by the Vite plugin under `bun run dev`; `vite build` writes
