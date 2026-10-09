@@ -1,8 +1,8 @@
 diff --git a/dist/node/chunks/node.js b/dist/node/chunks/node.js
-index 87cfa480c3d4132f9dd1b74c6c1bbe2b90385d3f..e2449560efc0afd248b3c27a414a322b4160690f 100644
+index cd5be24333678d8b71b408b0d66f6d91297b8570..fa77bc9f6ea978aab09460768592f39c783f5247 100644
 --- a/dist/node/chunks/node.js
 +++ b/dist/node/chunks/node.js
-@@ -11627,7 +11627,10 @@ async function isPortAvailable(port) {
+@@ -14652,7 +14652,10 @@ async function isPortAvailable(port) {
  }
  function tryListen(port, host) {
  	return new Promise((resolve) => {

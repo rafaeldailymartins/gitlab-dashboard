@@ -32,6 +32,30 @@ updates:
       tooling:
         dependency-type: development
     open-pull-requests-limit: 5
+    # Held back, each until something outside this repository moves. Every one
+    # was proposed in the tooling group of 2026-10-09 and failed a gate there.
+    # Delete an entry once its reason is gone, and Dependabot proposes the
+    # version again.
+    ignore:
+      # typescript-eslint supports TypeScript below 6.1, and 7.x has no
+      # JavaScript API for it to load at all: `bun run lint` fails before
+      # reading a file.
+      - dependency-name: typescript
+        versions: ['>=6.1.0']
+      # eslint-plugin-react 7.37.5, the newest there is, calls
+      # `context.getFilename`, which ESLint 10 removed, and eslint-plugin-jsx-a11y
+      # declares ESLint 9 at most. unicorn 66 onward requires ESLint 10.4.
+      - dependency-name: eslint
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@eslint/js'
+        update-types: ['version-update:semver-major']
+      - dependency-name: eslint-plugin-unicorn
+        versions: ['>=66.0.0']
+      # MSW 3 intercepts nothing under `bun --bun vitest`: every mocked request
+      # goes to the network and the suite fails. The tests run on Bun by design
+      # (`AGENTS.md` § Runtime).
+      - dependency-name: msw
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
