@@ -36,7 +36,7 @@ this pass.
 | Test coverage, lines                 | ≥ 90%                                        | 97.43%                         | `bun run test:coverage`         | CI                             |
 | Test coverage, `model/`              | **100%**                                     | 100%                           | `bun run test:coverage`         | CI                             |
 | Mutation score, `model/`             | ≥ 85%                                        | 93.46%, 66 of 1039 survived    | `bun run test:mutation`         | scheduled CI                   |
-| Initial bundle                       | ≤ 180 kB gzip                                | 178.17 kB, on 2026-10-01       | `bun run build && bun run size` | CI                             |
+| Initial bundle                       | ≤ 196 kB gzip                                | 195.55 kB, on 2026-10-09       | `bun run build && bun run size` | CI                             |
 | Fault reports carry nothing personal | no planted value survives, in any field      | pass                           | `bun run test`                  | CI                             |
 | Browser and function scrubs agree    | one answer for every generated report        | pass                           | `bun run test`                  | CI                             |
 | No source map served                 | no `.map` in `dist/`, no chunk naming one    | pass, 41 removed               | `bun run build`                 | CI                             |

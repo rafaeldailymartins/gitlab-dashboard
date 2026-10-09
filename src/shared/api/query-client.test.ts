@@ -57,7 +57,7 @@ async function failed(error: Error, meta?: Record<string, unknown>) {
   const client = createQueryClient({ onFault })
 
   await client
-    .fetchQuery({
+    .query({
       ...(meta === undefined ? {} : { meta }),
       queryFn,
       queryKey: ['q'],
@@ -95,7 +95,7 @@ describe('the faults a query reports', () => {
     const client = createQueryClient()
 
     await expect(
-      client.fetchQuery({
+      client.query({
         queryFn: () => Promise.reject(new Error('x')),
         queryKey: ['q'],
         retry: false,

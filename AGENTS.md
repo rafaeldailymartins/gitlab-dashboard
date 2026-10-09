@@ -20,7 +20,7 @@ Paraglide. The one exception is `README.pt-BR.md`, the Portuguese translation of
 | `bun run test:coverage`           | Same, with coverage thresholds enforced                                                                                                   |
 | `bun run test:e2e`                | Builds, serves `dist/`, runs Playwright over `features/acceptance/*.feature` — chromium locally, three browsers in CI                     |
 | `bun run test:mutation`           | Stryker mutation testing on the model layer                                                                                               |
-| `bun run build` && `bun run size` | Production build, its Content-Security-Policy, and the 180 kB gzip budget                                                                 |
+| `bun run build` && `bun run size` | Production build, its Content-Security-Policy, and the 196 kB gzip budget                                                                 |
 | `bun run arch:trace`              | Every scenario cites a requirement, and every requirement is cited                                                                        |
 | `bun run lint:a11y`               | Biome, ARIA rules and unique element ids only                                                                                             |
 | `bun run a11y:contrast`           | Every colour pair that has to stay legible, measured against both schemes                                                                 |
@@ -236,7 +236,7 @@ that exercise those screens, reads the file first.
   `toIsoDate(date, 'UTC')`, so a picked square is a calendar date and no instant
   crosses a zone on the way in or out. The picker is `lazy()` for the reason the
   team screen's pickers are: the dashboard is the first screen, the budget has
-  two kilobytes left, and the popup machinery hoists into the entry when
+  half a kilobyte left, and the popup machinery hoists into the entry when
   imported eagerly. The month on insights is a stepper because
   `<input type="month">` is a plain text box on desktop Firefox and Safari. The
   controls that would go past today are disabled with `focusableWhenDisabled`,
@@ -385,9 +385,10 @@ that exercise those screens, reads the file first.
   "unavailable" would send them looking for an outage.
 - **Faults go to Sentry, in its EU region, through a function on this origin,
   and a report is rebuilt rather than cleaned.** Four constraints chose the tool
-  and every one of them is still load-bearing: an initial load at 178 kB of a
-  180 kB budget, a policy whose `connect-src` is this origin and GitLab, a
-  screen full of other people's names and hours, and `bun audit` at zero.
+  and every one of them is still load-bearing: an initial load at 195.5 kB of a
+  196 kB budget (178 kB of 180 kB when the tool was chosen), a policy whose
+  `connect-src` is this origin and GitLab, a screen full of other people's names
+  and hours, and `bun audit` at zero.
   Measured on errors-only configurations, Sentry's browser client is 21 kB,
   Grafana Faro 40 kB without tree-shaking, PostHog 51–102 kB, and
   OpenTelemetry has no error grouping at all; Sentry's SDK is also the protocol
