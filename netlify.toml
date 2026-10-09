@@ -1,7 +1,7 @@
 [build]
   # `commit.txt` names the commit this deploy was built from. It is how
-  # `.github/workflows/deployments.yml` knows when a push has gone live, since
-  # Netlify tells GitHub about deploy previews and nothing else. Only a Netlify
+  # `.github/workflows/deployments.yml` knows which commit production serves,
+  # since Netlify tells GitHub about deploy previews and nothing else. Only a Netlify
   # build sets `COMMIT_REF`, so it is written here rather than by `bun run build`.
   #
   # `netlify/lib/release.json` is the same commit for the functions, which are

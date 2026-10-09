@@ -1,5 +1,6 @@
-Promotes `staging` to `main`. Merging this deploys production and publishes the
-next release, computed from the commits below — see `CONTRIBUTING.md`.
+Promotes `staging` to `main`. Merging this builds production's deploy and
+publishes the next release, computed from the commits below — see
+`CONTRIBUTING.md`. The deploy goes live when it is published by hand in Netlify.
 
 Worked through on https://staging--gitlabdashboard.netlify.app before merging.
 Each step is explained in `docs/qa/release-checklist.md` § On staging.
@@ -22,7 +23,8 @@ Each step is explained in `docs/qa/release-checklist.md` § On staging.
 
 ## After merging
 
-- [ ] Netlify is serving this merge's deploy, not one built before it.
+- [ ] Published this merge's deploy in Netlify, with the lock left on, and
+      production serves it rather than one built before it.
 - [ ] Production still lists the teams it had before, and a save there works —
       a second save included.
 - [ ] The release for this merge is published, and its notes read right.

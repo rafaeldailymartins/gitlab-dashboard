@@ -1,59 +1,88 @@
-# Records each Netlify deploy of `main` as a GitHub deployment, so the
-# repository shows what production is running, since when, and at which
-# address.
+# Records the deploy production serves as a GitHub deployment, so the repository
+# shows what production is running, since when, and at which address.
 #
-# Netlify reports deploy previews to GitHub and nothing else: it has no
-# notification that creates a deployment, and it posts no status for a branch
-# deploy or for production. So this asks the site itself. The Netlify build
-# writes the commit it built to `/commit.txt` (`netlify.toml`), and the job waits
-# until production serves this push's commit. The `environment` key is what
-# makes the job a deployment: GitHub marks it in progress while the job runs,
-# and successful or failed with it.
+# Production is published by hand. The site is locked in Netlify on purpose, so
+# a merge into `main` builds a deploy that waits, `ready`, until somebody
+# publishes it from Deploys — and nothing tells GitHub when that happens:
+# Netlify reports deploy previews and nothing else. So this asks the site
+# itself, every hour and whenever it is run from the Actions tab. The Netlify
+# build writes the commit it built to `/commit.txt` (`netlify.toml`). When
+# production serves `main`'s head and no deployment records that commit yet,
+# the second job records it. The `environment` key is what makes that job a
+# deployment, and a deployment is of the commit its run started from, which is
+# why only `main`'s head can be recorded.
+#
+# It used to run on every push to `main` and wait for that push to go live,
+# failing after twenty minutes when it did not. With publishing locked that is
+# every push, and a red run for a deploy that is exactly where it should be.
+# Production serving anything else now — a deploy not yet published, or an
+# earlier one published back — is not recorded and not a failure; the run says
+# what it found.
 #
 # `staging` is not recorded, because nothing outside Netlify can see it: every
 # deploy but production sits behind Netlify's own access protection, and
 # `staging--gitlabdashboard.netlify.app` answers a request from a runner with
-# 401 and a login page. A job waiting on it would fail after twenty minutes on
-# every push, so it would record a failure for a deploy that went fine.
-#
-# A job that finds a newer commit served has been overtaken by a later push,
-# which is a deploy that happened rather than one that failed, so it succeeds;
-# the later push's own job marks it inactive. One that finds nothing it knows
-# for twenty minutes fails, and the Netlify deploy log says why.
+# 401 and a login page.
 
 name: Deployments
 
 on:
-  push:
-    branches: [main]
+  schedule:
+    # Every hour. A deploy published by hand is recorded within the hour, or at
+    # once by running this from the Actions tab.
+    - cron: '41 * * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+# A scheduled run and a manual one finding the same commit would record it
+# twice; queued behind the first, the second finds it recorded.
+concurrency:
+  group: deployments
+  cancel-in-progress: false
+
 jobs:
-  netlify:
+  served:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    environment:
-      name: production
-      url: https://gitlabdashboard.netlify.app
+    timeout-minutes: 5
+    permissions:
+      deployments: read
+    outputs:
+      unrecorded: ${{ steps.check.outputs.unrecorded }}
     steps:
-      - name: Wait for Netlify to publish this commit
+      - name: Read the commit production serves
+        id: check
         env:
           GH_TOKEN: ${{ github.token }}
           SITE: https://gitlabdashboard.netlify.app
         run: |
-          for attempt in $(seq 60); do
-            served=$(curl --fail --silent --show-error --header 'Cache-Control: no-cache' "$SITE/commit.txt?attempt=$attempt" || true)
-            if [ "$served" = "$GITHUB_SHA" ]; then
-              echo "$SITE is serving $GITHUB_SHA."
+          served=$(curl --fail --silent --show-error --header 'Cache-Control: no-cache' "$SITE/commit.txt?run=$GITHUB_RUN_ID" || true)
+          [[ "$served" =~ ^[0-9a-f]{40}$ ]] || served='nothing readable'
+          if [ "$served" != "$GITHUB_SHA" ]; then
+            echo "$SITE serves $served, and main is at $GITHUB_SHA: nothing to record until that deploy is published."
+            exit 0
+          fi
+          # A deployment of this commit may exist and still not record it: a
+          # failed one, from before publishing was locked, is one. Only a
+          # deployment whose latest status is a success counts.
+          for id in $(gh api "repos/$GITHUB_REPOSITORY/deployments?environment=production&sha=$GITHUB_SHA" --jq '.[].id'); do
+            state=$(gh api "repos/$GITHUB_REPOSITORY/deployments/$id/statuses?per_page=1" --jq '.[0].state // ""')
+            if [ "$state" = success ]; then
+              echo "$GITHUB_SHA is already recorded as production."
               exit 0
             fi
-            if [[ "$served" =~ ^[0-9a-f]{40}$ ]] && [ "$(gh api "repos/$GITHUB_REPOSITORY/compare/$GITHUB_SHA...$served" --jq .status)" = ahead ]; then
-              echo "$SITE is already serving $served, which comes after $GITHUB_SHA."
-              exit 0
-            fi
-            sleep 20
           done
-          echo "::error::$SITE did not serve $GITHUB_SHA within twenty minutes. The Netlify deploy log for this commit says why."
-          exit 1
+          echo "unrecorded=true" >> "$GITHUB_OUTPUT"
+
+  record:
+    needs: served
+    if: needs.served.outputs.unrecorded == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: production
+      url: https://gitlabdashboard.netlify.app
+    steps:
+      - name: Record the deploy
+        run: echo "Production serves $GITHUB_SHA."
