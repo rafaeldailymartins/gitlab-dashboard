@@ -210,7 +210,7 @@ menos os testes de mutação, que rodam toda semana:
 | Score de mutação ≥ 85% em `model/`         | `bun run test:mutation`, semanal no CI |
 | Zero vulnerabilidades em produção          | `bun run security:audit`               |
 | Nenhum pacote vulnerável novo, sem exceção | dependency review, sobre o `bun.lock`  |
-| Bundle inicial de até 180 kB gzip          | `size-limit`                           |
+| Bundle inicial de até 196 kB gzip          | `size-limit`                           |
 | Zero violações do axe, nos dois temas      | a suíte de aceitação                   |
 | Layout shift abaixo de 0,1                 | a suíte de aceitação                   |
 | Sem rolagem lateral em 375 px              | a suíte de aceitação                   |
