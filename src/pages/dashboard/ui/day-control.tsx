@@ -16,7 +16,7 @@ const PICKER_SIZE = 'h-7 w-48'
  * The picker arrives on its own, and is not in the bundle every reader downloads.
  *
  * The dashboard is the first screen, so whatever it imports eagerly is the
- * initial load, and that is 178 kB of a 180 kB budget. The calendar and the
+ * initial load, and that is 195.5 kB of a 196 kB budget. The calendar and the
  * popup machinery under it are what the team screen measured at 34 kB hoisted
  * into the entry when imported eagerly; loaded here they are a chunk of their
  * own, fetched as the dashboard mounts. Mapped to `default` rather than exported

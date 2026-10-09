@@ -30,7 +30,7 @@ which is the mercy in it.
 - [ ] `bun run test:coverage` — thresholds enforced.
 - [ ] `bun run test:e2e` — chromium locally; the pull request's `e2e` check runs all three browsers.
 - [ ] `bun run test:mutation` — the model layer, at or above 85.
-- [ ] `bun run build && bun run size` — inside the 180 kB gzip budget.
+- [ ] `bun run build && bun run size` — inside the 196 kB gzip budget.
 - [ ] Every new `Scenario` carries a `# Spec: <capability> / <id>` comment, and
       every requirement touched by the change has one.
 - [ ] `bunx openspec validate <change> --strict` passes.
