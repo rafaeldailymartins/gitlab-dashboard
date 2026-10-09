@@ -132,6 +132,7 @@
     "msw"
   ],
   "overrides": {
+    "handlebars": "^4.7.10",
     "qs": "^6.15.3"
   },
   "typeCoverage": {
