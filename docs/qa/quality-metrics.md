@@ -525,6 +525,20 @@ hours` found yesterday's three. Four scenarios, three browsers, twelve failures,
   the command line's across all 184 files by hashing both, when the guard landed.
   Measured back to back on the three gates that carry the hook, steady state on
   that date: 38s without the guard, 28s with it.
+  **The guard was being undone by `bun run dev`, measured on 2026-10-05.** The
+  Vite plugin is a second writer: under `dev` it emits `locale-modules`, skips
+  its own compile only when `src/paraglide/` is exactly what it last wrote, and
+  deletes what it did not write — the fingerprint included, which lived there.
+  The script emitted `message-modules`. So every gate after a dev server
+  recompiled 391 files (8–20s), and every dev server after a gate recompiled
+  them back: `ready` in 10–12s instead of 3.5s. The script now emits the
+  plugin's development output byte for byte and keeps its fingerprint in
+  `node_modules/.cache/paraglide/`; both sides then skip. `vite build` was the
+  third writer, emitting `message-modules` into the same folder, so a dev server
+  after `bun run build` or `bun run test:e2e` was ready in 18.6s; the build now
+  compiles into `node_modules/.cache/paraglide/build` and reaches it through an
+  alias, which also took `bun run build` itself from 49s to 7s — measured, the
+  `dist/` it writes is byte-identical.
 - **Running the gates in parallel was measured twice and rejected twice, both
   on 2026-08-24.** Before the guard it took 344s against 53s in series, because
   the gates were racing over generated sources. After the guard removed the race
@@ -541,7 +555,8 @@ hours` found yesterday's three. Four scenarios, three browsers, twelve failures,
   gates spend their time waiting on file reads rather than saturating cores, so
   there is idle time for parallelism to recover. The compile stays serial and
   ahead of the group, which is what keeps the race the guard closed from
-  reopening: verified by deleting `src/paraglide/.fingerprint` and watching the
+  reopening: verified by deleting the fingerprint (now
+  `node_modules/.cache/paraglide/fingerprint`) and watching the
   compile do the work before the group opened, with every gate inside it then
   reporting the messages current.
 - **The component project shares one environment per worker (`isolate: false`).**
