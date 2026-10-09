@@ -91,6 +91,9 @@
     "msw",
     "lefthook",
   ],
+  "patchedDependencies": {
+    "vite@8.2.2": "patches/vite@8.2.2.patch",
+  },
   "overrides": {
     "qs": "^6.15.3",
   },

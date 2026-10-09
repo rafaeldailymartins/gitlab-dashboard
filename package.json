@@ -145,5 +145,8 @@
       "src/app/main.tsx"
     ],
     "strict": true
+  },
+  "patchedDependencies": {
+    "vite@8.2.2": "patches/vite@8.2.2.patch"
   }
 }

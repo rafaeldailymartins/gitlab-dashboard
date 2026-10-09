@@ -1107,6 +1107,18 @@ one without reading the reason will reintroduce a bug that is already fixed.
   fails as having stopped filtering. Raising the production tier's floor, or
   letting `accepted.ts` excuse a production package, is the change this
   paragraph exists to stop.
+- **Vite is patched, by one line, in `patches/vite@8.2.2.patch`.** Before it
+  binds, `bun run dev` probes port 3000 on the wildcard addresses with a bare
+  `net.Server` and closes it — and `close()` waits for every connection the
+  probe accepted. A tab left open on the app is a client polling that port
+  every second to reconnect, so a restart with the app open could be accepted
+  by the probe and wait on it: measured, 37s and 98s under Node and more than
+  four minutes under Bun, which accepts for longer before it reports
+  listening; with nothing connected it was 5s. That was the dev server that was
+  "sometimes slow". The patch hands the probe a handler that destroys what it
+  accepts — the tab's ping fails and retries a second later against the real
+  server. Still present in 8.3.2. Upgrading Vite makes `bun install` fail on the
+  patch, which is the moment to check whether it is still needed.
 - **Two linters.** ESLint carries the type-aware, React and testing-library
   rules; Biome carries the ARIA rules and the unique-id rule. Replacing ESLint
   with Biome was measured twice and rejected — `docs/qa/quality-metrics.md` has
