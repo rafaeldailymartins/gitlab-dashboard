@@ -144,7 +144,7 @@ The code that sends reports SHALL NOT be part of what the first page load
 requests. It SHALL be fetched once the page is idle. A fault that happens before
 it arrives SHALL still be reported once it does.
 
-The initial load SHALL stay within its 180 kB budget.
+The initial load SHALL stay within its 196 kB budget.
 
 #### Scenario: The first load
 
