@@ -3,7 +3,7 @@
 # next promotion.
 #
 # Version updates only. Dependabot cannot raise security updates for Bun, so a
-# new advisory against a locked package is caught by the daily `bun audit` in
+# new advisory against a locked package is caught by the weekly `bun audit` in
 # `audit.yml` instead; and a security update for an action would be raised
 # against `main`, which `branch-policy` refuses from anything but `staging` or a
 # hotfix. Both are covered by the weekly run below.
