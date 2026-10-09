@@ -70,7 +70,7 @@ jobs:
 
   # A package the pull request adds or moves to a version with a known
   # advisory, at any severity and in either scope, is refused before the merge —
-  # the daily `bun audit` in `audit.yml` only finds it once it is on a branch.
+  # the weekly `bun audit` in `audit.yml` only finds it once it is on a branch.
   # It judges the change, not the tree: an advisory against a package the pull
   # request does not touch is the audit's to report.
   #
