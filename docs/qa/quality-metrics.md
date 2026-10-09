@@ -28,6 +28,7 @@ this pass.
 | Type coverage                        | ≥ 99%                                        | 99.88% (51 911 of 51 969)      | `bun run types:coverage`        | `verify`, CI                   |
 | Production vulnerabilities           | **0, at any severity, no exceptions**        | 0, over 92 packages            | `bun run security:audit`        | pre-push, `verify`, CI, weekly |
 | Tooling vulnerabilities              | 0 not accounted for in `accepted.ts`         | 1 accepted, over 887 packages  | `bun run security:audit`        | pre-push, `verify`, CI, weekly |
+| Dependency patches applied           | each one to the version installed            | 1 patch, Vite 8.3.3            | `bun run patches:check`         | `verify`, CI                   |
 | New vulnerable packages              | none added, at any severity                  | —                              | dependency review               | CI, pull requests              |
 | Commit messages                      | Conventional Commits, every commit           | —                              | `bun commitlint`                | commit-msg, CI                 |
 | Test coverage, statements            | ≥ 90%                                        | 97.36%                         | `bun run test:coverage`         | CI                             |
@@ -36,7 +37,7 @@ this pass.
 | Test coverage, lines                 | ≥ 90%                                        | 97.43%                         | `bun run test:coverage`         | CI                             |
 | Test coverage, `model/`              | **100%**                                     | 100%                           | `bun run test:coverage`         | CI                             |
 | Mutation score, `model/`             | ≥ 85%                                        | 93.46%, 66 of 1039 survived    | `bun run test:mutation`         | scheduled CI                   |
-| Initial bundle                       | ≤ 180 kB gzip                                | 178.17 kB, on 2026-10-01       | `bun run build && bun run size` | CI                             |
+| Initial bundle                       | ≤ 196 kB gzip                                | 195.55 kB, on 2026-10-09       | `bun run build && bun run size` | CI                             |
 | Fault reports carry nothing personal | no planted value survives, in any field      | pass                           | `bun run test`                  | CI                             |
 | Browser and function scrubs agree    | one answer for every generated report        | pass                           | `bun run test`                  | CI                             |
 | No source map served                 | no `.map` in `dist/`, no chunk naming one    | pass, 41 removed               | `bun run build`                 | CI                             |

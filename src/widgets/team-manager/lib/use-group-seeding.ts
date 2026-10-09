@@ -81,7 +81,7 @@ export function useGroupSeeding(): Seeding {
       setBusy(fullPath)
 
       try {
-        const answer = await client.fetchQuery(teamSuggestionsQuery(gateway, window))
+        const answer = await client.query(teamSuggestionsQuery(gateway, window))
 
         return suggestionsFrom(answer.people).map((one) => memberOf(one.person))
       } finally {

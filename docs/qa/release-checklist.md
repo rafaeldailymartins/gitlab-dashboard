@@ -30,7 +30,7 @@ which is the mercy in it.
 - [ ] `bun run test:coverage` — thresholds enforced.
 - [ ] `bun run test:e2e` — chromium locally; the pull request's `e2e` check runs all three browsers.
 - [ ] `bun run test:mutation` — the model layer, at or above 85.
-- [ ] `bun run build && bun run size` — inside the 180 kB gzip budget.
+- [ ] `bun run build && bun run size` — inside the 196 kB gzip budget.
 - [ ] Every new `Scenario` carries a `# Spec: <capability> / <id>` comment, and
       every requirement touched by the change has one.
 - [ ] `bunx openspec validate <change> --strict` passes.
@@ -224,12 +224,14 @@ in a test file. `docs/qa/test-plan.md` delegates them here by name.
 
 ## After promoting to production
 
-- [ ] **The deploy Netlify is serving is this merge's.** A deploy that built is
-      not a deploy that went live: publishing an earlier deploy by hand locks
-      auto-publishing, and every later deploy then builds `ready` and is never
-      published — three did, one after another, with nothing on the site saying
-      so. `Deploys` shows the published one; if it is not the merge's commit,
-      unlock auto-publishing and publish it.
+- [ ] **Publish this merge's deploy, and check it is the one served.**
+      Production is locked against auto-publishing on purpose, so every deploy
+      builds `ready` and waits: Deploys, the merge's deploy, **Publish deploy**,
+      and leave the lock on. A deploy that built is not a deploy that went
+      live — three once waited `ready`, one after another, with nothing on the
+      site saying so. `Deploys` shows the published one. `deployments.yml`
+      records it as `production` within the hour, or at once when it is run
+      from the Actions tab.
 - [ ] Sign in on the production URL.
 - [ ] **The teams listed are the ones production had, and a save works.** The
       function names its store from the deploy context the platform hands it,

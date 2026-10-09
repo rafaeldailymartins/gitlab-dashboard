@@ -25,7 +25,13 @@ for (const match of html.matchAll(REFERENCE)) {
 export default [
   {
     gzip: true,
-    limit: '180 kB',
+    // 180 kB until 2026-10-09 (OBS-5). React 19.2.8 → 19.3.0 added 8.6 kB to
+    // this load and zod 4.4.3 → 4.6.5 added 6.4 kB, each measured by reverting
+    // that package alone, which took it from 179.53 kB to 195.55 kB. Holding both
+    // back was the alternative, and the owner chose the budget instead:
+    // `openspec/changes/archive/*-raise-the-initial-load-budget`. The headroom
+    // left is half a kilobyte on purpose — the next addition meets the gate.
+    limit: '196 kB',
     name: 'initial load (every file index.html requests)',
     path: paths,
   },

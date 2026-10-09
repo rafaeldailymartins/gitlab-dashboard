@@ -23,11 +23,16 @@ a pull request that cannot merge rather than a surprise in production.
   on the OAuth application, exactly. Use a preview for the interface and
   `staging` for anything that needs a session.
 - **A local run keeps teams in memory**, so a restart forgets them.
-- **Production is a GitHub deployment.** Once Netlify serves a push to `main`,
-  `deployments.yml` records it under the `production` environment, which is
-  how the repository page shows what is running. A deployment that failed there
-  is a Netlify deploy that did not go live; its log is on Netlify. Homologation
-  is not recorded: it is behind Netlify's access protection, so a runner cannot
+- **Production is published by hand, and the lock stays on.** The site is
+  locked against auto-publishing in Netlify on purpose, so a merge into `main`
+  builds a deploy that waits, `ready`, until you publish it: Deploys, the
+  merge's deploy, **Publish deploy**. Do not unlock it to get a deploy out.
+- **Production is a GitHub deployment once it is published.** `deployments.yml`
+  reads what production serves every hour, and when run from the Actions tab,
+  and records `main`'s head under the `production` environment once production
+  serves it — which is how the repository page shows what is running. A merge
+  nobody has published yet is simply not recorded. Homologation is not
+  recorded at all: it is behind Netlify's access protection, so a runner cannot
   see what it serves.
 
 ## Branches
@@ -68,7 +73,8 @@ gh pr create --base main --head staging --title "release: promote staging" --bod
 
 The body is the part of `docs/qa/release-checklist.md` that only a real deploy
 can answer, as checkboxes. Work through them on staging, tick them, then merge.
-The merge deploys production and publishes a release.
+The merge builds production's deploy and publishes a release; the deploy goes
+live when you publish it in Netlify.
 
 A promotion takes **everything** on `staging`. If something there is not ready,
 fix it or revert it on `staging` first — by pull request, like any other change.
