@@ -17,35 +17,50 @@
  * options and the compiler's own version. It also refuses to trust itself when
  * the output is missing: deleting `src/paraglide/` has to mean a rebuild, not a
  * stale stamp.
+ *
+ * There is a second writer, and the two used to undo each other. `bun run dev`
+ * compiles through the Vite plugin, which skips its own compile only when
+ * `src/paraglide/` is byte for byte what it last wrote, and deletes whatever it
+ * did not write. This wrote another output structure and kept its stamp inside
+ * that folder, so every gate after a dev server rebuilt 391 files and the stamp
+ * with them, and every dev server after a gate rebuilt them back and deleted
+ * the stamp — a full compile on each side of every switch, which the `pre-push`
+ * hook makes routine. So the output here is now exactly the plugin's in
+ * development, and the stamp lives outside the folder the plugin owns.
  */
 import { createHash } from 'node:crypto'
-import { access, readdir, readFile, writeFile } from 'node:fs/promises'
+import { access, mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 const MESSAGES_DIR = 'messages'
 const OUT_DIR = 'src/paraglide'
-/** Absolute, as the CLI resolves it: the compiler records it in a generated
- * README, and a relative path there would be the one byte of output that
- * differed from what the command line produced. */
-const PROJECT = path.resolve('project.inlang')
+/** Relative, as `vite.config.ts` passes it: the compiler records it in a
+ * generated README, and any other spelling there is one byte of output that
+ * differs from the plugin's, which is enough to make it compile again. */
+const PROJECT = './project.inlang'
 const SETTINGS = 'project.inlang/settings.json'
 
-/** Written after a successful compile, inside the output it describes. */
-const STAMP = path.join(OUT_DIR, '.fingerprint')
+/** Written after a successful compile, and outside the output it describes:
+ * the Vite plugin deletes from `src/paraglide/` every file it did not write. */
+const STAMP = 'node_modules/.cache/paraglide/fingerprint'
 
-/** Proof the output is really there, not just recorded as having been there. */
-const EMITTED = path.join(OUT_DIR, 'messages.js')
+/** Proof the output is really there, and in this structure: only
+ * `locale-modules` emits a module per locale, so after `vite build` has written
+ * `message-modules` this is missing and the next gate compiles back. */
+const EMITTED = path.join(OUT_DIR, 'messages', 'en.js')
 
 const VERSION = 'node_modules/@inlang/paraglide-js/package.json'
 
 /**
- * The same options as the Vite plugin in `vite.config.ts`. They have to agree:
- * whichever runs last decides what the other one's consumers see.
+ * The same options as the Vite plugin in `vite.config.ts`, plus the structure
+ * it chooses for itself under `bun run dev`. They have to agree byte for byte,
+ * or each writer rebuilds the folder the other one just wrote.
  */
 const OPTIONS = {
   emitTsDeclarations: true,
   isServer: 'false',
   outdir: `./${OUT_DIR}`,
+  outputStructure: 'locale-modules',
   project: PROJECT,
   // Not `as const`: the compiler's own option type wants a mutable array, and a
   // readonly one is not assignable to it.
@@ -112,6 +127,7 @@ async function main(): Promise<void> {
   const { compile } = await import('@inlang/paraglide-js')
 
   await compile(OPTIONS)
+  await mkdir(path.dirname(STAMP), { recursive: true })
   await writeFile(STAMP, wanted)
   process.stdout.write('messages compiled\n')
 }

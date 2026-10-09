@@ -1119,6 +1119,12 @@ one without reading the reason will reintroduce a bug that is already fixed.
   accepts — the tab's ping fails and retries a second later against the real
   server. Still present in 8.3.2. Upgrading Vite makes `bun install` fail on the
   patch, which is the moment to check whether it is still needed.
+- **The compiled messages have one writer per folder.** `src/paraglide/` is
+  `locale-modules`, written byte for byte alike by `scripts/compile-messages.ts`
+  and by the Vite plugin under `bun run dev`; `vite build` writes
+  `message-modules` to `node_modules/.cache/paraglide/build` and reaches it
+  through the `@/paraglide` alias. Each used to rebuild what the other had just
+  written — `docs/qa/quality-metrics.md` has the measurements.
 - **Two linters.** ESLint carries the type-aware, React and testing-library
   rules; Biome carries the ARIA rules and the unique-id rule. Replacing ESLint
   with Biome was measured twice and rejected — `docs/qa/quality-metrics.md` has

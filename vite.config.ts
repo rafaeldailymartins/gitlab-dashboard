@@ -24,7 +24,22 @@ function reportingDefines(env: Record<string, string | undefined>): Record<strin
   }
 }
 
-export default defineConfig(({ mode }) => ({
+/**
+ * Where the plugin writes the compiled messages, which is not the same place
+ * for a build. `vite build` compiles `message-modules`, which the bundle needs
+ * to drop every message a chunk does not use; `bun run dev` and every gate read
+ * `locale-modules` from `src/paraglide/`. Sharing the folder made each one
+ * rebuild it after the other: a dev server after `bun run build` — or after
+ * `bun run test:e2e`, which builds — was ready in 18.6s instead of 3.5s,
+ * recompiling 391 files back. The build reaches its copy through the alias
+ * below, ahead of `@`, so nothing in `src/` names where it is.
+ */
+const MESSAGES = {
+  build: './node_modules/.cache/paraglide/build',
+  serve: './src/paraglide',
+} as const
+
+export default defineConfig(({ command, mode }) => ({
   build: {
     // Written, uploaded by `scripts/upload-source-maps.ts` when there is
     // somewhere to upload them, then deleted by `scripts/drop-source-maps.ts`:
@@ -51,7 +66,7 @@ export default defineConfig(({ mode }) => ({
     paraglideVitePlugin({
       emitTsDeclarations: true,
       isServer: 'false',
-      outdir: './src/paraglide',
+      outdir: MESSAGES[command],
       project: './project.inlang',
       strategy: ['localStorage', 'preferredLanguage', 'baseLocale'],
     }),
@@ -66,9 +81,15 @@ export default defineConfig(({ mode }) => ({
     // name, which costs the bundle nothing.
   ],
   resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('src', import.meta.url)),
-    },
+    // An array, not an object: the first entry that matches wins, `@` matches
+    // `@/paraglide` too, and an object's keys are sorted by the linter.
+    alias: [
+      {
+        find: '@/paraglide',
+        replacement: fileURLToPath(new URL(MESSAGES[command], import.meta.url)),
+      },
+      { find: '@', replacement: fileURLToPath(new URL('src', import.meta.url)) },
+    ],
   },
   server: {
     port: 3000,
