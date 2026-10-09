@@ -1,0 +1,16 @@
+diff --git a/dist/node/chunks/node.js b/dist/node/chunks/node.js
+index 87cfa480c3d4132f9dd1b74c6c1bbe2b90385d3f..e2449560efc0afd248b3c27a414a322b4160690f 100644
+--- a/dist/node/chunks/node.js
++++ b/dist/node/chunks/node.js
+@@ -11627,7 +11627,10 @@ async function isPortAvailable(port) {
+ }
+ function tryListen(port, host) {
+ 	return new Promise((resolve) => {
+-		const server = net.createServer();
++		// Patched by gitlab-dashboard: a client already polling the port — the Vite
++		// client in a tab left open — can be accepted by this probe, and close()
++		// waits for every accepted connection, so the server never started.
++		const server = net.createServer((socket) => socket.destroy());
+ 		server.once("error", (e) => {
+ 			server.close(() => resolve(e.code === "EADDRINUSE" ? null : port));
+ 		});
