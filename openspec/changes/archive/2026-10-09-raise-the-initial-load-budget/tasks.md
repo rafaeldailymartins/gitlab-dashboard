@@ -24,6 +24,6 @@
 
 ## 3. Everything together
 
-- [ ] 3.1 `bun run verify && bun run test`, `bun run build && bun run size` and
+- [x] 3.1 `bun run verify && bun run test`, `bun run build && bun run size` and
       `bun run test:e2e` pass on the runtime group's branch, and its pull
       request's checks go green
